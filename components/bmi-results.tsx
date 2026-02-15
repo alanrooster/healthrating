@@ -128,6 +128,7 @@ function MetricCard({
 export function BMIResults({ result }: BMIResultsProps) {
   const {
     bmi,
+    compositeScore,
     adjustedBMI,
     category,
     idealWeightMin,
@@ -139,11 +140,16 @@ export function BMIResults({ result }: BMIResultsProps) {
     waistToHeightRatio,
     riskLevel,
     recommendations,
+    hasBodyMeasurements,
   } = result
 
   const isOverweight = overweightBy > 0
   const isUnderweight = underweightBy > 0
   const isHealthy = !isOverweight && !isUnderweight
+
+  // Show composite score as primary when body measurements are provided
+  const primaryScore = hasBodyMeasurements ? compositeScore : bmi
+  const primaryLabel = hasBodyMeasurements ? "Body Score" : "BMI"
 
   return (
     <div className="flex flex-col gap-6">
@@ -160,12 +166,18 @@ export function BMIResults({ result }: BMIResultsProps) {
         >
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex items-center gap-3">
-              <span className="text-5xl font-bold sm:text-6xl">{bmi}</span>
+              <span className="text-5xl font-bold sm:text-6xl">{primaryScore}</span>
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium opacity-80">BMI</span>
+                <span className="text-sm font-medium opacity-80">{primaryLabel}</span>
                 <span className="text-lg font-semibold">{category}</span>
               </div>
             </div>
+
+            {hasBodyMeasurements && (
+              <p className="text-xs opacity-80">
+                Composite score combining BMI, body fat, and waist measurements
+              </p>
+            )}
 
             {isOverweight && (
               <p className="text-lg font-semibold">
@@ -194,12 +206,13 @@ export function BMIResults({ result }: BMIResultsProps) {
         </div>
 
         <CardContent className="flex flex-col gap-6 pt-6">
-          <BMIGauge bmi={bmi} />
+          <BMIGauge bmi={primaryScore} />
 
           <div className="flex items-center justify-between rounded-lg bg-secondary p-4">
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">
                 Ideal weight range
+                {hasBodyMeasurements && " (measurement-adjusted)"}
               </span>
               <span className="text-lg font-bold text-foreground">
                 {idealWeightMin} - {idealWeightMax} kg
@@ -223,6 +236,7 @@ export function BMIResults({ result }: BMIResultsProps) {
               label="Standard BMI"
               value={bmi}
               unit="kg/m2"
+              sublabel="Weight & height only"
             />
             <MetricCard
               label="Age-Adjusted BMI"
@@ -230,6 +244,14 @@ export function BMIResults({ result }: BMIResultsProps) {
               unit="kg/m2"
               sublabel="Accounts for age & sex"
             />
+            {hasBodyMeasurements && (
+              <MetricCard
+                label="Composite Score"
+                value={compositeScore}
+                unit="pts"
+                sublabel="Includes body measurements"
+              />
+            )}
             {bodyFatPercentage !== null && (
               <MetricCard
                 label="Body Fat (Navy)"

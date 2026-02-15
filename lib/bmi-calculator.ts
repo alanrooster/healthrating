@@ -13,6 +13,7 @@ export interface BodyMeasurements {
 
 export interface BMIResult {
   bmi: number
+  compositeScore: number
   category: string
   idealWeightMin: number
   idealWeightMax: number
@@ -24,6 +25,7 @@ export interface BMIResult {
   adjustedBMI: number
   riskLevel: "low" | "moderate" | "high" | "very-high"
   recommendations: string[]
+  hasBodyMeasurements: boolean
 }
 
 /**
@@ -272,33 +274,61 @@ function getRecommendations(
 }
 
 /**
+ * Calculate a composite body composition score that blends BMI with body measurements.
+ * When body measurements are available, body fat % is converted to an equivalent BMI
+ * and blended with the standard BMI to produce a more accurate score.
+ *
+ * The "Equivalent BMI from Body Fat" mapping uses the Deurenberg formula inverted:
+ *   Body Fat % = 1.2 * BMI + 0.23 * Age - 10.8 * sex_factor - 5.4
+ *   => Equivalent BMI = (BF% - 0.23 * Age + 10.8 * sex_factor + 5.4) / 1.2
+ *
+ * Waist-to-height ratio also adjusts the score as it's a strong predictor of
+ * cardiometabolic risk independent of BMI.
+ */
+function calcCompositeScore(
+  bmi: number,
+  age: number,
+  sex: Sex,
+  bodyFat: number | null,
+  waistToHeightRatio: number | null
+): number {
+  let score = bmi
+  let blendWeight = 1.0
+  let totalWeight = 1.0
+
+  // Blend in body-fat-derived equivalent BMI (weight: 0.4)
+  if (bodyFat !== null) {
+    const sexFactor = sex === "male" ? 1 : 0
+    const equivalentBMI = (bodyFat - 0.23 * age + 10.8 * sexFactor + 5.4) / 1.2
+    // Clamp to reasonable range
+    const clampedEqBMI = Math.max(12, Math.min(55, equivalentBMI))
+    score = bmi * blendWeight + clampedEqBMI * 0.4
+    totalWeight += 0.4
+  }
+
+  // Adjust based on waist-to-height ratio (adds up to +/- 1.5 BMI points)
+  if (waistToHeightRatio !== null) {
+    // 0.5 is the healthy threshold; deviation from it shifts the score
+    const whtrDeviation = waistToHeightRatio - 0.5
+    const whtrAdjustment = whtrDeviation * 7.5 // maps +-0.2 deviation to +-1.5 BMI points
+    score += whtrAdjustment * 0.3
+    totalWeight += 0.3
+  }
+
+  return score / totalWeight
+}
+
+/**
  * Main calculation function
  */
 export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   const { age, sex, weightKg, heightCm, waistCm, hipCm, neckCm } = measurements
 
+  const hasBodyMeasurements = !!(waistCm || hipCm || neckCm)
+
   // Core BMI
   const bmi = calcBMI(weightKg, heightCm)
   const adjustedBMI = calcAgeAdjustedBMI(bmi, age, sex)
-  const category = getBMICategory(adjustedBMI)
-
-  // Ideal weight
-  const formulaRange = calcIdealWeightRange(heightCm, sex)
-  const bmiRange = calcBMIIdealRange(heightCm)
-
-  // Average the two methods for a refined range
-  const idealWeightMin = Math.round(((formulaRange.min + bmiRange.min) / 2) * 10) / 10
-  const idealWeightMax = Math.round(((formulaRange.max + bmiRange.max) / 2) * 10) / 10
-
-  // How much over/under
-  const overweightBy =
-    weightKg > idealWeightMax
-      ? Math.round((weightKg - idealWeightMax) * 10) / 10
-      : 0
-  const underweightBy =
-    weightKg < idealWeightMin
-      ? Math.round((idealWeightMin - weightKg) * 10) / 10
-      : 0
 
   // Body fat (Navy method)
   let bodyFatPercentage: number | null = null
@@ -320,8 +350,46 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
     waistToHeightRatio = Math.round(calcWHtR(waistCm, heightCm) * 100) / 100
   }
 
+  // Composite score that incorporates body measurements
+  const compositeScore = Math.round(
+    calcCompositeScore(adjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio) * 10
+  ) / 10
+
+  const category = getBMICategory(compositeScore)
+
+  // Ideal weight
+  const formulaRange = calcIdealWeightRange(heightCm, sex)
+  const bmiRange = calcBMIIdealRange(heightCm)
+
+  // Average the two methods for a refined range
+  let idealWeightMin = Math.round(((formulaRange.min + bmiRange.min) / 2) * 10) / 10
+  let idealWeightMax = Math.round(((formulaRange.max + bmiRange.max) / 2) * 10) / 10
+
+  // If body fat is available, refine ideal weight using healthy body fat ranges
+  if (bodyFatPercentage !== null) {
+    const leanMass = weightKg * (1 - bodyFatPercentage / 100)
+    // Healthy body fat: men 10-20%, women 18-28%
+    const healthyBFLow = sex === "male" ? 0.10 : 0.18
+    const healthyBFHigh = sex === "male" ? 0.20 : 0.28
+    const bfIdealMin = Math.round((leanMass / (1 - healthyBFHigh)) * 10) / 10
+    const bfIdealMax = Math.round((leanMass / (1 - healthyBFLow)) * 10) / 10
+    // Blend body-fat-based ideal weight with formula-based (40/60 split)
+    idealWeightMin = Math.round(((idealWeightMin * 0.6 + bfIdealMin * 0.4)) * 10) / 10
+    idealWeightMax = Math.round(((idealWeightMax * 0.6 + bfIdealMax * 0.4)) * 10) / 10
+  }
+
+  // How much over/under
+  const overweightBy =
+    weightKg > idealWeightMax
+      ? Math.round((weightKg - idealWeightMax) * 10) / 10
+      : 0
+  const underweightBy =
+    weightKg < idealWeightMin
+      ? Math.round((idealWeightMin - weightKg) * 10) / 10
+      : 0
+
   const riskLevel = determineRiskLevel(
-    adjustedBMI,
+    compositeScore,
     bodyFatPercentage,
     waistToHipRatio,
     waistToHeightRatio,
@@ -330,6 +398,7 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
 
   const partialResult: Partial<BMIResult> = {
     bmi: Math.round(bmi * 10) / 10,
+    compositeScore,
     adjustedBMI: Math.round(adjustedBMI * 10) / 10,
     category,
     idealWeightMin,
@@ -340,6 +409,7 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
     waistToHipRatio,
     waistToHeightRatio,
     riskLevel,
+    hasBodyMeasurements,
   }
 
   const recommendations = getRecommendations(partialResult, measurements)
