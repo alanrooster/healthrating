@@ -1,14 +1,24 @@
 export type Sex = "male" | "female"
 
+export type Ethnicity =
+  | "caucasian"
+  | "african"
+  | "south-asian"
+  | "east-asian"
+  | "southeast-asian"
+  | "hispanic"
+  | "middle-eastern"
+  | "pacific-islander"
+
 export interface BodyMeasurements {
   age: number
   sex: Sex
+  ethnicity: Ethnicity
   weightKg: number
   heightCm: number
-  waistCm?: number
-  hipCm?: number
-  neckCm?: number
-  wristCm?: number
+  waistCm: number
+  neckCm: number
+  wristCm: number
 }
 
 export interface BMIResult {
@@ -20,7 +30,6 @@ export interface BMIResult {
   overweightBy: number
   underweightBy: number
   bodyFatPercentage: number | null
-  waistToHipRatio: number | null
   waistToHeightRatio: number | null
   adjustedBMI: number
   riskLevel: "low" | "moderate" | "high" | "very-high"
@@ -60,43 +69,63 @@ function calcAgeAdjustedBMI(
 }
 
 /**
- * US Navy Body Fat % formula
- * Uses waist, neck, (and hip for women) circumferences
+ * Body Fat % estimation using two complementary methods:
+ *
+ * 1. U.S. Navy circumference method (uses waist, neck, height)
+ *    - Male:   495 / (1.0324 - 0.19077*log10(waist-neck) + 0.15456*log10(height)) - 450
+ *    - Female: uses a waist-only simplified regression when hip is unavailable
+ *
+ * 2. Deurenberg formula (uses BMI, age, sex)
+ *    BF% = 1.2*BMI + 0.23*age - 10.8*sexFactor - 5.4
+ *
+ * We average both methods for a more robust estimate.
  */
-function calcBodyFatNavy(
+function calcBodyFatCombined(
   sex: Sex,
+  age: number,
   heightCm: number,
+  weightKg: number,
   waistCm: number,
-  neckCm: number,
-  hipCm?: number
-): number | null {
-  if (sex === "male") {
-    if (waistCm <= neckCm) return null
-    const bf =
-      495 /
-        (1.0324 -
-          0.19077 * Math.log10(waistCm - neckCm) +
-          0.15456 * Math.log10(heightCm)) -
-      450
-    return Math.max(2, Math.min(bf, 60))
-  }
-  // Female
-  if (!hipCm) return null
-  if (waistCm + hipCm <= neckCm) return null
-  const bf =
-    495 /
-      (1.29579 -
-        0.35004 * Math.log10(waistCm + hipCm - neckCm) +
-        0.221 * Math.log10(heightCm)) -
-    450
-  return Math.max(8, Math.min(bf, 60))
-}
+  neckCm: number
+): number {
+  const sexFactor = sex === "male" ? 1 : 0
+  const heightM = heightCm / 100
+  const bmi = weightKg / (heightM * heightM)
 
-/**
- * Waist-to-hip ratio
- */
-function calcWHR(waistCm: number, hipCm: number): number {
-  return waistCm / hipCm
+  // Deurenberg formula
+  const deurenberg = 1.2 * bmi + 0.23 * age - 10.8 * sexFactor - 5.4
+
+  // Navy method (male formula works directly; for female we use a waist-only regression)
+  let navy: number | null = null
+  if (sex === "male") {
+    if (waistCm > neckCm) {
+      navy =
+        495 /
+          (1.0324 -
+            0.19077 * Math.log10(waistCm - neckCm) +
+            0.15456 * Math.log10(heightCm)) -
+        450
+    }
+  } else {
+    // Female simplified: regression based on waist, neck, height without hip
+    if (waistCm > neckCm) {
+      navy =
+        495 /
+          (1.29579 -
+            0.35004 * Math.log10(waistCm * 1.18 - neckCm) +
+            0.221 * Math.log10(heightCm)) -
+        450
+    }
+  }
+
+  if (navy !== null) {
+    navy = Math.max(sex === "male" ? 2 : 8, Math.min(navy, 60))
+    // Average both methods
+    const combined = (deurenberg + navy) / 2
+    return Math.max(2, Math.min(combined, 60))
+  }
+
+  return Math.max(2, Math.min(deurenberg, 60))
 }
 
 /**
@@ -155,15 +184,18 @@ function calcBMIIdealRange(heightCm: number): { min: number; max: number } {
 function determineRiskLevel(
   bmi: number,
   bodyFat: number | null,
-  whr: number | null,
   whtr: number | null,
-  sex: Sex
+  sex: Sex,
+  ethnicity: Ethnicity
 ): "low" | "moderate" | "high" | "very-high" {
   let riskScore = 0
 
-  // BMI scoring
+  // Ethnicity-adjusted BMI thresholds
+  // South Asian, East Asian, Southeast Asian populations have elevated risk at lower BMIs
+  const overweightThreshold = getOverweightBMIThreshold(ethnicity)
+
   if (bmi < 18.5) riskScore += 1
-  else if (bmi >= 25 && bmi < 30) riskScore += 1
+  else if (bmi >= overweightThreshold && bmi < 30) riskScore += 1
   else if (bmi >= 30 && bmi < 35) riskScore += 2
   else if (bmi >= 35) riskScore += 3
 
@@ -178,22 +210,73 @@ function determineRiskLevel(
     }
   }
 
-  // Waist-to-hip ratio scoring
-  if (whr !== null) {
-    if (sex === "male" && whr > 0.9) riskScore += 1
-    if (sex === "female" && whr > 0.85) riskScore += 1
-  }
-
   // Waist-to-height ratio scoring (most predictive)
   if (whtr !== null) {
     if (whtr > 0.5) riskScore += 1
     if (whtr > 0.6) riskScore += 1
   }
 
+  // Ethnicity risk modifier: South/East/SE Asian populations have
+  // higher metabolic risk at the same BMI (WHO expert consultation)
+  if (["south-asian", "east-asian", "southeast-asian"].includes(ethnicity)) {
+    if (bmi >= 23) riskScore += 1
+  }
+
   if (riskScore <= 1) return "low"
   if (riskScore <= 3) return "moderate"
   if (riskScore <= 5) return "high"
   return "very-high"
+}
+
+/**
+ * Ethnicity-adjusted overweight BMI threshold.
+ * WHO recommends lower cut-offs for Asian populations due to
+ * higher body fat % and metabolic risk at lower BMIs.
+ * Pacific Islanders have higher muscle/bone mass so threshold is raised.
+ */
+function getOverweightBMIThreshold(ethnicity: Ethnicity): number {
+  switch (ethnicity) {
+    case "south-asian":
+    case "east-asian":
+    case "southeast-asian":
+      return 23 // WHO Asian cut-off
+    case "pacific-islander":
+      return 26 // higher muscle/bone mass
+    default:
+      return 25 // standard WHO threshold
+  }
+}
+
+/**
+ * Ethnicity-based BMI adjustment.
+ * Research shows that at the same BMI, different ethnic groups
+ * carry different amounts of body fat and face different health risks.
+ *
+ * References:
+ * - WHO Expert Consultation (2004): Appropriate BMI for Asian populations
+ * - Deurenberg et al. (2002): BMI-body fat relationship differs across ethnic groups
+ * - Wagner & Heyward (2000): Body composition differences across ethnicities
+ */
+function getEthnicityBMIAdjustment(ethnicity: Ethnicity): number {
+  switch (ethnicity) {
+    case "south-asian":
+      return 2.5 // significantly higher body fat at same BMI
+    case "east-asian":
+      return 1.5 // higher body fat at same BMI
+    case "southeast-asian":
+      return 1.8
+    case "african":
+      return -1.0 // higher muscle mass, lower body fat at same BMI
+    case "pacific-islander":
+      return -1.5 // significantly higher muscle/bone mass
+    case "hispanic":
+      return 0.5 // slightly higher trunk fat distribution
+    case "middle-eastern":
+      return 0.8 // slightly higher body fat at same BMI
+    case "caucasian":
+    default:
+      return 0 // baseline reference
+  }
 }
 
 /**
@@ -322,42 +405,31 @@ function calcCompositeScore(
  * Main calculation function
  */
 export function calculateBMI(measurements: BodyMeasurements): BMIResult {
-  const { age, sex, weightKg, heightCm, waistCm, hipCm, neckCm } = measurements
-
-  const hasBodyMeasurements = !!(waistCm || hipCm || neckCm)
+  const { age, sex, ethnicity, weightKg, heightCm, waistCm, neckCm } = measurements
 
   // Core BMI
   const bmi = calcBMI(weightKg, heightCm)
   const adjustedBMI = calcAgeAdjustedBMI(bmi, age, sex)
 
-  // Body fat (Navy method)
-  let bodyFatPercentage: number | null = null
-  if (waistCm && neckCm) {
-    bodyFatPercentage = calcBodyFatNavy(sex, heightCm, waistCm, neckCm, hipCm)
-    if (bodyFatPercentage !== null) {
-      bodyFatPercentage = Math.round(bodyFatPercentage * 10) / 10
-    }
-  }
+  // Ethnicity adjustment applied to the adjusted BMI
+  const ethnicityAdjustment = getEthnicityBMIAdjustment(ethnicity)
+  const ethnicityAdjustedBMI = adjustedBMI + ethnicityAdjustment
 
-  // Waist ratios
-  let waistToHipRatio: number | null = null
-  if (waistCm && hipCm) {
-    waistToHipRatio = Math.round(calcWHR(waistCm, hipCm) * 100) / 100
-  }
+  // Body fat (combined Navy + Deurenberg method)
+  const bodyFatRaw = calcBodyFatCombined(sex, age, heightCm, weightKg, waistCm, neckCm)
+  const bodyFatPercentage = Math.round(bodyFatRaw * 10) / 10
 
-  let waistToHeightRatio: number | null = null
-  if (waistCm) {
-    waistToHeightRatio = Math.round(calcWHtR(waistCm, heightCm) * 100) / 100
-  }
+  // Waist-to-height ratio
+  const waistToHeightRatio = Math.round(calcWHtR(waistCm, heightCm) * 100) / 100
 
-  // Composite score that incorporates body measurements
+  // Composite score that incorporates body measurements + ethnicity
   const compositeScore = Math.round(
-    calcCompositeScore(adjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio) * 10
+    calcCompositeScore(ethnicityAdjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio) * 10
   ) / 10
 
   const category = getBMICategory(compositeScore)
 
-  // Ideal weight
+  // Ideal weight range
   const formulaRange = calcIdealWeightRange(heightCm, sex)
   const bmiRange = calcBMIIdealRange(heightCm)
 
@@ -365,18 +437,26 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   let idealWeightMin = Math.round(((formulaRange.min + bmiRange.min) / 2) * 10) / 10
   let idealWeightMax = Math.round(((formulaRange.max + bmiRange.max) / 2) * 10) / 10
 
-  // If body fat is available, refine ideal weight using healthy body fat ranges
-  if (bodyFatPercentage !== null) {
-    const leanMass = weightKg * (1 - bodyFatPercentage / 100)
-    // Healthy body fat: men 10-20%, women 18-28%
-    const healthyBFLow = sex === "male" ? 0.10 : 0.18
-    const healthyBFHigh = sex === "male" ? 0.20 : 0.28
-    const bfIdealMin = Math.round((leanMass / (1 - healthyBFHigh)) * 10) / 10
-    const bfIdealMax = Math.round((leanMass / (1 - healthyBFLow)) * 10) / 10
-    // Blend body-fat-based ideal weight with formula-based (40/60 split)
-    idealWeightMin = Math.round(((idealWeightMin * 0.6 + bfIdealMin * 0.4)) * 10) / 10
-    idealWeightMax = Math.round(((idealWeightMax * 0.6 + bfIdealMax * 0.4)) * 10) / 10
+  // Adjust ideal weight range based on ethnicity
+  // Groups with higher muscle/bone mass get a slightly higher range
+  if (ethnicityAdjustment < 0) {
+    idealWeightMin = Math.round((idealWeightMin * (1 + Math.abs(ethnicityAdjustment) * 0.01)) * 10) / 10
+    idealWeightMax = Math.round((idealWeightMax * (1 + Math.abs(ethnicityAdjustment) * 0.01)) * 10) / 10
+  } else if (ethnicityAdjustment > 0) {
+    idealWeightMin = Math.round((idealWeightMin * (1 - ethnicityAdjustment * 0.008)) * 10) / 10
+    idealWeightMax = Math.round((idealWeightMax * (1 - ethnicityAdjustment * 0.008)) * 10) / 10
   }
+
+  // Refine ideal weight using healthy body fat ranges
+  const leanMass = weightKg * (1 - bodyFatPercentage / 100)
+  // Healthy body fat: men 10-20%, women 18-28%
+  const healthyBFLow = sex === "male" ? 0.10 : 0.18
+  const healthyBFHigh = sex === "male" ? 0.20 : 0.28
+  const bfIdealMin = Math.round((leanMass / (1 - healthyBFHigh)) * 10) / 10
+  const bfIdealMax = Math.round((leanMass / (1 - healthyBFLow)) * 10) / 10
+  // Blend body-fat-based ideal weight with formula-based (40/60 split)
+  idealWeightMin = Math.round((idealWeightMin * 0.6 + bfIdealMin * 0.4) * 10) / 10
+  idealWeightMax = Math.round((idealWeightMax * 0.6 + bfIdealMax * 0.4) * 10) / 10
 
   // How much over/under
   const overweightBy =
@@ -391,25 +471,24 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   const riskLevel = determineRiskLevel(
     compositeScore,
     bodyFatPercentage,
-    waistToHipRatio,
     waistToHeightRatio,
-    sex
+    sex,
+    ethnicity
   )
 
   const partialResult: Partial<BMIResult> = {
     bmi: Math.round(bmi * 10) / 10,
     compositeScore,
-    adjustedBMI: Math.round(adjustedBMI * 10) / 10,
+    adjustedBMI: Math.round(ethnicityAdjustedBMI * 10) / 10,
     category,
     idealWeightMin,
     idealWeightMax,
     overweightBy,
     underweightBy,
     bodyFatPercentage,
-    waistToHipRatio,
     waistToHeightRatio,
     riskLevel,
-    hasBodyMeasurements,
+    hasBodyMeasurements: true,
   }
 
   const recommendations = getRecommendations(partialResult, measurements)

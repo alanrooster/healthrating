@@ -7,19 +7,30 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { BodyMeasurements, Sex } from "@/lib/bmi-calculator"
+import type { BodyMeasurements, Sex, Ethnicity } from "@/lib/bmi-calculator"
 
 interface BMIFormProps {
   onCalculate: (measurements: BodyMeasurements) => void
 }
 
+const ETHNICITY_OPTIONS: { value: Ethnicity; label: string }[] = [
+  { value: "caucasian", label: "Caucasian / European" },
+  { value: "african", label: "African / Afro-Caribbean" },
+  { value: "south-asian", label: "South Asian" },
+  { value: "east-asian", label: "East Asian" },
+  { value: "southeast-asian", label: "Southeast Asian" },
+  { value: "hispanic", label: "Hispanic / Latino" },
+  { value: "middle-eastern", label: "Middle Eastern" },
+  { value: "pacific-islander", label: "Pacific Islander" },
+]
+
 export function BMIForm({ onCalculate }: BMIFormProps) {
   const [sex, setSex] = useState<Sex>("male")
+  const [ethnicity, setEthnicity] = useState<Ethnicity>("caucasian")
   const [age, setAge] = useState("")
   const [weight, setWeight] = useState("")
   const [height, setHeight] = useState("")
   const [waist, setWaist] = useState("")
-  const [hip, setHip] = useState("")
   const [neck, setNeck] = useState("")
   const [wrist, setWrist] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -29,6 +40,9 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
     const ageNum = Number(age)
     const weightNum = Number(weight)
     const heightNum = Number(height)
+    const waistNum = Number(waist)
+    const neckNum = Number(neck)
+    const wristNum = Number(wrist)
 
     if (!age || ageNum < 2 || ageNum > 120) {
       newErrors.age = "Enter a valid age (2-120)"
@@ -39,16 +53,13 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
     if (!height || heightNum < 50 || heightNum > 280) {
       newErrors.height = "Enter a valid height (50-280 cm)"
     }
-    if (waist && (Number(waist) < 30 || Number(waist) > 200)) {
+    if (!waist || waistNum < 30 || waistNum > 200) {
       newErrors.waist = "Enter a valid waist (30-200 cm)"
     }
-    if (hip && (Number(hip) < 40 || Number(hip) > 200)) {
-      newErrors.hip = "Enter a valid hip (40-200 cm)"
-    }
-    if (neck && (Number(neck) < 20 || Number(neck) > 80)) {
+    if (!neck || neckNum < 20 || neckNum > 80) {
       newErrors.neck = "Enter a valid neck (20-80 cm)"
     }
-    if (wrist && (Number(wrist) < 10 || Number(wrist) > 30)) {
+    if (!wrist || wristNum < 10 || wristNum > 30) {
       newErrors.wrist = "Enter a valid wrist (10-30 cm)"
     }
 
@@ -63,18 +74,18 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
     onCalculate({
       age: Number(age),
       sex,
+      ethnicity,
       weightKg: Number(weight),
       heightCm: Number(height),
-      waistCm: waist ? Number(waist) : undefined,
-      hipCm: hip ? Number(hip) : undefined,
-      neckCm: neck ? Number(neck) : undefined,
-      wristCm: wrist ? Number(wrist) : undefined,
+      waistCm: Number(waist),
+      neckCm: Number(neck),
+      wristCm: Number(wrist),
     })
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-      {/* Sex Selection */}
+      {/* Basic Information */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold text-foreground">
@@ -82,9 +93,10 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
+          {/* Sex Selection */}
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium text-muted-foreground">
-              Biological Sex
+              Biological Sex <span className="text-destructive">*</span>
             </Label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -142,10 +154,44 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
             </div>
           </div>
 
+          {/* Ethnicity Selection */}
+          <div className="flex flex-col gap-2">
+            <Label
+              htmlFor="ethnicity"
+              className="text-sm font-medium text-muted-foreground"
+            >
+              Ethnicity <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Different ethnic groups have different body fat distributions and
+              metabolic risk profiles at the same BMI (WHO guidelines).
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {ETHNICITY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setEthnicity(opt.value)}
+                  className={`rounded-lg border-2 px-3 py-2.5 text-xs font-medium transition-all ${
+                    ethnicity === opt.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:border-primary/50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Age, Weight, Height */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="age" className="text-sm font-medium text-muted-foreground">
-                Age
+              <Label
+                htmlFor="age"
+                className="text-sm font-medium text-muted-foreground"
+              >
+                Age <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="age"
@@ -164,7 +210,7 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
                 htmlFor="weight"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Weight (kg)
+                Weight (kg) <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="weight"
@@ -184,7 +230,7 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
                 htmlFor="height"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Height (cm)
+                Height (cm) <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="height"
@@ -208,23 +254,21 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold text-foreground">
             Body Measurements
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              (optional, improves accuracy)
-            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">
-            Adding waist and neck measurements enables body fat estimation using the
-            U.S. Navy method. Hip measurement is required for women.
+            Waist and neck measurements are used for body fat estimation (U.S.
+            Navy + Deurenberg methods). Wrist circumference helps determine body
+            frame size.
           </p>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="waist"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Waist (cm)
+                Waist (cm) <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="waist"
@@ -241,30 +285,10 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label
-                htmlFor="hip"
-                className="text-sm font-medium text-muted-foreground"
-              >
-                Hip (cm)
-              </Label>
-              <Input
-                id="hip"
-                type="number"
-                step="0.1"
-                placeholder="widest point"
-                value={hip}
-                onChange={(e) => setHip(e.target.value)}
-                className={errors.hip ? "border-destructive" : ""}
-              />
-              {errors.hip && (
-                <span className="text-xs text-destructive">{errors.hip}</span>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label
                 htmlFor="neck"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Neck (cm)
+                Neck (cm) <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="neck"
@@ -284,7 +308,7 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
                 htmlFor="wrist"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Wrist (cm)
+                Wrist (cm) <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="wrist"
@@ -303,11 +327,7 @@ export function BMIForm({ onCalculate }: BMIFormProps) {
         </CardContent>
       </Card>
 
-      <Button
-        type="submit"
-        size="lg"
-        className="w-full text-base font-semibold"
-      >
+      <Button type="submit" size="lg" className="w-full text-base font-semibold">
         Calculate Body Composition
       </Button>
     </form>

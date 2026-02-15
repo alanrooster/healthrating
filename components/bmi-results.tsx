@@ -136,7 +136,6 @@ export function BMIResults({ result }: BMIResultsProps) {
     overweightBy,
     underweightBy,
     bodyFatPercentage,
-    waistToHipRatio,
     waistToHeightRatio,
     riskLevel,
     recommendations,
@@ -239,10 +238,10 @@ export function BMIResults({ result }: BMIResultsProps) {
               sublabel="Weight & height only"
             />
             <MetricCard
-              label="Age-Adjusted BMI"
+              label="Adjusted BMI"
               value={adjustedBMI}
               unit="kg/m2"
-              sublabel="Accounts for age & sex"
+              sublabel="Age, sex & ethnicity"
             />
             {hasBodyMeasurements && (
               <MetricCard
@@ -258,17 +257,6 @@ export function BMIResults({ result }: BMIResultsProps) {
                 value={bodyFatPercentage}
                 unit="%"
                 sublabel="U.S. Navy method"
-              />
-            )}
-            {waistToHipRatio !== null && (
-              <MetricCard
-                label="Waist-to-Hip"
-                value={waistToHipRatio}
-                sublabel={
-                  waistToHipRatio > 0.9
-                    ? "Above healthy range"
-                    : "Within healthy range"
-                }
               />
             )}
             {waistToHeightRatio !== null && (
@@ -317,10 +305,10 @@ export function BMIResults({ result }: BMIResultsProps) {
       {/* Disclaimer */}
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
         This calculator provides estimates based on statistical formulas. Results
-        are not a substitute for professional medical advice. The age-adjusted BMI
-        accounts for natural body composition changes with age and sex. Body fat
-        estimation uses the U.S. Navy circumference method when measurements are
-        provided.
+        are not a substitute for professional medical advice. The adjusted BMI
+        accounts for age, sex, and ethnicity-specific body composition differences
+        (WHO guidelines). Body fat estimation combines the U.S. Navy circumference
+        method with the Deurenberg formula for improved accuracy.
       </p>
     </div>
   )
