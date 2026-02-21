@@ -8,9 +8,9 @@ const _inter = Inter({ subsets: ['latin'] })
 const _spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Smart BMI Calculator - Body Composition Analysis',
+  title: 'Health Calculator - Comprehensive Health Assessment',
   description:
-    'Advanced BMI calculator using age, sex, weight, height, and body measurements for accurate body composition analysis.',
+    'Comprehensive health calculator combining body composition, air quality, diet assessment, and exercise evaluation based on WHO guidelines.',
 }
 
 export const viewport: Viewport = {
