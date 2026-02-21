@@ -3,6 +3,8 @@
 import {
   Activity,
   BarChart3,
+  Brain,
+  Briefcase,
   Cloud,
   Dumbbell,
   Heart,
@@ -37,6 +39,8 @@ const NAV_ITEMS = [
   { id: "air", label: "Air Quality", icon: Cloud },
   { id: "diet", label: "Diet Assessment", icon: UtensilsCrossed },
   { id: "exercise", label: "Exercise", icon: Dumbbell },
+  { id: "lifestyle", label: "Lifestyle", icon: Briefcase },
+  { id: "mental", label: "Mental Health", icon: Brain },
 ]
 
 function getScoreBadgeClass(score: number): string {
@@ -56,6 +60,8 @@ export function AppSidebar({
     air: scores.airQuality,
     diet: scores.diet,
     exercise: scores.exercise,
+    lifestyle: scores.lifestyle,
+    mental: scores.mentalHealth,
   }
 
   return (

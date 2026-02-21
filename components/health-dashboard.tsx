@@ -2,6 +2,8 @@
 
 import {
   Activity,
+  Brain,
+  Briefcase,
   Cloud,
   Dumbbell,
   UtensilsCrossed,
@@ -31,6 +33,8 @@ const MODULE_META: Record<
   airQuality: { label: "Air Quality", icon: Cloud, section: "air" },
   diet: { label: "Diet", icon: UtensilsCrossed, section: "diet" },
   exercise: { label: "Exercise", icon: Dumbbell, section: "exercise" },
+  lifestyle: { label: "Lifestyle", icon: Briefcase, section: "lifestyle" },
+  mentalHealth: { label: "Mental Health", icon: Brain, section: "mental" },
 }
 
 export function HealthDashboard({ result, onNavigate }: HealthDashboardProps) {

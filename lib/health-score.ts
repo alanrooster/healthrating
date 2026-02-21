@@ -9,6 +9,8 @@ export interface HealthScores {
   airQuality: ModuleScore
   diet: ModuleScore
   exercise: ModuleScore
+  lifestyle: ModuleScore
+  mentalHealth: ModuleScore
 }
 
 export interface OverallHealthResult {
@@ -21,10 +23,12 @@ export interface OverallHealthResult {
 }
 
 const WEIGHTS = {
-  body: 0.3,
-  airQuality: 0.15,
-  diet: 0.3,
-  exercise: 0.25,
+  body: 0.20,
+  airQuality: 0.10,
+  diet: 0.20,
+  exercise: 0.15,
+  lifestyle: 0.15,
+  mentalHealth: 0.20,
 }
 
 /**
@@ -102,7 +106,7 @@ export function calculateOverallHealth(scores: HealthScores): OverallHealthResul
       overallScore: 0,
       letterGrade: "-",
       completedCount: 0,
-      totalModules: 4,
+      totalModules: 6,
       scores,
       summary: "Complete at least one assessment to see your health score.",
     }
@@ -128,7 +132,7 @@ export function calculateOverallHealth(scores: HealthScores): OverallHealthResul
     overallScore,
     letterGrade,
     completedCount,
-    totalModules: 4,
+    totalModules: 6,
     scores,
     summary: summaries[letterGrade] || "",
   }

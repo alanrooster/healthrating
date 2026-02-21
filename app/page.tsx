@@ -9,6 +9,8 @@ import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
 import { DietSection } from "@/components/diet-section"
 import { ExerciseSection } from "@/components/exercise-section"
+import { LifestyleSection } from "@/components/lifestyle-section"
+import { MentalHealthSection } from "@/components/mental-health-section"
 import { MethodologySection } from "@/components/methodology-section"
 import {
   calculateOverallHealth,
@@ -38,6 +40,14 @@ export default function Page() {
     ...EMPTY_SCORE,
     label: "Exercise",
   })
+  const [lifestyleScore, setLifestyleScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Lifestyle",
+  })
+  const [mentalHealthScore, setMentalHealthScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Mental Health",
+  })
 
   const scores: HealthScores = useMemo(
     () => ({
@@ -45,8 +55,10 @@ export default function Page() {
       airQuality: airScore,
       diet: dietScore,
       exercise: exerciseScore,
+      lifestyle: lifestyleScore,
+      mentalHealth: mentalHealthScore,
     }),
-    [bodyScore, airScore, dietScore, exerciseScore]
+    [bodyScore, airScore, dietScore, exerciseScore, lifestyleScore, mentalHealthScore]
   )
 
   const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
@@ -67,6 +79,14 @@ export default function Page() {
     setExerciseScore({ score, completed: true, label: "Exercise" })
   }
 
+  function handleLifestyleResult(score: number) {
+    setLifestyleScore({ score, completed: true, label: "Lifestyle" })
+  }
+
+  function handleMentalHealthResult(score: number) {
+    setMentalHealthScore({ score, completed: true, label: "Mental Health" })
+  }
+
   function renderSection() {
     switch (activeSection) {
       case "dashboard":
@@ -84,6 +104,10 @@ export default function Page() {
         return <DietSection onResult={handleDietResult} />
       case "exercise":
         return <ExerciseSection onResult={handleExerciseResult} />
+      case "lifestyle":
+        return <LifestyleSection onResult={handleLifestyleResult} />
+      case "mental":
+        return <MentalHealthSection onResult={handleMentalHealthResult} />
       case "methodology":
         return <MethodologySection />
       default:
@@ -102,6 +126,8 @@ export default function Page() {
     air: "Air Quality",
     diet: "Diet Assessment",
     exercise: "Exercise Assessment",
+    lifestyle: "Lifestyle Assessment",
+    mental: "Mental Health Screening",
     methodology: "Methodology",
   }
 
