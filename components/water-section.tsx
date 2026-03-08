@@ -7,8 +7,12 @@ import {
   CheckCircle2,
   Info,
   FlaskConical,
+  ChevronLeft,
+  ChevronRight,
+  Building,
+  GlassWater,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -27,6 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Progress } from "@/components/ui/progress"
 import {
   calculateWaterQuality,
   getWaterCountries,
@@ -112,6 +117,14 @@ const FREQUENCY_OPTIONS: { value: WaterAnswers["bottledFrequency"]; label: strin
   { value: "primary", label: "Primary water source" },
 ]
 
+const STEP_INFO = [
+  { title: "Location & Source", icon: Droplets },
+  { title: "Home Filtration", icon: FlaskConical },
+  { title: "Bottled Water & Microplastics", icon: Droplets },
+  { title: "Infrastructure & Quality", icon: Building },
+  { title: "Daily Intake", icon: GlassWater },
+]
+
 export function WaterSection({ onResult }: WaterSectionProps) {
   const countries = useMemo(() => getWaterCountries(), [])
 
@@ -122,23 +135,54 @@ export function WaterSection({ onResult }: WaterSectionProps) {
     recentRenovation: false,
   })
   const [result, setResult] = useState<WaterResult | null>(null)
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0)
 
   const updateAnswer = <K extends keyof WaterAnswers>(key: K, value: WaterAnswers[K]) => {
     setAnswers((prev) => ({ ...prev, [key]: value }))
   }
 
-  const canProceedStep1 = answers.country && answers.primarySource
-  const canProceedStep2 = answers.filtration !== undefined
-  const canProceedStep3 =
-    answers.bottledFrequency !== undefined &&
-    (answers.bottledFrequency === "never" ||
-      (answers.bottleType !== undefined && answers.bottleStorage !== undefined))
-  const canProceedStep4 = answers.buildingAge && answers.observedIssues
-  const canCalculate = canProceedStep4 && answers.dailyWaterIntake
+  // Step validation
+  const canProceed = (currentStep: number): boolean => {
+    switch (currentStep) {
+      case 0:
+        return !!(answers.country && answers.primarySource)
+      case 1:
+        return answers.filtration !== undefined
+      case 2:
+        return !!(
+          answers.bottledFrequency !== undefined &&
+          (answers.bottledFrequency === "never" ||
+            (answers.bottleType !== undefined && 
+             (answers.bottleType === "glass" || 
+              answers.bottleType === "reusable-metal" || 
+              answers.bottleType === "aluminum" ||
+              answers.bottleStorage !== undefined)))
+        )
+      case 3:
+        return !!(answers.buildingAge && answers.observedIssues)
+      case 4:
+        return answers.dailyWaterIntake !== undefined
+      default:
+        return false
+    }
+  }
+
+  const totalSteps = 5
+
+  function handleNext() {
+    if (step < totalSteps - 1 && canProceed(step)) {
+      setStep(step + 1)
+    }
+  }
+
+  function handleBack() {
+    if (step > 0) {
+      setStep(step - 1)
+    }
+  }
 
   function handleCalculate() {
-    if (!canCalculate) return
+    if (!canProceed(4)) return
     const waterResult = calculateWaterQuality(answers as WaterAnswers)
     setResult(waterResult)
     onResult(waterResult.score)
@@ -149,6 +193,105 @@ export function WaterSection({ onResult }: WaterSectionProps) {
     answers.bottledFrequency !== "never" &&
     answers.bottleType &&
     (answers.bottleType === "plastic" || answers.bottleType === "reusable-plastic")
+
+  const needsStorageQuestion =
+    answers.bottledFrequency &&
+    answers.bottledFrequency !== "never" &&
+    answers.bottleType &&
+    answers.bottleType !== "glass" &&
+    answers.bottleType !== "reusable-metal"
+
+  // Results view
+  if (result) {
+    return (
+      <TooltipProvider>
+        <div className="flex flex-col gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground text-balance">
+              Water Quality Results
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Based on your location, habits, and microplastic exposure
+            </p>
+          </div>
+
+          {/* Score Card */}
+          <Card className="overflow-hidden">
+            <div
+              className={`p-6 ${
+                result.score >= 75
+                  ? "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]"
+                  : result.score >= 50
+                    ? "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]"
+                    : "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2 text-center">
+                <span className="text-5xl font-bold">{result.score}</span>
+                <span className="text-lg font-semibold">{result.category}</span>
+              </div>
+            </div>
+
+            <CardContent className="flex flex-col gap-4 pt-6">
+              {/* Sub-scores */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <ScoreItem label="Infrastructure" value={result.details.countryBaseline} />
+                <ScoreItem label="Source" value={result.details.sourceScore} />
+                <ScoreItem label="Filtration" value={result.details.filtrationScore} />
+                <ScoreItem label="Plastic Exposure" value={result.details.plasticScore} />
+                <ScoreItem label="Infrastructure Age" value={result.details.infrastructureScore} />
+                <ScoreItem label="Hydration" value={result.details.hydrationScore} />
+              </div>
+
+              {/* Microplastic Alert */}
+              {result.microplasticRisk !== "none" && (
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-4 ${
+                    result.microplasticRisk === "high" || result.microplasticRisk === "very-high"
+                      ? "border-[hsl(var(--accent))] bg-[hsl(var(--accent))]/10"
+                      : "border-[hsl(var(--warning))] bg-[hsl(var(--warning))]/10"
+                  }`}
+                >
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-[hsl(var(--accent))]" />
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      Microplastic Risk: {result.microplasticRisk.replace("-", " ")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Consider switching to glass or metal containers. Avoid heat-exposed plastic bottles.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recommendations */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground">Recommendations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="flex flex-col gap-2">
+                {result.recommendations.map((rec, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Button variant="outline" onClick={() => { setResult(null); setStep(0) }}>
+            Retake Assessment
+          </Button>
+        </div>
+      </TooltipProvider>
+    )
+  }
+
+  const StepIcon = STEP_INFO[step].icon
 
   return (
     <TooltipProvider>
@@ -163,141 +306,24 @@ export function WaterSection({ onResult }: WaterSectionProps) {
           </p>
         </div>
 
-        {/* Step 1: Location & Source */}
+        {/* Progress */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              Step {step + 1} of {totalSteps}
+            </span>
+            <span className="font-medium text-foreground">{STEP_INFO[step].title}</span>
+          </div>
+          <Progress value={((step + 1) / totalSteps) * 100} className="h-2" />
+        </div>
+
+        {/* Single Card for Current Step */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg text-foreground">
-              <Droplets className="h-5 w-5 text-primary" />
-              Step 1: Location & Water Source
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <Label className="text-foreground">Country *</Label>
-              <Select
-                value={answers.country || ""}
-                onValueChange={(v) => updateAnswer("country", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Used to determine baseline water infrastructure quality (WHO/UNICEF data)
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Label className="text-foreground">Primary Drinking Water Source *</Label>
-              <RadioGroup
-                value={answers.primarySource || ""}
-                onValueChange={(v) => updateAnswer("primarySource", v as WaterSource)}
-                className="grid gap-2 sm:grid-cols-2"
-              >
-                {SOURCE_OPTIONS.map((opt) => (
-                  <Label
-                    key={opt.value}
-                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
-                      answers.primarySource === opt.value
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted/50"
-                    }`}
-                  >
-                    <RadioGroupItem value={opt.value} className="mt-0.5" />
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <span className="text-xs text-muted-foreground">{opt.desc}</span>
-                    </div>
-                  </Label>
-                ))}
-              </RadioGroup>
-            </div>
-
-            {canProceedStep1 && step === 1 && (
-              <Button onClick={() => setStep(2)} className="self-start">
-                Continue
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Step 2: Filtration */}
-        {step >= 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
-                <FlaskConical className="h-5 w-5 text-primary" />
-                Step 2: Home Water Filtration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              <div className="flex flex-col gap-3">
-                <Label className="text-foreground">Filtration System *</Label>
-                <RadioGroup
-                  value={answers.filtration || ""}
-                  onValueChange={(v) => updateAnswer("filtration", v as FiltrationType)}
-                  className="grid gap-2 sm:grid-cols-2"
-                >
-                  {FILTER_OPTIONS.map((opt) => (
-                    <Label
-                      key={opt.value}
-                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
-                        answers.filtration === opt.value
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <RadioGroupItem value={opt.value} className="mt-0.5" />
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                        <span className="text-xs text-muted-foreground">{opt.desc}</span>
-                      </div>
-                    </Label>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              {answers.filtration && answers.filtration !== "none" && (
-                <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                  <Switch
-                    id="filter-maintained"
-                    checked={answers.filterMaintained}
-                    onCheckedChange={(v) => updateAnswer("filterMaintained", v)}
-                  />
-                  <div className="flex flex-col gap-0.5">
-                    <Label htmlFor="filter-maintained" className="text-sm font-medium text-foreground">
-                      Filter regularly maintained/replaced
-                    </Label>
-                    <span className="text-xs text-muted-foreground">
-                      Unmaintained filters can harbor bacteria
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {canProceedStep2 && step === 2 && (
-                <Button onClick={() => setStep(3)} className="self-start">
-                  Continue
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step 3: Bottled Water & Plastic */}
-        {step >= 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
-                <Droplets className="h-5 w-5 text-primary" />
-                Step 3: Bottled Water & Microplastics
+              <StepIcon className="h-5 w-5 text-primary" />
+              {STEP_INFO[step].title}
+              {step === 2 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
@@ -309,36 +335,142 @@ export function WaterSection({ onResult }: WaterSectionProps) {
                     </p>
                   </TooltipContent>
                 </Tooltip>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              <div className="flex flex-col gap-3">
-                <Label className="text-foreground">How often do you drink bottled water? *</Label>
-                <RadioGroup
-                  value={answers.bottledFrequency || ""}
-                  onValueChange={(v) =>
-                    updateAnswer("bottledFrequency", v as WaterAnswers["bottledFrequency"])
-                  }
-                  className="grid gap-2 sm:grid-cols-3"
-                >
-                  {FREQUENCY_OPTIONS.map((opt) => (
-                    <Label
-                      key={opt.value}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                        answers.bottledFrequency === opt.value
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <RadioGroupItem value={opt.value} />
-                      <span className="text-sm text-foreground">{opt.label}</span>
-                    </Label>
-                  ))}
-                </RadioGroup>
-              </div>
+              )}
+            </CardTitle>
+          </CardHeader>
 
-              {answers.bottledFrequency && answers.bottledFrequency !== "never" && (
-                <>
+          <CardContent className="flex flex-col gap-5">
+            {/* Step 0: Location & Source */}
+            {step === 0 && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-foreground">Country *</Label>
+                  <Select
+                    value={answers.country || ""}
+                    onValueChange={(v) => updateAnswer("country", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Used to determine baseline water infrastructure quality (WHO/UNICEF data)
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Primary Drinking Water Source *</Label>
+                  <RadioGroup
+                    value={answers.primarySource || ""}
+                    onValueChange={(v) => updateAnswer("primarySource", v as WaterSource)}
+                    className="grid gap-2 sm:grid-cols-2"
+                  >
+                    {SOURCE_OPTIONS.map((opt) => (
+                      <Label
+                        key={opt.value}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                          answers.primarySource === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} className="mt-0.5" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                          <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                        </div>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </>
+            )}
+
+            {/* Step 1: Filtration */}
+            {step === 1 && (
+              <>
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Filtration System *</Label>
+                  <RadioGroup
+                    value={answers.filtration || ""}
+                    onValueChange={(v) => updateAnswer("filtration", v as FiltrationType)}
+                    className="grid gap-2 sm:grid-cols-2"
+                  >
+                    {FILTER_OPTIONS.map((opt) => (
+                      <Label
+                        key={opt.value}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                          answers.filtration === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} className="mt-0.5" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                          <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                        </div>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {answers.filtration && answers.filtration !== "none" && (
+                  <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                    <Switch
+                      id="filter-maintained"
+                      checked={answers.filterMaintained}
+                      onCheckedChange={(v) => updateAnswer("filterMaintained", v)}
+                    />
+                    <div className="flex flex-col gap-0.5">
+                      <Label htmlFor="filter-maintained" className="text-sm font-medium text-foreground">
+                        Filter regularly maintained/replaced
+                      </Label>
+                      <span className="text-xs text-muted-foreground">
+                        Unmaintained filters can harbor bacteria
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Step 2: Bottled Water & Plastic */}
+            {step === 2 && (
+              <>
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">How often do you drink bottled water? *</Label>
+                  <RadioGroup
+                    value={answers.bottledFrequency || ""}
+                    onValueChange={(v) =>
+                      updateAnswer("bottledFrequency", v as WaterAnswers["bottledFrequency"])
+                    }
+                    className="grid gap-2 sm:grid-cols-3"
+                  >
+                    {FREQUENCY_OPTIONS.map((opt) => (
+                      <Label
+                        key={opt.value}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                          answers.bottledFrequency === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} />
+                        <span className="text-sm text-foreground">{opt.label}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {answers.bottledFrequency && answers.bottledFrequency !== "never" && (
                   <div className="flex flex-col gap-3">
                     <Label className="text-foreground">Primary bottle type *</Label>
                     <RadioGroup
@@ -374,200 +506,150 @@ export function WaterSection({ onResult }: WaterSectionProps) {
                       ))}
                     </RadioGroup>
                   </div>
+                )}
 
-                  {showPlasticQuestions && (
-                    <>
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-foreground">
-                            Plastic bottles per week
-                          </Label>
-                          <span className="text-sm font-bold text-foreground">
-                            {answers.plasticBottlesPerWeek}
-                          </span>
-                        </div>
-                        <Slider
-                          value={[answers.plasticBottlesPerWeek || 0]}
-                          onValueChange={([v]) => updateAnswer("plasticBottlesPerWeek", v)}
-                          min={0}
-                          max={30}
-                          step={1}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>0</span>
-                          <span>5</span>
-                          <span>10</span>
-                          <span>20</span>
-                          <span>30+</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-3">
-                        <Label className="text-foreground">
-                          How are your plastic bottles usually stored? *
-                        </Label>
-                        <RadioGroup
-                          value={answers.bottleStorage || ""}
-                          onValueChange={(v) => updateAnswer("bottleStorage", v as StorageCondition)}
-                          className="grid gap-2 sm:grid-cols-2"
-                        >
-                          {STORAGE_OPTIONS.map((opt) => (
-                            <Label
-                              key={opt.value}
-                              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
-                                answers.bottleStorage === opt.value
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:bg-muted/50"
-                              }`}
-                            >
-                              <RadioGroupItem value={opt.value} className="mt-0.5" />
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-sm font-medium text-foreground">
-                                  {opt.label}
-                                </span>
-                                <span className="text-xs text-muted-foreground">{opt.desc}</span>
-                              </div>
-                            </Label>
-                          ))}
-                        </RadioGroup>
-                        <p className="text-xs text-muted-foreground">
-                          Heat increases BPA and phthalate leaching by up to 55x (Rochester & Bolden 2015)
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  {answers.bottleType &&
-                    answers.bottleType !== "plastic" &&
-                    answers.bottleType !== "reusable-plastic" && (
-                      <div className="flex flex-col gap-3">
-                        <Label className="text-foreground">
-                          How are your bottles usually stored? *
-                        </Label>
-                        <RadioGroup
-                          value={answers.bottleStorage || ""}
-                          onValueChange={(v) => updateAnswer("bottleStorage", v as StorageCondition)}
-                          className="grid gap-2 sm:grid-cols-2"
-                        >
-                          {STORAGE_OPTIONS.slice(0, 2).map((opt) => (
-                            <Label
-                              key={opt.value}
-                              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                                answers.bottleStorage === opt.value
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:bg-muted/50"
-                              }`}
-                            >
-                              <RadioGroupItem value={opt.value} />
-                              <span className="text-sm text-foreground">{opt.label}</span>
-                            </Label>
-                          ))}
-                        </RadioGroup>
-                      </div>
-                    )}
-                </>
-              )}
-
-              {canProceedStep3 && step === 3 && (
-                <Button onClick={() => setStep(4)} className="self-start">
-                  Continue
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Step 4: Infrastructure & Hydration */}
-        {step >= 4 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
-                <Droplets className="h-5 w-5 text-primary" />
-                Step 4: Infrastructure & Hydration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              <div className="flex flex-col gap-3">
-                <Label className="text-foreground">Building/Home Age *</Label>
-                <RadioGroup
-                  value={answers.buildingAge || ""}
-                  onValueChange={(v) => updateAnswer("buildingAge", v as BuildingAge)}
-                  className="grid gap-2 sm:grid-cols-3"
-                >
-                  {BUILDING_AGE_OPTIONS.map((opt) => (
-                    <Label
-                      key={opt.value}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                        answers.buildingAge === opt.value
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <RadioGroupItem value={opt.value} />
-                      <span className="text-sm text-foreground">{opt.label}</span>
-                    </Label>
-                  ))}
-                </RadioGroup>
-                <p className="text-xs text-muted-foreground">
-                  Buildings before 1986 may have lead pipes (varies by country)
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                  <Switch
-                    id="pipe-issues"
-                    checked={answers.knownPipeIssues}
-                    onCheckedChange={(v) => updateAnswer("knownPipeIssues", v)}
-                  />
-                  <Label htmlFor="pipe-issues" className="text-sm text-foreground">
-                    Known pipe issues or plumbing problems
-                  </Label>
-                </div>
-
-                {(answers.buildingAge === "30-50" || answers.buildingAge === "50-plus") && (
-                  <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                    <Switch
-                      id="renovation"
-                      checked={answers.recentRenovation}
-                      onCheckedChange={(v) => updateAnswer("recentRenovation", v)}
-                    />
-                    <div className="flex flex-col gap-0.5">
-                      <Label htmlFor="renovation" className="text-sm text-foreground">
-                        Recent renovation or construction
-                      </Label>
-                      <span className="text-xs text-muted-foreground">
-                        Can disturb old pipes and release lead
+                {showPlasticQuestions && (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">Plastic bottles per week</Label>
+                      <span className="text-sm font-bold text-foreground">
+                        {answers.plasticBottlesPerWeek}
                       </span>
+                    </div>
+                    <Slider
+                      value={[answers.plasticBottlesPerWeek || 0]}
+                      onValueChange={([v]) => updateAnswer("plasticBottlesPerWeek", v)}
+                      min={0}
+                      max={30}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>0</span>
+                      <span>5</span>
+                      <span>10</span>
+                      <span>20</span>
+                      <span>30+</span>
                     </div>
                   </div>
                 )}
-              </div>
 
-              <div className="flex flex-col gap-3">
-                <Label className="text-foreground">Any observed water quality issues? *</Label>
-                <RadioGroup
-                  value={answers.observedIssues || ""}
-                  onValueChange={(v) => updateAnswer("observedIssues", v as WaterIssue)}
-                  className="grid gap-2 sm:grid-cols-3"
-                >
-                  {WATER_ISSUE_OPTIONS.map((opt) => (
-                    <Label
-                      key={opt.value}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                        answers.observedIssues === opt.value
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <RadioGroupItem value={opt.value} />
-                      <span className="text-sm text-foreground">{opt.label}</span>
+                {needsStorageQuestion && (
+                  <div className="flex flex-col gap-3">
+                    <Label className="text-foreground">
+                      How are your bottles usually stored? *
                     </Label>
-                  ))}
-                </RadioGroup>
-              </div>
+                    <RadioGroup
+                      value={answers.bottleStorage || ""}
+                      onValueChange={(v) => updateAnswer("bottleStorage", v as StorageCondition)}
+                      className="grid gap-2 sm:grid-cols-2"
+                    >
+                      {STORAGE_OPTIONS.map((opt) => (
+                        <Label
+                          key={opt.value}
+                          className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                            answers.bottleStorage === opt.value
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:bg-muted/50"
+                          }`}
+                        >
+                          <RadioGroupItem value={opt.value} className="mt-0.5" />
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                            <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                          </div>
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                    {showPlasticQuestions && (
+                      <p className="text-xs text-muted-foreground">
+                        Heat increases BPA and phthalate leaching by up to 55x (Rochester & Bolden 2015)
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
 
+            {/* Step 3: Infrastructure */}
+            {step === 3 && (
+              <>
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Building Age *</Label>
+                  <RadioGroup
+                    value={answers.buildingAge || ""}
+                    onValueChange={(v) => updateAnswer("buildingAge", v as BuildingAge)}
+                    className="grid gap-2 sm:grid-cols-3"
+                  >
+                    {BUILDING_AGE_OPTIONS.map((opt) => (
+                      <Label
+                        key={opt.value}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                          answers.buildingAge === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} />
+                        <span className="text-sm text-foreground">{opt.label}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground">
+                    Buildings before 1986 may have lead pipes; before 2014 may have lead solder
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Observed Water Quality Issues *</Label>
+                  <RadioGroup
+                    value={answers.observedIssues || ""}
+                    onValueChange={(v) => updateAnswer("observedIssues", v as WaterIssue)}
+                    className="grid gap-2 sm:grid-cols-3"
+                  >
+                    {WATER_ISSUE_OPTIONS.map((opt) => (
+                      <Label
+                        key={opt.value}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                          answers.observedIssues === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} />
+                        <span className="text-sm text-foreground">{opt.label}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      id="pipe-issues"
+                      checked={answers.knownPipeIssues}
+                      onCheckedChange={(v) => updateAnswer("knownPipeIssues", v)}
+                    />
+                    <Label htmlFor="pipe-issues" className="text-sm font-medium text-foreground">
+                      Known plumbing/pipe issues
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      id="recent-reno"
+                      checked={answers.recentRenovation}
+                      onCheckedChange={(v) => updateAnswer("recentRenovation", v)}
+                    />
+                    <Label htmlFor="recent-reno" className="text-sm font-medium text-foreground">
+                      Recent plumbing renovation (last 5 years)
+                    </Label>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 4: Daily Intake */}
+            {step === 4 && (
               <div className="flex flex-col gap-3">
                 <Label className="text-foreground">Daily Water Intake *</Label>
                 <RadioGroup
@@ -591,155 +673,47 @@ export function WaterSection({ onResult }: WaterSectionProps) {
                     </Label>
                   ))}
                 </RadioGroup>
+                <p className="text-xs text-muted-foreground">
+                  WHO recommends 2-3 liters of water per day for adults
+                </p>
               </div>
+            )}
+          </CardContent>
 
-              <Button onClick={handleCalculate} disabled={!canCalculate} className="self-start">
-                Calculate Water Quality Score
+          <CardFooter className="flex justify-between border-t pt-4">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={step === 0}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </Button>
+
+            {step < totalSteps - 1 ? (
+              <Button onClick={handleNext} disabled={!canProceed(step)} className="gap-1">
+                Next
+                <ChevronRight className="h-4 w-4" />
               </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Results */}
-        {result && <WaterResults result={result} />}
+            ) : (
+              <Button onClick={handleCalculate} disabled={!canProceed(step)}>
+                Calculate Score
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
       </div>
     </TooltipProvider>
   )
 }
 
-function WaterResults({ result }: { result: WaterResult }) {
-  const {
-    score,
-    category,
-    riskLevel,
-    countryBaseline,
-    personalFactors,
-    microplasticRisk,
-    recommendations,
-    breakdown,
-  } = result
-
-  const isGood = score >= 70
-
+function ScoreItem({ label, value }: { label: string; value: number }) {
+  const color = getScoreColor(value)
   return (
-    <div className="flex flex-col gap-4">
-      {/* Score Banner */}
-      <Card className="overflow-hidden">
-        <div
-          className="p-6"
-          style={{ backgroundColor: getScoreColor(score), color: "#fff" }}
-        >
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex items-center gap-3">
-              <span className="text-5xl font-bold">{score}</span>
-              <div className="flex flex-col items-start">
-                <span className="text-sm font-medium opacity-80">/ 100</span>
-                <span className="text-lg font-semibold">{category}</span>
-              </div>
-            </div>
-            <div className="flex gap-4 text-sm opacity-90">
-              <span>Country baseline: {countryBaseline}</span>
-              <span>Personal factors: {personalFactors}</span>
-            </div>
-          </div>
-        </div>
-
-        <CardContent className="flex flex-col gap-6 pt-6">
-          {/* Breakdown */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-foreground">Score Breakdown</h3>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <BreakdownItem label="Country Infrastructure" value={breakdown.countryScore} weight="25%" />
-              <BreakdownItem label="Water Source" value={breakdown.sourceScore} weight="20%" />
-              <BreakdownItem label="Filtration" value={breakdown.filtrationScore} weight="20%" />
-              <BreakdownItem label="Plastic Exposure" value={breakdown.plasticScore} weight="20%" />
-              <BreakdownItem label="Infrastructure" value={breakdown.infrastructureScore} weight="10%" />
-              <BreakdownItem label="Hydration" value={breakdown.hydrationScore} weight="5%" />
-            </div>
-          </div>
-
-          {/* Microplastic Risk */}
-          <div
-            className={`flex items-center gap-3 rounded-lg p-4 ${
-              microplasticRisk === "low"
-                ? "bg-[hsl(var(--success))]/10 border border-[hsl(var(--success))]/20"
-                : microplasticRisk === "moderate"
-                  ? "bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/20"
-                  : "bg-[hsl(var(--accent))]/10 border border-[hsl(var(--accent))]/20"
-            }`}
-          >
-            {microplasticRisk === "low" ? (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-[hsl(var(--success))]" />
-            ) : (
-              <AlertTriangle
-                className={`h-5 w-5 shrink-0 ${
-                  microplasticRisk === "moderate"
-                    ? "text-[hsl(var(--warning))]"
-                    : "text-[hsl(var(--accent))]"
-                }`}
-              />
-            )}
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold text-foreground">
-                Microplastic Exposure Risk: {microplasticRisk.charAt(0).toUpperCase() + microplasticRisk.slice(1)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {microplasticRisk === "low"
-                  ? "Your water consumption habits minimize microplastic exposure."
-                  : microplasticRisk === "moderate"
-                    ? "Some exposure from plastic bottles. Consider glass or metal alternatives."
-                    : "High exposure from plastic bottles. Heat exposure increases chemical leaching."}
-              </span>
-            </div>
-          </div>
-
-          {/* Recommendations */}
-          {recommendations.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold text-foreground">Recommendations</h3>
-              <ul className="flex flex-col gap-2">
-                {recommendations.map((rec, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        Country baseline from WHO/UNICEF Joint Monitoring Programme (JMP) 2023 and
-        Environmental Performance Index 2024. Microplastic data from WHO (2022),
-        Mason et al. (2018), and PNAS (2024). BPA leaching research from Rochester & Bolden (2015).
-      </p>
-    </div>
-  )
-}
-
-function BreakdownItem({
-  label,
-  value,
-  weight,
-}: {
-  label: string
-  value: number
-  weight: string
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
-      <div className="flex flex-col">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-xs text-muted-foreground/70">{weight}</span>
-      </div>
-      <span
-        className="text-sm font-bold"
-        style={{ color: getScoreColor(value) }}
-      >
-        {value}
-      </span>
+    <div className="flex flex-col gap-1 rounded-lg bg-secondary p-3">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={`text-lg font-bold ${color}`}>{value}</span>
     </div>
   )
 }
