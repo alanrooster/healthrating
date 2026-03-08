@@ -116,31 +116,62 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Starts with employment status screening (Employed, Freelancer,
-            Entrepreneur, Unemployed, Retired, Student, Homemaker, Unable to
-            Work) to adapt the assessment appropriately.
+            Comprehensive psychosocial work environment assessment based on
+            internationally validated instruments. Starts with employment status
+            screening to adapt questions appropriately.
           </p>
           <p>
-            For employed individuals: assesses work schedule (hours, shift type,
-            commute) and work stress (exhaustion, overwhelm, effort-reward
-            balance, job control, job security).
+            <strong>For employed individuals, covers 6 domains:</strong>
           </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Work Schedule (12%):</strong> Hours, shift type, commute.
+              WHO/ILO Joint Estimates (2021) show 55+ hours/week increases stroke
+              risk by 35% and ischaemic heart disease by 17%. IARC Monograph 124
+              classifies night shift work as Group 2A (probably carcinogenic).
+            </li>
+            <li>
+              <strong>Burnout (22%):</strong> Exhaustion, overwhelm, cynicism.
+              Based on Copenhagen Burnout Inventory (Kristensen 2005) and Maslach
+              Burnout Inventory (Maslach & Jackson 1981) three-factor model.
+            </li>
+            <li>
+              <strong>Job Demands (15%):</strong> Quantitative, emotional, and
+              cognitive demands from COPSOQ III. High demands without adequate
+              resources predict stress-related illness.
+            </li>
+            <li>
+              <strong>Job Resources (18%):</strong> Job control, role clarity,
+              meaning of work, development opportunities. Karasek Job
+              Demand-Control model (1979) shows low control with high demands
+              creates high-strain jobs with 2-3x cardiovascular risk.
+            </li>
+            <li>
+              <strong>Workplace Relationships (20%):</strong> Social support from
+              colleagues and supervisors (Johnson JDC-S 1988), quality of
+              leadership, organizational justice, recognition (Siegrist ERI),
+              bullying exposure (EU-OSHA), sense of community, work-life conflict.
+              COPSOQ III (2019-2025) validated in 18+ countries.
+            </li>
+            <li>
+              <strong>Job Security (13%):</strong> Employment security, insecurity
+              over working conditions, effort-reward balance. Siegrist ERI model
+              (1996) shows imbalance doubles coronary heart disease risk.
+            </li>
+          </ul>
           <p>
-            Retired individuals receive simplified scoring with questions on
-            retirement satisfaction and sense of purpose. Unemployed individuals
-            are assessed on unemployment duration, job search stress, and
-            financial stress.
-          </p>
-          <p>
-            Working hours thresholds based on WHO/ILO Joint Estimates (2021)
-            showing 55+ hours/week increases stroke risk by 35%. Shift work
-            penalties follow IARC Monograph 124 classification. Work stress
-            questions inspired by Copenhagen Burnout Inventory and Karasek
-            Job Demand-Control model.
+            Non-employed statuses (retired, unemployed, student) receive
+            adapted assessments covering relevant stressors like social isolation,
+            purpose, and financial stress.
           </p>
           <p className="text-xs">
-            Sources: WHO/ILO (2021), IARC Monograph 124 (2019), CBI
-            (Kristensen 2005), ERI Model (Siegrist 1996), Karasek JDC (1979).
+            Sources: COPSOQ III (Burr et al. 2019, Berthelsen 2020, Australian
+            validation 2025), WHO/ILO Joint Estimates (2021), IARC Monograph 124
+            (2019), Copenhagen Burnout Inventory (Kristensen 2005), Maslach
+            Burnout Inventory (1981), Effort-Reward Imbalance model (Siegrist
+            1996), Job Demand-Control-Support model (Karasek 1979, Johnson 1988),
+            WHO Guidelines on Mental Health at Work (2022), EU-OSHA Psychosocial
+            Risks Framework (2022-2025), ILO Psychosocial Hazards (2022).
           </p>
         </CardContent>
       </Card>
