@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
+import { WaterSection } from "@/components/water-section"
 import { DietSection } from "@/components/diet-section"
 import { ExerciseSection } from "@/components/exercise-section"
 import { WorkSection } from "@/components/work-section"
@@ -33,6 +34,10 @@ export default function Page() {
     ...EMPTY_SCORE,
     label: "Air Quality",
   })
+  const [waterScore, setWaterScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Water Quality",
+  })
   const [dietScore, setDietScore] = useState<ModuleScore>({
     ...EMPTY_SCORE,
     label: "Diet",
@@ -58,13 +63,14 @@ export default function Page() {
     () => ({
       body: bodyScore,
       airQuality: airScore,
+      waterQuality: waterScore,
       diet: dietScore,
       exercise: exerciseScore,
       work: workScore,
       lifestyle: lifestyleScore,
       mentalHealth: mentalHealthScore,
     }),
-    [bodyScore, airScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore]
+    [bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore]
   )
 
   const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
@@ -75,6 +81,10 @@ export default function Page() {
 
   function handleAirResult(score: number) {
     setAirScore({ score, completed: true, label: "Air Quality" })
+  }
+
+  function handleWaterResult(score: number) {
+    setWaterScore({ score, completed: true, label: "Water Quality" })
   }
 
   function handleDietResult(score: number) {
@@ -110,6 +120,8 @@ export default function Page() {
         return <BodyCompositionSection onResult={handleBodyResult} />
       case "air":
         return <AirQualitySection onResult={handleAirResult} />
+      case "water":
+        return <WaterSection onResult={handleWaterResult} />
       case "diet":
         return <DietSection onResult={handleDietResult} />
       case "exercise":
@@ -136,6 +148,7 @@ export default function Page() {
     dashboard: "Dashboard",
     body: "Body Composition",
     air: "Air Quality",
+    water: "Water Quality",
     diet: "Diet Assessment",
     exercise: "Exercise Assessment",
     work: "Work Assessment",

@@ -5,6 +5,7 @@ import {
   Brain,
   Briefcase,
   Cloud,
+  Droplets,
   Dumbbell,
   Moon,
   UtensilsCrossed,
@@ -32,6 +33,7 @@ const MODULE_META: Record<
 > = {
   body: { label: "Body Composition", icon: Activity, section: "body" },
   airQuality: { label: "Air Quality", icon: Cloud, section: "air" },
+  waterQuality: { label: "Water Quality", icon: Droplets, section: "water" },
   diet: { label: "Diet", icon: UtensilsCrossed, section: "diet" },
   exercise: { label: "Exercise", icon: Dumbbell, section: "exercise" },
   work: { label: "Work", icon: Briefcase, section: "work" },

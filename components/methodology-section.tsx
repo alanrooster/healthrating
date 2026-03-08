@@ -63,7 +63,62 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Diet Assessment (30% of overall score)
+            Water Quality (7% of overall score)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Combines country-level water infrastructure data with personal
+            consumption habits and microplastic exposure assessment.
+          </p>
+          <p>
+            <strong>Scoring components:</strong>
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Country Baseline (25%):</strong> Based on WHO/UNICEF Joint
+              Monitoring Programme (JMP) 2023 data on safely managed drinking
+              water access, combined with Environmental Performance Index 2024
+              water quality indicators.
+            </li>
+            <li>
+              <strong>Water Source (20%):</strong> Municipal tap, private well,
+              spring, rainwater, or bottled water. Adjusted by country baseline.
+            </li>
+            <li>
+              <strong>Home Filtration (20%):</strong> Type of filtration
+              (none, pitcher, faucet, under-sink, reverse osmosis, whole-house,
+              distillation) and maintenance status.
+            </li>
+            <li>
+              <strong>Plastic/Microplastic Exposure (20%):</strong> Frequency of
+              bottled water consumption, bottle type (plastic vs glass vs metal),
+              quantity per week, and storage conditions. WHO (2022) and PNAS (2024)
+              show plastic bottles contain 10-100x more microplastics than tap water.
+              Heat exposure increases BPA/phthalate leaching by up to 55x.
+            </li>
+            <li>
+              <strong>Infrastructure (10%):</strong> Building age (lead pipe risk),
+              known plumbing issues, recent renovation, observed water quality issues.
+            </li>
+            <li>
+              <strong>Hydration (5%):</strong> Daily water intake vs WHO
+              recommendation of 2-3 liters.
+            </li>
+          </ul>
+          <p className="text-xs">
+            Sources: WHO/UNICEF JMP (2023), Environmental Performance Index (2024),
+            WHO Microplastics in Drinking Water (2022), Mason et al. (2018),
+            PNAS Nanoplastics Study (2024), Rochester & Bolden BPA Research (2015),
+            EU Drinking Water Directive 2020/2184.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
+            Diet Assessment (15% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -245,10 +300,10 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            The overall score is a weighted composite: Body Composition 18%,
-            Mental Health 18%, Diet 17%, Lifestyle 15%, Exercise 12%,
-            Work 12%, Air Quality 8%. Only completed modules contribute to
-            the score, with weights re-normalized among them.
+            The overall score is a weighted composite: Mental Health 18%,
+            Body Composition 16%, Diet 15%, Lifestyle 14%, Exercise 12%,
+            Work 11%, Air Quality 7%, Water Quality 7%. Only completed modules
+            contribute to the score, with weights re-normalized among them.
           </p>
           <p>
             Letter grades: A (90-100), B (75-89), C (60-74), D (40-59),
