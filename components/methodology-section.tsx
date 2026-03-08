@@ -123,18 +123,41 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            10 questions covering key dietary indicators from the WHO Healthy
-            Diet Monitoring Initiative (HDMI). Each question scores 0-10 based
-            on alignment with WHO dietary recommendations.
+            16 questions covering key dietary indicators from WHO guidelines and
+            IARC (International Agency for Research on Cancer) carcinogen
+            classifications. Integrates both nutritional quality and cancer risk.
           </p>
           <p>
-            Key WHO targets: 400g+ fruits and vegetables daily, less than 10%
-            energy from free sugars, less than 5g salt per day, and limited
-            intake of saturated fats and ultra-processed foods.
+            <strong>IARC Carcinogen Classifications (food-related):</strong>
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Group 1 (Carcinogenic):</strong> Processed meat (bacon,
+              ham, sausages, hot dogs - 18% increased colorectal cancer risk
+              per 50g/day), alcoholic beverages (linked to 7 cancer types),
+              Chinese-style salted fish (nasopharyngeal cancer).
+            </li>
+            <li>
+              <strong>Group 2A (Probably carcinogenic):</strong> Red meat
+              (beef, pork, lamb), very hot beverages above 65°C (esophageal
+              cancer), high-temperature frying emissions and acrylamide
+              (formed in chips, fries, burnt toast).
+            </li>
+            <li>
+              <strong>Group 2B (Possibly carcinogenic):</strong> Pickled
+              vegetables (Asian-style), aspartame (artificial sweetener).
+            </li>
+          </ul>
+          <p>
+            <strong>WHO Dietary Targets:</strong> 400g+ fruits/vegetables daily,
+            less than 10% energy from free sugars, less than 5g salt/day,
+            limited saturated fats and ultra-processed foods.
           </p>
           <p className="text-xs">
-            Sources: WHO Healthy Diet Fact Sheet (2024), WHO HDMI Guidance
-            (2024).
+            Sources: IARC Monographs Vol. 114 (Red Meat, Processed Meat, 2015),
+            IARC Monographs Vol. 100E (Alcohol, 2012), IARC Monographs Vol. 116
+            (Hot Beverages, 2018), WHO Healthy Diet Fact Sheet (2024), WHO HDMI
+            Guidance (2024).
           </p>
         </CardContent>
       </Card>

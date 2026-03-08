@@ -1,8 +1,27 @@
 /**
- * Diet Assessment based on WHO Healthy Diet Monitoring Initiative (HDMI).
+ * Diet Assessment based on WHO Healthy Diet Monitoring Initiative (HDMI)
+ * and IARC (International Agency for Research on Cancer) Classifications.
  *
- * 10 questions covering key dietary indicators. Each scored 0-10
- * based on alignment with WHO recommendations.
+ * IARC Cancer Classifications for Food & Diet:
+ * ============================================
+ * GROUP 1 - Carcinogenic to humans:
+ *   - Processed meat (bacon, ham, sausages, hot dogs, salami, corned beef)
+ *   - Alcoholic beverages
+ *   - Salted fish (Chinese-style)
+ *   - Aflatoxins (found in improperly stored grains, nuts, spices)
+ *
+ * GROUP 2A - Probably carcinogenic to humans:
+ *   - Red meat (beef, pork, lamb, goat, horse)
+ *   - Very hot beverages (>65°C)
+ *   - High-temperature frying emissions
+ *   - Acrylamide (formed in starchy foods at high temp: chips, fries, toast)
+ *   - Nitrate/nitrite (under conditions of endogenous nitrosation)
+ *
+ * GROUP 2B - Possibly carcinogenic to humans:
+ *   - Pickled vegetables (traditional Asian-style)
+ *   - Caffeic acid (in coffee - but coffee overall is Group 3 / not classifiable)
+ *   - Aspartame (artificial sweetener)
+ *   - Aloe vera (whole leaf extract)
  *
  * WHO Key Recommendations:
  * - At least 400g (5 servings) of fruits & vegetables per day
@@ -10,7 +29,7 @@
  * - Less than 10% of total energy from free sugars (~50g/day)
  * - Less than 30% of total energy from fats
  * - Less than 5g of salt per day
- * - Limit processed meat and ultra-processed foods
+ * - Limit processed meat and red meat
  * - Prefer fish and plant-based proteins
  */
 
@@ -19,27 +38,41 @@ export interface DietQuestion {
   question: string
   description: string
   options: DietOption[]
-  isHealthy: boolean // if true, higher frequency = better score
+  isHealthy: boolean
+  iarcGroup?: "1" | "2A" | "2B" | null
+  iarcNote?: string
 }
 
 export interface DietOption {
   label: string
-  value: number // 0-4 (index)
+  value: number
   description?: string
 }
 
 export interface DietAnswers {
-  [questionId: string]: number // selected option value
+  [questionId: string]: number
+}
+
+export interface IARCRiskItem {
+  substance: string
+  group: "1" | "2A" | "2B"
+  groupLabel: string
+  frequency: string
+  riskLevel: "high" | "moderate" | "low" | "minimal"
+  recommendation: string
 }
 
 export interface DietResult {
-  totalScore: number // 0-100
-  categoryScores: { question: string; score: number; maxScore: number; feedback: string }[]
+  totalScore: number
+  categoryScores: { question: string; score: number; maxScore: number; feedback: string; iarcGroup?: string }[]
   overallFeedback: string
   category: string
+  iarcRisks: IARCRiskItem[]
+  iarcSummary: string
 }
 
 export const DIET_QUESTIONS: DietQuestion[] = [
+  // Healthy foods (higher = better)
   {
     id: "fruits",
     question: "How many servings of fruit do you eat per day?",
@@ -93,6 +126,115 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     ],
   },
   {
+    id: "fish_protein",
+    question: "How often do you eat fish or plant-based protein?",
+    description: "Fish, tofu, tempeh, seitan, edamame, or other plant proteins",
+    isHealthy: true,
+    options: [
+      { label: "Rarely or never", value: 0 },
+      { label: "1-2 times per week", value: 1 },
+      { label: "3-4 times per week", value: 2 },
+      { label: "5-6 times per week", value: 3 },
+      { label: "Daily or more", value: 4 },
+    ],
+  },
+
+  // IARC Group 1: Carcinogenic to humans
+  {
+    id: "processed_meat",
+    question: "How often do you eat processed meat?",
+    description: "Bacon, ham, sausages, hot dogs, salami, corned beef, deli meats, canned meat",
+    isHealthy: false,
+    iarcGroup: "1",
+    iarcNote: "IARC Group 1 - Carcinogenic to humans. Each 50g/day increases colorectal cancer risk by 18%.",
+    options: [
+      { label: "Never or rarely", value: 0 },
+      { label: "1-2 times per week", value: 1 },
+      { label: "3-4 times per week", value: 2 },
+      { label: "5-6 times per week", value: 3 },
+      { label: "Daily or more", value: 4 },
+    ],
+  },
+  {
+    id: "alcohol",
+    question: "How often do you consume alcoholic beverages?",
+    description: "Beer, wine, spirits, cocktails - any amount",
+    isHealthy: false,
+    iarcGroup: "1",
+    iarcNote: "IARC Group 1 - Carcinogenic to humans. Linked to cancers of mouth, throat, esophagus, liver, breast, colon.",
+    options: [
+      { label: "Never or rarely", value: 0 },
+      { label: "1-2 drinks per week", value: 1 },
+      { label: "3-6 drinks per week", value: 2 },
+      { label: "1-2 drinks daily", value: 3 },
+      { label: "3+ drinks daily", value: 4 },
+    ],
+  },
+  {
+    id: "salted_fish",
+    question: "How often do you eat salted or preserved fish?",
+    description: "Chinese-style salted fish, dried fish, fermented fish products",
+    isHealthy: false,
+    iarcGroup: "1",
+    iarcNote: "IARC Group 1 - Carcinogenic to humans. Linked to nasopharyngeal cancer.",
+    options: [
+      { label: "Never or rarely", value: 0 },
+      { label: "1-2 times per month", value: 1 },
+      { label: "1-2 times per week", value: 2 },
+      { label: "3-4 times per week", value: 3 },
+      { label: "Daily or more", value: 4 },
+    ],
+  },
+
+  // IARC Group 2A: Probably carcinogenic
+  {
+    id: "red_meat",
+    question: "How often do you eat red meat?",
+    description: "Beef, pork, lamb, goat - fresh, minced, or as steaks/chops",
+    isHealthy: false,
+    iarcGroup: "2A",
+    iarcNote: "IARC Group 2A - Probably carcinogenic to humans. Linked to colorectal, pancreatic, and prostate cancer.",
+    options: [
+      { label: "Never or rarely", value: 0 },
+      { label: "1-2 times per week", value: 1 },
+      { label: "3-4 times per week", value: 2 },
+      { label: "5-6 times per week", value: 3 },
+      { label: "Daily or more", value: 4 },
+    ],
+  },
+  {
+    id: "very_hot_beverages",
+    question: "How often do you drink very hot beverages (above 65°C)?",
+    description: "Tea, coffee, or other drinks consumed very hot - hot enough to burn your mouth",
+    isHealthy: false,
+    iarcGroup: "2A",
+    iarcNote: "IARC Group 2A - Probably carcinogenic. Very hot beverages can cause esophageal cancer regardless of type.",
+    options: [
+      { label: "Never - I wait for drinks to cool", value: 0 },
+      { label: "Occasionally", value: 1 },
+      { label: "Sometimes", value: 2 },
+      { label: "Often", value: 3 },
+      { label: "Always - I drink beverages very hot", value: 4 },
+    ],
+  },
+  {
+    id: "high_temp_cooking",
+    question: "How often do you eat food cooked at very high temperatures?",
+    description: "Deep-fried foods, charred/burnt meat, heavily browned toast, chips/fries (acrylamide formation)",
+    isHealthy: false,
+    iarcGroup: "2A",
+    iarcNote: "IARC Group 2A - High-temperature frying and acrylamide are probably carcinogenic. Formed when starchy foods are cooked at high temp.",
+    options: [
+      { label: "Rarely or never", value: 0 },
+      { label: "1-2 times per week", value: 1 },
+      { label: "3-4 times per week", value: 2 },
+      { label: "Once daily", value: 3 },
+      { label: "Multiple times daily", value: 4 },
+    ],
+  },
+
+  // Other WHO dietary concerns
+  {
     id: "sugary_drinks",
     question: "How often do you drink sugary beverages?",
     description: "Soda, sweetened juice, energy drinks, sweetened coffee/tea",
@@ -106,22 +248,9 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     ],
   },
   {
-    id: "processed_meat",
-    question: "How often do you eat processed or red meat?",
-    description: "Bacon, sausages, ham, hot dogs, burgers, steak",
-    isHealthy: false,
-    options: [
-      { label: "Never or rarely", value: 0 },
-      { label: "1-2 times per week", value: 1 },
-      { label: "3-4 times per week", value: 2 },
-      { label: "5-6 times per week", value: 3 },
-      { label: "Daily or more", value: 4 },
-    ],
-  },
-  {
     id: "ultra_processed",
     question: "How often do you eat ultra-processed foods?",
-    description: "Fast food, packaged snacks, instant noodles, frozen meals, sweets",
+    description: "Fast food, packaged snacks, instant noodles, frozen meals, sweets, soft drinks",
     isHealthy: false,
     options: [
       { label: "Never or rarely", value: 0 },
@@ -145,19 +274,6 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     ],
   },
   {
-    id: "fish_protein",
-    question: "How often do you eat fish or plant-based protein?",
-    description: "Fish, tofu, tempeh, seitan, edamame, or other plant proteins",
-    isHealthy: true,
-    options: [
-      { label: "Rarely or never", value: 0 },
-      { label: "1-2 times per week", value: 1 },
-      { label: "3-4 times per week", value: 2 },
-      { label: "5-6 times per week", value: 3 },
-      { label: "Daily or more", value: 4 },
-    ],
-  },
-  {
     id: "saturated_fat",
     question: "How often do you consume high saturated fat foods?",
     description: "Butter, cream, cheese, pastries, fried foods, fatty cuts of meat",
@@ -172,10 +288,7 @@ export const DIET_QUESTIONS: DietQuestion[] = [
   },
 ]
 
-const FEEDBACK: Record<
-  string,
-  { good: string; moderate: string; poor: string }
-> = {
+const FEEDBACK: Record<string, { good: string; moderate: string; poor: string }> = {
   fruits: {
     good: "Great fruit intake! You are meeting WHO recommendations.",
     moderate: "Try to increase fruit consumption to at least 2 servings/day.",
@@ -194,44 +307,119 @@ const FEEDBACK: Record<
   legumes: {
     good: "Excellent legume and nut consumption for fiber and plant protein.",
     moderate: "Adding more beans, lentils, or nuts would improve your diet quality.",
-    poor: "Legumes are nutrient-dense and inexpensive. Try adding them to meals 3+ times/week.",
-  },
-  sugary_drinks: {
-    good: "Great job avoiding sugary beverages!",
-    moderate: "Try to reduce sugary drinks. Replace with water, tea, or unsweetened alternatives.",
-    poor: "Very high sugar intake from beverages. This significantly increases diabetes and obesity risk.",
-  },
-  processed_meat: {
-    good: "Great job limiting processed and red meat intake.",
-    moderate: "Consider reducing processed meat to 1-2 times per week or less.",
-    poor: "High processed meat intake is linked to cancer and heart disease. Try plant-based alternatives.",
-  },
-  ultra_processed: {
-    good: "Excellent! Low ultra-processed food consumption.",
-    moderate: "Try to reduce packaged and fast food. Cook more meals from whole ingredients.",
-    poor: "Very high ultra-processed food intake. This is linked to obesity, diabetes, and heart disease.",
-  },
-  salt: {
-    good: "Great salt management! This protects your cardiovascular health.",
-    moderate: "Consider reducing salt. Use herbs and spices for flavor instead.",
-    poor: "Very high salt intake. WHO recommends less than 5g/day. High salt causes hypertension.",
+    poor: "Legumes are nutrient-dense. Try adding them to meals 3+ times/week.",
   },
   fish_protein: {
     good: "Excellent fish and plant protein intake!",
     moderate: "Try to include fish or plant-based protein 3+ times per week.",
     poor: "Consider adding more fish or plant proteins. They are healthier than red meat.",
   },
+  processed_meat: {
+    good: "Excellent! You are avoiding processed meat, a Group 1 carcinogen.",
+    moderate: "Consider reducing processed meat. IARC classifies it as carcinogenic (Group 1).",
+    poor: "HIGH CANCER RISK: Processed meat is a Group 1 carcinogen (same category as tobacco). Each 50g/day increases colorectal cancer risk by 18%.",
+  },
+  alcohol: {
+    good: "Excellent! Avoiding alcohol eliminates this cancer risk factor.",
+    moderate: "Consider reducing alcohol intake. IARC classifies it as carcinogenic (Group 1).",
+    poor: "HIGH CANCER RISK: Alcohol is a Group 1 carcinogen linked to 7 types of cancer including mouth, throat, liver, and breast cancer.",
+  },
+  salted_fish: {
+    good: "Excellent! You are avoiding salted fish, a Group 1 carcinogen.",
+    moderate: "Consider reducing salted/preserved fish consumption.",
+    poor: "HIGH CANCER RISK: Chinese-style salted fish is a Group 1 carcinogen linked to nasopharyngeal cancer.",
+  },
+  red_meat: {
+    good: "Great job limiting red meat intake.",
+    moderate: "Consider reducing red meat. IARC classifies it as probably carcinogenic (Group 2A).",
+    poor: "ELEVATED CANCER RISK: Red meat is Group 2A (probably carcinogenic). Linked to colorectal and pancreatic cancer.",
+  },
+  very_hot_beverages: {
+    good: "Good practice! Letting beverages cool reduces esophageal cancer risk.",
+    moderate: "Try to let your beverages cool before drinking.",
+    poor: "ELEVATED CANCER RISK: Very hot beverages (>65°C) are Group 2A carcinogenic and increase esophageal cancer risk.",
+  },
+  high_temp_cooking: {
+    good: "Great! You are limiting high-temperature cooking which produces carcinogens.",
+    moderate: "Try to reduce deep-fried and charred foods. Use lower-temperature cooking methods.",
+    poor: "ELEVATED CANCER RISK: High-temperature frying produces acrylamide (Group 2A). Avoid charred/burnt foods.",
+  },
+  sugary_drinks: {
+    good: "Great job avoiding sugary beverages!",
+    moderate: "Try to reduce sugary drinks. Replace with water or unsweetened alternatives.",
+    poor: "Very high sugar intake from beverages increases diabetes and obesity risk.",
+  },
+  ultra_processed: {
+    good: "Excellent! Low ultra-processed food consumption.",
+    moderate: "Try to reduce packaged and fast food. Cook more meals from whole ingredients.",
+    poor: "Very high ultra-processed food intake is linked to obesity, diabetes, and heart disease.",
+  },
+  salt: {
+    good: "Great salt management! This protects your cardiovascular health.",
+    moderate: "Consider reducing salt. Use herbs and spices for flavor instead.",
+    poor: "Very high salt intake. WHO recommends less than 5g/day. High salt causes hypertension.",
+  },
   saturated_fat: {
     good: "Great job limiting saturated fat intake.",
     moderate: "Try to reduce fried foods, butter, and high-fat dairy consumption.",
-    poor: "Very high saturated fat intake increases heart disease risk. Choose healthier fats like olive oil.",
+    poor: "Very high saturated fat intake increases heart disease risk.",
   },
+}
+
+function getIARCRiskLevel(group: "1" | "2A" | "2B", frequency: number): "high" | "moderate" | "low" | "minimal" {
+  if (group === "1") {
+    if (frequency >= 3) return "high"
+    if (frequency >= 2) return "moderate"
+    if (frequency >= 1) return "low"
+    return "minimal"
+  }
+  if (group === "2A") {
+    if (frequency >= 4) return "high"
+    if (frequency >= 2) return "moderate"
+    if (frequency >= 1) return "low"
+    return "minimal"
+  }
+  // Group 2B
+  if (frequency >= 4) return "moderate"
+  if (frequency >= 2) return "low"
+  return "minimal"
+}
+
+function getIARCRecommendation(id: string, frequency: number): string {
+  if (frequency === 0) return "Keep avoiding this carcinogen."
+
+  switch (id) {
+    case "processed_meat":
+      return frequency >= 2
+        ? "Strongly consider eliminating or drastically reducing processed meat. Replace with fish, poultry, or plant proteins."
+        : "Try to reduce further. Any amount increases cancer risk."
+    case "alcohol":
+      return frequency >= 2
+        ? "Consider reducing or eliminating alcohol. There is no safe level for cancer risk."
+        : "Even moderate drinking increases cancer risk. Consider reducing further."
+    case "salted_fish":
+      return frequency >= 2
+        ? "Strongly consider eliminating preserved/salted fish. Choose fresh fish instead."
+        : "Try to avoid preserved fish when possible."
+    case "red_meat":
+      return frequency >= 3
+        ? "WHO recommends limiting red meat to 350-500g per week maximum. Consider plant-based alternatives."
+        : "Moderate your intake and choose leaner cuts. Avoid charring when cooking."
+    case "very_hot_beverages":
+      return "Let beverages cool to a comfortable temperature (below 65°C) before drinking."
+    case "high_temp_cooking":
+      return frequency >= 2
+        ? "Use gentler cooking methods: steaming, boiling, baking at moderate temperatures. Avoid deep-frying."
+        : "Continue limiting high-temperature cooking methods."
+    default:
+      return "Consider reducing consumption of this item."
+  }
 }
 
 export function calculateDietScore(answers: DietAnswers): DietResult {
   const categoryScores: DietResult["categoryScores"] = []
+  const iarcRisks: IARCRiskItem[] = []
   let totalPoints = 0
-  const maxPoints = DIET_QUESTIONS.length * 10
 
   for (const q of DIET_QUESTIONS) {
     const answer = answers[q.id]
@@ -239,11 +427,14 @@ export function calculateDietScore(answers: DietAnswers): DietResult {
 
     let score: number
     if (q.isHealthy) {
-      // Higher frequency = better: 0->0, 1->2.5, 2->5, 3->7.5, 4->10
       score = answer * 2.5
     } else {
-      // Lower frequency = better: 0->10, 1->7.5, 2->5, 3->2.5, 4->0
       score = (4 - answer) * 2.5
+      
+      // Extra penalty for IARC Group 1 carcinogens
+      if (q.iarcGroup === "1" && answer >= 2) {
+        score = Math.max(0, score - 2)
+      }
     }
 
     const feedbackSet = FEEDBACK[q.id]
@@ -259,40 +450,69 @@ export function calculateDietScore(answers: DietAnswers): DietResult {
       score: Math.round(score * 10) / 10,
       maxScore: 10,
       feedback,
+      iarcGroup: q.iarcGroup ? `Group ${q.iarcGroup}` : undefined,
     })
 
     totalPoints += score
+
+    // Track IARC risks
+    if (q.iarcGroup && answer > 0) {
+      const frequencyLabels = ["Rarely", "1-2x/week", "3-4x/week", "5-6x/week", "Daily+"]
+      iarcRisks.push({
+        substance: q.description?.split(",")[0] || q.question,
+        group: q.iarcGroup,
+        groupLabel:
+          q.iarcGroup === "1"
+            ? "Carcinogenic to humans"
+            : q.iarcGroup === "2A"
+              ? "Probably carcinogenic"
+              : "Possibly carcinogenic",
+        frequency: frequencyLabels[answer] || "Unknown",
+        riskLevel: getIARCRiskLevel(q.iarcGroup, answer),
+        recommendation: getIARCRecommendation(q.id, answer),
+      })
+    }
   }
 
   const answeredCount = categoryScores.length
   const adjustedMax = answeredCount * 10
-  const totalScore =
-    adjustedMax > 0 ? Math.round((totalPoints / adjustedMax) * 100) : 0
+  const totalScore = adjustedMax > 0 ? Math.round((totalPoints / adjustedMax) * 100) : 0
+
+  // Generate IARC summary
+  const group1Risks = iarcRisks.filter((r) => r.group === "1")
+  const group2ARisks = iarcRisks.filter((r) => r.group === "2A")
+  const highRisks = iarcRisks.filter((r) => r.riskLevel === "high")
+
+  let iarcSummary = ""
+  if (group1Risks.length === 0 && group2ARisks.length === 0) {
+    iarcSummary = "Excellent! You are avoiding known and probable carcinogens in your diet."
+  } else if (highRisks.length > 0) {
+    iarcSummary = `WARNING: You have ${highRisks.length} high-risk exposure(s) to IARC carcinogens. ${group1Risks.length > 0 ? `${group1Risks.length} Group 1 (confirmed carcinogen) exposure(s).` : ""} Strongly consider reducing these foods.`
+  } else if (group1Risks.length > 0) {
+    iarcSummary = `You have ${group1Risks.length} exposure(s) to Group 1 carcinogens. While frequency is moderate, any exposure increases cancer risk.`
+  } else {
+    iarcSummary = `You have ${group2ARisks.length} exposure(s) to Group 2A probable carcinogens. Consider reducing these foods.`
+  }
 
   let category: string
   let overallFeedback: string
 
   if (totalScore >= 85) {
     category = "Excellent"
-    overallFeedback =
-      "Your diet closely aligns with WHO recommendations. Keep up these healthy eating habits."
+    overallFeedback = "Your diet closely aligns with WHO recommendations and minimizes cancer risk factors."
   } else if (totalScore >= 70) {
     category = "Good"
-    overallFeedback =
-      "Your diet is generally healthy with some room for improvement. Focus on the areas with lower scores."
+    overallFeedback = "Your diet is generally healthy with some room for improvement. Pay attention to IARC-classified foods."
   } else if (totalScore >= 50) {
     category = "Fair"
-    overallFeedback =
-      "Your diet needs improvement in several areas. Consider gradual changes towards whole foods, more fruits and vegetables."
+    overallFeedback = "Your diet needs improvement. Consider reducing processed meat, alcohol, and high-temperature cooked foods."
   } else if (totalScore >= 30) {
     category = "Poor"
-    overallFeedback =
-      "Your diet has significant room for improvement. High intake of processed foods and low intake of healthy foods increase disease risk."
+    overallFeedback = "Your diet has significant health risks. High exposure to carcinogenic foods requires attention."
   } else {
     category = "Very Poor"
-    overallFeedback =
-      "Your diet poses serious health risks. Consider consulting a nutritionist for guidance on improving your eating habits."
+    overallFeedback = "Your diet poses serious health risks including high exposure to carcinogens. Consider consulting a nutritionist."
   }
 
-  return { totalScore, categoryScores, overallFeedback, category }
+  return { totalScore, categoryScores, overallFeedback, category, iarcRisks, iarcSummary }
 }
