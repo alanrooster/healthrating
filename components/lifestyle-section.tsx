@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import {
-  Briefcase,
   Moon,
-  Clock,
   Users,
+  Tv,
   Cigarette,
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
+  TreePine,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -34,21 +34,20 @@ interface LifestyleSectionProps {
 }
 
 const DEFAULT_ANSWERS: LifestyleAnswers = {
-  workingHoursPerDay: 8,
-  daysPerWeek: 5,
-  shiftType: "day",
-  yearsOfShiftWork: 0,
   sleepHoursPerNight: 7,
   sleepQuality: "good",
   sleepDifficulty: "rarely",
-  workExhaustion: "sometimes",
-  workOverwhelm: "sometimes",
-  effortRewardBalance: "fairly-rewarded",
+  sleepScheduleConsistency: "consistent",
   socialFrequency: "weekly",
-  workLifeBalance: "good",
+  qualityRelationships: "good",
+  lonelinessFrequency: "rarely",
   screenTimeHours: 3,
+  outdoorTimeMinutes: 30,
+  hobbiesEngagement: "weekly",
   smokingStatus: "never",
   alcoholFrequency: "monthly",
+  alcoholUnitsPerSession: 2,
+  caffeineConsumption: "moderate",
 }
 
 interface QuestionGroup {
@@ -70,53 +69,6 @@ interface QuestionDef {
 }
 
 const QUESTION_GROUPS: QuestionGroup[] = [
-  {
-    title: "Work Schedule",
-    icon: Briefcase,
-    questions: [
-      {
-        id: "workingHoursPerDay",
-        label: "Working hours per day",
-        description: "Average hours spent working each day",
-        type: "number",
-        min: 0,
-        max: 18,
-        step: 0.5,
-        unit: "hours",
-      },
-      {
-        id: "daysPerWeek",
-        label: "Working days per week",
-        type: "number",
-        min: 0,
-        max: 7,
-        step: 1,
-        unit: "days",
-      },
-      {
-        id: "shiftType",
-        label: "Shift type",
-        description: "What type of work schedule do you have?",
-        type: "select",
-        options: [
-          { value: "day", label: "Day shift (regular hours)" },
-          { value: "rotating", label: "Rotating shifts" },
-          { value: "night", label: "Permanent night shift" },
-          { value: "not-working", label: "Not currently working" },
-        ],
-      },
-      {
-        id: "yearsOfShiftWork",
-        label: "Years of shift/night work",
-        description: "Total years spent doing shift or night work",
-        type: "number",
-        min: 0,
-        max: 50,
-        step: 1,
-        unit: "years",
-      },
-    ],
-  },
   {
     title: "Sleep",
     icon: Moon,
@@ -157,60 +109,29 @@ const QUESTION_GROUPS: QuestionGroup[] = [
           { value: "always", label: "Always" },
         ],
       },
-    ],
-  },
-  {
-    title: "Work Stress",
-    icon: Clock,
-    questions: [
       {
-        id: "workExhaustion",
-        label: "How often do you feel exhausted from work?",
-        description: "Inspired by the Copenhagen Burnout Inventory",
+        id: "sleepScheduleConsistency",
+        label: "Sleep schedule consistency",
+        description: "How consistent is your sleep/wake time?",
         type: "select",
         options: [
-          { value: "never", label: "Never" },
-          { value: "rarely", label: "Rarely" },
-          { value: "sometimes", label: "Sometimes" },
-          { value: "often", label: "Often" },
-          { value: "always", label: "Always" },
-        ],
-      },
-      {
-        id: "workOverwhelm",
-        label: "How often do you feel overwhelmed by your workload?",
-        type: "select",
-        options: [
-          { value: "never", label: "Never" },
-          { value: "rarely", label: "Rarely" },
-          { value: "sometimes", label: "Sometimes" },
-          { value: "often", label: "Often" },
-          { value: "always", label: "Always" },
-        ],
-      },
-      {
-        id: "effortRewardBalance",
-        label: "How well does your effort match your rewards?",
-        description: "Based on Siegrist Effort-Reward Imbalance model",
-        type: "select",
-        options: [
-          { value: "well-rewarded", label: "Well rewarded" },
-          { value: "fairly-rewarded", label: "Fairly rewarded" },
-          { value: "neutral", label: "Neutral" },
-          { value: "under-rewarded", label: "Under-rewarded" },
-          { value: "very-under-rewarded", label: "Very under-rewarded" },
+          { value: "very-consistent", label: "Very consistent (same time daily)" },
+          { value: "consistent", label: "Mostly consistent" },
+          { value: "somewhat", label: "Somewhat variable" },
+          { value: "inconsistent", label: "Inconsistent" },
+          { value: "very-inconsistent", label: "Very irregular" },
         ],
       },
     ],
   },
   {
-    title: "Social & Work-Life Balance",
+    title: "Social Connection",
     icon: Users,
     questions: [
       {
         id: "socialFrequency",
         label: "How often do you socialize (family/friends)?",
-        description: "Holt-Lunstad research: social isolation significantly impacts health",
+        description: "In-person or meaningful video calls count",
         type: "select",
         options: [
           { value: "daily", label: "Daily" },
@@ -221,8 +142,9 @@ const QUESTION_GROUPS: QuestionGroup[] = [
         ],
       },
       {
-        id: "workLifeBalance",
-        label: "How would you rate your work-life balance?",
+        id: "qualityRelationships",
+        label: "Quality of your close relationships",
+        description: "How supportive and fulfilling are your relationships?",
         type: "select",
         options: [
           { value: "excellent", label: "Excellent" },
@@ -233,6 +155,25 @@ const QUESTION_GROUPS: QuestionGroup[] = [
         ],
       },
       {
+        id: "lonelinessFrequency",
+        label: "How often do you feel lonely?",
+        description: "Feeling isolated or lacking companionship",
+        type: "select",
+        options: [
+          { value: "never", label: "Never" },
+          { value: "rarely", label: "Rarely" },
+          { value: "sometimes", label: "Sometimes" },
+          { value: "often", label: "Often" },
+          { value: "always", label: "Always" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "Leisure & Balance",
+    icon: TreePine,
+    questions: [
+      {
         id: "screenTimeHours",
         label: "Recreational screen time per day",
         description: "Non-work screen time (social media, TV, gaming)",
@@ -241,6 +182,29 @@ const QUESTION_GROUPS: QuestionGroup[] = [
         max: 16,
         step: 0.5,
         unit: "hours",
+      },
+      {
+        id: "outdoorTimeMinutes",
+        label: "Daily outdoor/nature time",
+        description: "Time spent outside, in parks, or natural settings",
+        type: "number",
+        min: 0,
+        max: 480,
+        step: 15,
+        unit: "minutes",
+      },
+      {
+        id: "hobbiesEngagement",
+        label: "Engagement in hobbies/leisure activities",
+        description: "Activities you enjoy outside of work and screens",
+        type: "select",
+        options: [
+          { value: "daily", label: "Daily" },
+          { value: "several-weekly", label: "Several times a week" },
+          { value: "weekly", label: "Weekly" },
+          { value: "monthly", label: "Monthly" },
+          { value: "rarely", label: "Rarely or never" },
+        ],
       },
     ],
   },
@@ -270,6 +234,28 @@ const QUESTION_GROUPS: QuestionGroup[] = [
           { value: "weekly", label: "Weekly" },
           { value: "several-weekly", label: "Several times a week" },
           { value: "daily", label: "Daily" },
+        ],
+      },
+      {
+        id: "alcoholUnitsPerSession",
+        label: "Typical drinks per session",
+        description: "1 unit = 1 beer, 1 glass of wine, or 1 shot",
+        type: "number",
+        min: 0,
+        max: 15,
+        step: 1,
+        unit: "drinks",
+      },
+      {
+        id: "caffeineConsumption",
+        label: "Caffeine consumption",
+        description: "Coffee, tea, energy drinks combined",
+        type: "select",
+        options: [
+          { value: "none", label: "None" },
+          { value: "moderate", label: "Moderate (1-3 cups)" },
+          { value: "high", label: "High (4-6 cups)" },
+          { value: "excessive", label: "Excessive (7+ cups)" },
         ],
       },
     ],
@@ -320,8 +306,8 @@ export function LifestyleSection({ onResult }: LifestyleSectionProps) {
           Lifestyle Assessment
         </h1>
         <p className="text-sm text-muted-foreground">
-          Based on WHO/ILO occupational health guidelines, Copenhagen Burnout
-          Inventory, and validated sleep/social health research.
+          Based on WHO guidelines, Pittsburgh Sleep Quality Index, and
+          Holt-Lunstad social connection research.
         </p>
       </div>
 
@@ -437,10 +423,9 @@ function LifestyleResults({
   const { overallScore, subScores, riskFactors, recommendations } = result
 
   const subScoreItems = [
-    { label: "Work Schedule", score: subScores.workSchedule, icon: Briefcase },
     { label: "Sleep", score: subScores.sleep, icon: Moon },
-    { label: "Work Stress", score: subScores.workStress, icon: Clock },
-    { label: "Social & Balance", score: subScores.socialBalance, icon: Users },
+    { label: "Social Connection", score: subScores.social, icon: Users },
+    { label: "Leisure & Balance", score: subScores.leisure, icon: Tv },
     { label: "Habits", score: subScores.habits, icon: Cigarette },
   ]
 
@@ -465,7 +450,7 @@ function LifestyleResults({
         >
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-3">
-              <Briefcase className="h-8 w-8" />
+              <Moon className="h-8 w-8" />
               <span className="text-5xl font-bold">{overallScore}</span>
               <div className="flex flex-col items-start">
                 <span className="text-sm font-medium opacity-80">/ 100</span>
@@ -568,10 +553,9 @@ function LifestyleResults({
       </Button>
 
       <p className="text-xs text-muted-foreground leading-relaxed">
-        Based on WHO/ILO Joint Estimates on working hours (2021), IARC Monograph
-        124 on night shift work (2019), Copenhagen Burnout Inventory (Kristensen
-        et al. 2005), Effort-Reward Imbalance model (Siegrist 1996), PSQI sleep
-        scoring, and Holt-Lunstad social connection meta-analyses (2010, 2015).
+        Based on WHO sleep recommendations, Pittsburgh Sleep Quality Index (PSQI),
+        Holt-Lunstad social connection meta-analyses (2010, 2015), and WHO/CDC
+        evidence on substance use impacts.
       </p>
     </div>
   )

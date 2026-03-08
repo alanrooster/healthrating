@@ -9,6 +9,7 @@ import {
   Dumbbell,
   Heart,
   Info,
+  Moon,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -39,7 +40,8 @@ const NAV_ITEMS = [
   { id: "air", label: "Air Quality", icon: Cloud },
   { id: "diet", label: "Diet Assessment", icon: UtensilsCrossed },
   { id: "exercise", label: "Exercise", icon: Dumbbell },
-  { id: "lifestyle", label: "Lifestyle", icon: Briefcase },
+  { id: "work", label: "Work", icon: Briefcase },
+  { id: "lifestyle", label: "Lifestyle", icon: Moon },
   { id: "mental", label: "Mental Health", icon: Brain },
 ]
 
@@ -60,6 +62,7 @@ export function AppSidebar({
     air: scores.airQuality,
     diet: scores.diet,
     exercise: scores.exercise,
+    work: scores.work,
     lifestyle: scores.lifestyle,
     mental: scores.mentalHealth,
   }

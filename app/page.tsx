@@ -9,6 +9,7 @@ import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
 import { DietSection } from "@/components/diet-section"
 import { ExerciseSection } from "@/components/exercise-section"
+import { WorkSection } from "@/components/work-section"
 import { LifestyleSection } from "@/components/lifestyle-section"
 import { MentalHealthSection } from "@/components/mental-health-section"
 import { MethodologySection } from "@/components/methodology-section"
@@ -40,6 +41,10 @@ export default function Page() {
     ...EMPTY_SCORE,
     label: "Exercise",
   })
+  const [workScore, setWorkScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Work",
+  })
   const [lifestyleScore, setLifestyleScore] = useState<ModuleScore>({
     ...EMPTY_SCORE,
     label: "Lifestyle",
@@ -55,10 +60,11 @@ export default function Page() {
       airQuality: airScore,
       diet: dietScore,
       exercise: exerciseScore,
+      work: workScore,
       lifestyle: lifestyleScore,
       mentalHealth: mentalHealthScore,
     }),
-    [bodyScore, airScore, dietScore, exerciseScore, lifestyleScore, mentalHealthScore]
+    [bodyScore, airScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore]
   )
 
   const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
@@ -77,6 +83,10 @@ export default function Page() {
 
   function handleExerciseResult(score: number) {
     setExerciseScore({ score, completed: true, label: "Exercise" })
+  }
+
+  function handleWorkResult(score: number) {
+    setWorkScore({ score, completed: true, label: "Work" })
   }
 
   function handleLifestyleResult(score: number) {
@@ -104,6 +114,8 @@ export default function Page() {
         return <DietSection onResult={handleDietResult} />
       case "exercise":
         return <ExerciseSection onResult={handleExerciseResult} />
+      case "work":
+        return <WorkSection onResult={handleWorkResult} />
       case "lifestyle":
         return <LifestyleSection onResult={handleLifestyleResult} />
       case "mental":
@@ -126,6 +138,7 @@ export default function Page() {
     air: "Air Quality",
     diet: "Diet Assessment",
     exercise: "Exercise Assessment",
+    work: "Work Assessment",
     lifestyle: "Lifestyle Assessment",
     mental: "Mental Health Screening",
     methodology: "Methodology",

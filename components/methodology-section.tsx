@@ -111,32 +111,66 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
+            Work Assessment (12% of overall score)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Starts with employment status screening (Employed, Freelancer,
+            Entrepreneur, Unemployed, Retired, Student, Homemaker, Unable to
+            Work) to adapt the assessment appropriately.
+          </p>
+          <p>
+            For employed individuals: assesses work schedule (hours, shift type,
+            commute) and work stress (exhaustion, overwhelm, effort-reward
+            balance, job control, job security).
+          </p>
+          <p>
+            Retired individuals receive simplified scoring with questions on
+            retirement satisfaction and sense of purpose. Unemployed individuals
+            are assessed on unemployment duration, job search stress, and
+            financial stress.
+          </p>
+          <p>
+            Working hours thresholds based on WHO/ILO Joint Estimates (2021)
+            showing 55+ hours/week increases stroke risk by 35%. Shift work
+            penalties follow IARC Monograph 124 classification. Work stress
+            questions inspired by Copenhagen Burnout Inventory and Karasek
+            Job Demand-Control model.
+          </p>
+          <p className="text-xs">
+            Sources: WHO/ILO (2021), IARC Monograph 124 (2019), CBI
+            (Kristensen 2005), ERI Model (Siegrist 1996), Karasek JDC (1979).
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
             Lifestyle Assessment (15% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Covers five sub-domains: work schedule (20%), sleep quality (30%),
-            work stress (20%), social connection & work-life balance (15%),
-            and substance use habits (15%).
+            Covers four sub-domains: sleep quality (35%), social connection
+            (25%), leisure & balance (20%), and substance use habits (20%).
           </p>
           <p>
-            Working hours thresholds based on WHO/ILO Joint Estimates (2021)
-            showing 55+ hours/week increases stroke risk by 35%. Shift work
-            penalties follow IARC Monograph 124 classification of night shift
-            as Group 2A (probably carcinogenic).
+            Sleep scoring follows Pittsburgh Sleep Quality Index principles
+            with WHO recommendations of 7-9 hours for adults. Includes
+            assessment of sleep duration, quality, difficulty, and schedule
+            consistency.
           </p>
           <p>
-            Work stress questions inspired by the Copenhagen Burnout Inventory
-            (Kristensen et al. 2005) and Siegrist Effort-Reward Imbalance model.
-            Sleep scoring follows Pittsburgh Sleep Quality Index principles.
-            Social connection scoring based on Holt-Lunstad meta-analyses (2010,
-            2015).
+            Social connection scoring based on Holt-Lunstad meta-analyses
+            (2010, 2015) showing social isolation increases mortality risk by
+            29%. Leisure assessment covers screen time, outdoor exposure, and
+            hobby engagement.
           </p>
           <p className="text-xs">
-            Sources: WHO/ILO (2021), IARC Monograph 124 (2019), CBI (2005),
-            ERI Model (Siegrist 1996), PSQI, Holt-Lunstad et al. (2010, 2015),
-            WHO Guidelines on Mental Health at Work (2022).
+            Sources: PSQI, WHO Sleep Guidelines, Holt-Lunstad et al. (2010,
+            2015), WHO/CDC substance use evidence.
           </p>
         </CardContent>
       </Card>
@@ -180,10 +214,10 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            The overall score is a weighted composite: Body Composition 20%,
-            Mental Health 20%, Diet 20%, Exercise 15%, Lifestyle 15%,
-            Air Quality 10%. Only completed modules contribute to the score,
-            with weights re-normalized among them.
+            The overall score is a weighted composite: Body Composition 18%,
+            Mental Health 18%, Diet 17%, Lifestyle 15%, Exercise 12%,
+            Work 12%, Air Quality 8%. Only completed modules contribute to
+            the score, with weights re-normalized among them.
           </p>
           <p>
             Letter grades: A (90-100), B (75-89), C (60-74), D (40-59),

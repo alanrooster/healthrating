@@ -6,6 +6,7 @@ import {
   Briefcase,
   Cloud,
   Dumbbell,
+  Moon,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -33,7 +34,8 @@ const MODULE_META: Record<
   airQuality: { label: "Air Quality", icon: Cloud, section: "air" },
   diet: { label: "Diet", icon: UtensilsCrossed, section: "diet" },
   exercise: { label: "Exercise", icon: Dumbbell, section: "exercise" },
-  lifestyle: { label: "Lifestyle", icon: Briefcase, section: "lifestyle" },
+  work: { label: "Work", icon: Briefcase, section: "work" },
+  lifestyle: { label: "Lifestyle", icon: Moon, section: "lifestyle" },
   mentalHealth: { label: "Mental Health", icon: Brain, section: "mental" },
 }
 
