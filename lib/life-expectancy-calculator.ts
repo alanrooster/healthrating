@@ -343,6 +343,30 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
       totalAdjustment += years
     }
   }
+
+  // === WATER QUALITY ===
+  // Poor water quality and microplastic exposure affect health outcomes
+  // Contaminated water linked to various diseases (WHO 2022)
+  if (inputs.waterQualityScore !== undefined) {
+    dataPoints++
+    let years = 0
+    if (inputs.waterQualityScore >= 80) {
+      years = 0.5 // Clean water, good filtration
+    } else if (inputs.waterQualityScore < 30) {
+      years = -2 // Poor water quality, high contaminant exposure
+    } else if (inputs.waterQualityScore < 50) {
+      years = -1 // Moderate water quality issues
+    }
+    if (years !== 0) {
+      adjustments.push({
+        factor: "Water Quality",
+        years,
+        direction: years > 0 ? "positive" : "negative",
+        source: "WHO Drinking Water Guidelines 2022",
+      })
+      totalAdjustment += years
+    }
+  }
   
   // Calculate final values
   const adjustedTotal = Math.max(age + 1, baselineTotal + totalAdjustment)
