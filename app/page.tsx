@@ -70,9 +70,19 @@ export default function Page() {
     redMeatFrequency: number
     processedMeatFrequency: number
     fishFrequency: number
+    alcoholFrequency: number
   } | null>(null)
   const [waterData, setWaterData] = useState<{
     plasticBottlesPerWeek: number
+    primarySourceBottled: boolean
+  } | null>(null)
+  const [lifestyleData, setLifestyleData] = useState<{
+    smokingStatus: string
+    alcoholFrequency: string
+    alcoholUnitsPerSession: number
+  } | null>(null)
+  const [airData, setAirData] = useState<{
+    country: string
   } | null>(null)
 
   const scores: HealthScores = useMemo(
@@ -95,18 +105,21 @@ export default function Page() {
     setBodyScore({ score, completed: true, label: "Body Composition" })
   }
 
-  function handleAirResult(score: number) {
+  function handleAirResult(score: number, countryData?: { country: string }) {
     setAirScore({ score, completed: true, label: "Air Quality" })
+    if (countryData) {
+      setAirData(countryData)
+    }
   }
 
-  function handleWaterResult(score: number, plasticData?: { plasticBottlesPerWeek: number }) {
+  function handleWaterResult(score: number, plasticData?: { plasticBottlesPerWeek: number; primarySourceBottled: boolean }) {
     setWaterScore({ score, completed: true, label: "Water Quality" })
     if (plasticData) {
       setWaterData(plasticData)
     }
   }
 
-  function handleDietResult(score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number }) {
+  function handleDietResult(score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number; alcoholFrequency: number }) {
     setDietScore({ score, completed: true, label: "Diet" })
     if (meatData) {
       setDietData(meatData)
@@ -121,8 +134,11 @@ export default function Page() {
     setWorkScore({ score, completed: true, label: "Work" })
   }
 
-  function handleLifestyleResult(score: number) {
+  function handleLifestyleResult(score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) {
     setLifestyleScore({ score, completed: true, label: "Lifestyle" })
+    if (lifestyleExtras) {
+      setLifestyleData(lifestyleExtras)
+    }
   }
 
   function handleMentalHealthResult(score: number) {
@@ -162,7 +178,15 @@ export default function Page() {
       case "mental":
         return <MentalHealthSection onResult={handleMentalHealthResult} />
       case "carbon":
-        return <CarbonSection onResult={handleCarbonResult} dietData={dietData} waterData={waterData} />
+        return (
+          <CarbonSection
+            onResult={handleCarbonResult}
+            dietData={dietData}
+            waterData={waterData}
+            lifestyleData={lifestyleData}
+            airData={airData}
+          />
+        )
       case "methodology":
         return <MethodologySection />
       default:

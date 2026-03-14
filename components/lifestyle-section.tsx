@@ -30,7 +30,7 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface LifestyleSectionProps {
-  onResult: (score: number) => void
+  onResult: (score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) => void
 }
 
 const DEFAULT_ANSWERS: LifestyleAnswers = {
@@ -286,7 +286,13 @@ export function LifestyleSection({ onResult }: LifestyleSectionProps) {
   function handleCalculate() {
     const r = calculateLifestyle(answers)
     setResult(r)
-    onResult(r.overallScore)
+    // Pass smoking and alcohol data to carbon calculator
+    const lifestyleExtras = {
+      smokingStatus: answers.smokingStatus,
+      alcoholFrequency: answers.alcoholFrequency,
+      alcoholUnitsPerSession: answers.alcoholUnitsPerSession,
+    }
+    onResult(r.overallScore, lifestyleExtras)
   }
 
   function handleReset() {

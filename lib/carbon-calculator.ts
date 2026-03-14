@@ -221,7 +221,39 @@ const GRID_INTENSITY: Record<string, number> = {
   CN: 550,
   IN: 700,
   AU: 600,
+  JP: 450,
+  BR: 80, // Brazil (hydro)
+  CA: 120, // Canada (hydro)
+  IT: 300,
+  ES: 200,
+  NL: 380,
   default: 400,
+}
+
+// Helper to map country names to grid codes
+function mapCountryToGridCode(country: string): string {
+  const countryMap: Record<string, string> = {
+    sweden: "SE",
+    france: "FR",
+    norway: "NO",
+    germany: "DE",
+    poland: "PL",
+    "united kingdom": "UK",
+    uk: "UK",
+    "united states": "US",
+    usa: "US",
+    china: "CN",
+    india: "IN",
+    australia: "AU",
+    japan: "JP",
+    brazil: "BR",
+    canada: "CA",
+    italy: "IT",
+    spain: "ES",
+    netherlands: "NL",
+  }
+  const lowerCountry = country.toLowerCase()
+  return countryMap[lowerCountry] || country.toUpperCase().slice(0, 2)
 }
 
 // ============================================================================
@@ -230,14 +262,25 @@ const GRID_INTENSITY: Record<string, number> = {
 
 export function calculateCarbonFootprint(
   inputs: CarbonInputs,
-  // Optional: pass in diet data to add meat consumption impact
+  // Optional: pass in diet data to add meat/fish/alcohol consumption impact
   dietData?: {
     redMeatFrequency: number // 0-4 scale
     processedMeatFrequency: number
+    fishFrequency?: number
+    alcoholFrequency?: number
   },
   // Optional: pass in water data for plastic consumption impact
   waterData?: {
     plasticBottlesPerWeek: number
+    primarySourceBottled?: boolean
+  },
+  // Optional: pass in lifestyle data (smoking)
+  lifestyleData?: {
+    smokingStatus: string
+  },
+  // Optional: pass in country from air quality for grid intensity
+  airData?: {
+    country: string
   }
 ): CarbonResult {
   const {
@@ -296,7 +339,10 @@ export function calculateCarbonFootprint(
   let homeEmissions = HOUSING_BASE_EMISSIONS[housingType]
 
   // Adjust for grid carbon intensity
-  const gridIntensity = GRID_INTENSITY[countryCode.toUpperCase()] ?? GRID_INTENSITY.default
+  // Use country from airData if available (more reliable source), otherwise use countryCode from inputs
+  const effectiveCountry = airData?.country || countryCode
+  const countryCodeForGrid = mapCountryToGridCode(effectiveCountry)
+  const gridIntensity = GRID_INTENSITY[countryCodeForGrid] ?? GRID_INTENSITY.default
   const gridMultiplier = gridIntensity / 400 // normalize to default
 
   homeEmissions *= gridMultiplier * ELECTRICITY_MULTIPLIER[electricitySource]
@@ -332,6 +378,20 @@ export function calculateCarbonFootprint(
     // Processed meat: ~12kg CO2 per kg
     const processedServings = [0, 12, 52, 156, 365][dietData.processedMeatFrequency] ?? 0
     consumptionEmissions += processedServings * 0.1 * 12
+
+    // Fish: ~5kg CO2 per kg, average 150g per serving
+    if (dietData.fishFrequency !== undefined) {
+      const fishServingsPerYear = [0, 12, 52, 156, 365][dietData.fishFrequency] ?? 0
+      consumptionEmissions += fishServingsPerYear * 0.15 * 5
+    }
+
+    // Alcohol: ~3kg CO2 per liter (average across beer/wine/spirits)
+    // Scale: 0=never, 1=rarely, 2=monthly, 3=weekly, 4=daily
+    if (dietData.alcoholFrequency !== undefined) {
+      const drinkOccasionsPerYear = [0, 12, 24, 52, 365][dietData.alcoholFrequency] ?? 0
+      // Average 0.5L per drinking occasion
+      consumptionEmissions += drinkOccasionsPerYear * 0.5 * 3
+    }
   }
 
   // Add plastic bottle impact if available (from water assessment)
@@ -339,6 +399,24 @@ export function calculateCarbonFootprint(
   if (waterData && waterData.plasticBottlesPerWeek > 0) {
     const bottlesPerYear = waterData.plasticBottlesPerWeek * 52
     consumptionEmissions += bottlesPerYear * 0.082 // 82g = 0.082kg per bottle
+  }
+
+  // If bottled water is primary source, add additional transport/refrigeration impact
+  // ~100kg CO2/year for primary bottled water consumption
+  if (waterData?.primarySourceBottled) {
+    consumptionEmissions += 100
+  }
+
+  // Smoking: ~14g CO2 per cigarette (production, transport, packaging)
+  // Daily smoker: ~20 cigarettes/day = ~100kg CO2/year
+  if (lifestyleData?.smokingStatus) {
+    const smokingEmissions: Record<string, number> = {
+      never: 0,
+      former: 0,
+      occasional: 25, // ~5 cigarettes/week
+      daily: 100, // ~20 cigarettes/day
+    }
+    consumptionEmissions += smokingEmissions[lifestyleData.smokingStatus] ?? 0
   }
 
   consumptionEmissions = Math.max(0, consumptionEmissions)
@@ -425,10 +503,20 @@ export function calculateCarbonFootprint(
       "Switching from plastic bottles to a reusable bottle could save 200+ kg CO2/year and reduce microplastic exposure."
     )
   }
-  if (dietData && dietData.redMeatFrequency >= 3) {
-    recommendations.push(
-      "Reducing red meat consumption to 1-2 times per week could save 500+ kg CO2/year."
-    )
+if (dietData && dietData.redMeatFrequency >= 3) {
+  recommendations.push(
+  "Reducing red meat consumption to 1-2 times per week could save 500+ kg CO2/year."
+  )
+  }
+  if (lifestyleData?.smokingStatus === "daily") {
+  recommendations.push(
+  "Quitting smoking would save ~100 kg CO2/year, plus significant health benefits."
+  )
+  }
+  if (waterData?.primarySourceBottled) {
+  recommendations.push(
+  "Using filtered tap water instead of bottled would reduce your footprint by 100+ kg CO2/year."
+  )
   }
   if (perCapita <= comparison.parisTarget) {
     recommendations.push(

@@ -49,9 +49,19 @@ interface CarbonSectionProps {
     redMeatFrequency: number
     processedMeatFrequency: number
     fishFrequency: number
+    alcoholFrequency: number
   } | null
   waterData?: {
     plasticBottlesPerWeek: number
+    primarySourceBottled: boolean
+  } | null
+  lifestyleData?: {
+    smokingStatus: string
+    alcoholFrequency: string
+    alcoholUnitsPerSession: number
+  } | null
+  airData?: {
+    country: string
   } | null
 }
 
@@ -80,7 +90,7 @@ const COUNTRIES = [
   { code: "default", name: "Other" },
 ]
 
-export function CarbonSection({ onResult, dietData, waterData }: CarbonSectionProps) {
+export function CarbonSection({ onResult, dietData, waterData, lifestyleData, airData }: CarbonSectionProps) {
   const [step, setStep] = useState(1)
   const [result, setResult] = useState<CarbonResult | null>(null)
 
@@ -130,14 +140,27 @@ export function CarbonSection({ onResult, dietData, waterData }: CarbonSectionPr
     const externalDietData = dietData ? {
       redMeatFrequency: dietData.redMeatFrequency,
       processedMeatFrequency: dietData.processedMeatFrequency,
+      fishFrequency: dietData.fishFrequency,
+      alcoholFrequency: dietData.alcoholFrequency,
     } : undefined
 
     // Pass water/plastic data from water assessment if available
     const externalWaterData = waterData ? {
       plasticBottlesPerWeek: waterData.plasticBottlesPerWeek,
+      primarySourceBottled: waterData.primarySourceBottled,
     } : undefined
 
-    const calcResult = calculateCarbonFootprint(inputs, externalDietData, externalWaterData)
+    // Pass lifestyle data (smoking) if available
+    const externalLifestyleData = lifestyleData ? {
+      smokingStatus: lifestyleData.smokingStatus,
+    } : undefined
+
+    // Pass country from air quality for grid carbon intensity
+    const externalAirData = airData ? {
+      country: airData.country,
+    } : undefined
+
+    const calcResult = calculateCarbonFootprint(inputs, externalDietData, externalWaterData, externalLifestyleData, externalAirData)
     setResult(calcResult)
     onResult(calcResult.score, calcResult.totalKgCO2)
   }
@@ -173,20 +196,23 @@ export function CarbonSection({ onResult, dietData, waterData }: CarbonSectionPr
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            {/* Data integration notice */}
-            {(dietData || waterData) && (
-              <div className="flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <div className="text-muted-foreground">
-                  <span className="font-medium text-foreground">Integrated data: </span>
-                  {[
-                    dietData && "Diet (meat consumption)",
-                    waterData?.plasticBottlesPerWeek ? "Water (plastic bottles)" : null,
-                  ].filter(Boolean).join(", ")}
-                  {" - automatically included from your other assessments."}
-                </div>
-              </div>
-            )}
+{/* Data integration notice */}
+  {(dietData || waterData || lifestyleData || airData) && (
+  <div className="flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm">
+  <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+  <div className="text-muted-foreground">
+  <span className="font-medium text-foreground">Integrated data: </span>
+  {[
+  dietData && "Diet (meat, fish, alcohol)",
+  waterData?.plasticBottlesPerWeek ? "Water (plastic bottles)" : null,
+  waterData?.primarySourceBottled ? "Water (bottled source)" : null,
+  lifestyleData?.smokingStatus && lifestyleData.smokingStatus !== "never" ? "Lifestyle (smoking)" : null,
+  airData?.country ? `Air (${airData.country} grid)` : null,
+  ].filter(Boolean).join(", ")}
+  {" - automatically included from your other assessments."}
+  </div>
+  </div>
+  )}
 
             {/* Main result */}
             <div className="flex flex-col items-center gap-2 rounded-lg bg-secondary p-6 text-center">

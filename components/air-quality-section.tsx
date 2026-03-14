@@ -23,7 +23,7 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface AirQualitySectionProps {
-  onResult: (score: number) => void
+  onResult: (score: number, countryData?: { country: string }) => void
 }
 
 export function AirQualitySection({ onResult }: AirQualitySectionProps) {
@@ -54,7 +54,7 @@ export function AirQualitySection({ onResult }: AirQualitySectionProps) {
     if (!selectedCity) return
     const aqResult = scoreAirQuality(selectedCity)
     setResult(aqResult)
-    onResult(aqResult.score)
+    onResult(aqResult.score, { country })
   }
 
   return (

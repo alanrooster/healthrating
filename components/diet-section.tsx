@@ -35,7 +35,7 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface DietSectionProps {
-  onResult: (score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number }) => void
+  onResult: (score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number; alcoholFrequency: number }) => void
 }
 
 // Group questions into logical steps with IARC classification awareness
@@ -125,11 +125,12 @@ export function DietSection({ onResult }: DietSectionProps) {
     if (!allAnswered) return
     const dietResult = calculateDietScore(answers)
     setResult(dietResult)
-    // Pass meat consumption data to carbon calculator
+    // Pass meat and alcohol consumption data to carbon calculator
     const meatData = {
       redMeatFrequency: answers.red_meat ?? 0,
       processedMeatFrequency: answers.processed_meat ?? 0,
       fishFrequency: answers.fish_protein ?? 0,
+      alcoholFrequency: answers.alcohol ?? 0,
     }
     onResult(dietResult.totalScore, meatData)
   }
