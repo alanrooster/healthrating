@@ -235,12 +235,12 @@ export function WaterSection({ onResult }: WaterSectionProps) {
             <CardContent className="flex flex-col gap-4 pt-6">
               {/* Sub-scores */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <ScoreItem label="Infrastructure" value={result.details.countryBaseline} />
-                <ScoreItem label="Source" value={result.details.sourceScore} />
-                <ScoreItem label="Filtration" value={result.details.filtrationScore} />
-                <ScoreItem label="Plastic Exposure" value={result.details.plasticScore} />
-                <ScoreItem label="Infrastructure Age" value={result.details.infrastructureScore} />
-                <ScoreItem label="Hydration" value={result.details.hydrationScore} />
+                <ScoreItem label="Country Baseline" value={result.breakdown.countryScore} />
+                <ScoreItem label="Source" value={result.breakdown.sourceScore} />
+                <ScoreItem label="Filtration" value={result.breakdown.filtrationScore} />
+                <ScoreItem label="Plastic Exposure" value={result.breakdown.plasticScore} />
+                <ScoreItem label="Infrastructure" value={result.breakdown.infrastructureScore} />
+                <ScoreItem label="Hydration" value={result.breakdown.hydrationScore} />
               </div>
 
               {/* Microplastic Alert */}
