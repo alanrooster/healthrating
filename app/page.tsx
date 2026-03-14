@@ -65,6 +65,16 @@ export default function Page() {
   const [carbonScore, setCarbonScore] = useState(0)
   const [totalCO2, setTotalCO2] = useState(0)
 
+  // Cross-module data for carbon calculation
+  const [dietData, setDietData] = useState<{
+    redMeatFrequency: number
+    processedMeatFrequency: number
+    fishFrequency: number
+  } | null>(null)
+  const [waterData, setWaterData] = useState<{
+    plasticBottlesPerWeek: number
+  } | null>(null)
+
   const scores: HealthScores = useMemo(
     () => ({
       body: bodyScore,
@@ -89,12 +99,18 @@ export default function Page() {
     setAirScore({ score, completed: true, label: "Air Quality" })
   }
 
-  function handleWaterResult(score: number) {
+  function handleWaterResult(score: number, plasticData?: { plasticBottlesPerWeek: number }) {
     setWaterScore({ score, completed: true, label: "Water Quality" })
+    if (plasticData) {
+      setWaterData(plasticData)
+    }
   }
 
-  function handleDietResult(score: number) {
+  function handleDietResult(score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number }) {
     setDietScore({ score, completed: true, label: "Diet" })
+    if (meatData) {
+      setDietData(meatData)
+    }
   }
 
   function handleExerciseResult(score: number) {
@@ -146,7 +162,7 @@ export default function Page() {
       case "mental":
         return <MentalHealthSection onResult={handleMentalHealthResult} />
       case "carbon":
-        return <CarbonSection onResult={handleCarbonResult} />
+        return <CarbonSection onResult={handleCarbonResult} dietData={dietData} waterData={waterData} />
       case "methodology":
         return <MethodologySection />
       default:

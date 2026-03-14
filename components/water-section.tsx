@@ -47,7 +47,7 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface WaterSectionProps {
-  onResult: (score: number) => void
+  onResult: (score: number, plasticData?: { plasticBottlesPerWeek: number }) => void
 }
 
 const SOURCE_OPTIONS: { value: WaterSource; label: string; desc: string }[] = [
@@ -181,11 +181,15 @@ export function WaterSection({ onResult }: WaterSectionProps) {
     }
   }
 
-  function handleCalculate() {
-    if (!canProceed(4)) return
-    const waterResult = calculateWaterQuality(answers as WaterAnswers)
-    setResult(waterResult)
-    onResult(waterResult.score)
+function handleCalculate() {
+  if (!canProceed(4)) return
+  const waterResult = calculateWaterQuality(answers as WaterAnswers)
+  setResult(waterResult)
+  // Pass plastic bottle data to carbon calculator
+  const plasticData = {
+    plasticBottlesPerWeek: answers.bottleType === "plastic" ? (answers.plasticBottlesPerWeek ?? 0) : 0,
+  }
+  onResult(waterResult.score, plasticData)
   }
 
   const showPlasticQuestions =

@@ -234,6 +234,10 @@ export function calculateCarbonFootprint(
   dietData?: {
     redMeatFrequency: number // 0-4 scale
     processedMeatFrequency: number
+  },
+  // Optional: pass in water data for plastic consumption impact
+  waterData?: {
+    plasticBottlesPerWeek: number
   }
 ): CarbonResult {
   const {
@@ -330,6 +334,13 @@ export function calculateCarbonFootprint(
     consumptionEmissions += processedServings * 0.1 * 12
   }
 
+  // Add plastic bottle impact if available (from water assessment)
+  // Each plastic bottle ~82g CO2 (production + transport) per EPA/lifecycle analysis
+  if (waterData && waterData.plasticBottlesPerWeek > 0) {
+    const bottlesPerYear = waterData.plasticBottlesPerWeek * 52
+    consumptionEmissions += bottlesPerYear * 0.082 // 82g = 0.082kg per bottle
+  }
+
   consumptionEmissions = Math.max(0, consumptionEmissions)
 
   // --- TOTALS ---
@@ -407,6 +418,16 @@ export function calculateCarbonFootprint(
   if (recyclingHabit === "none" || recyclingHabit === "some") {
     recommendations.push(
       "Improving recycling habits can reduce your consumption footprint by 200-400 kg CO2/year."
+    )
+  }
+  if (waterData && waterData.plasticBottlesPerWeek >= 7) {
+    recommendations.push(
+      "Switching from plastic bottles to a reusable bottle could save 200+ kg CO2/year and reduce microplastic exposure."
+    )
+  }
+  if (dietData && dietData.redMeatFrequency >= 3) {
+    recommendations.push(
+      "Reducing red meat consumption to 1-2 times per week could save 500+ kg CO2/year."
     )
   }
   if (perCapita <= comparison.parisTarget) {

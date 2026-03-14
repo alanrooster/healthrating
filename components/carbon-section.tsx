@@ -45,6 +45,14 @@ import {
 
 interface CarbonSectionProps {
   onResult: (score: number, totalKgCO2: number) => void
+  dietData?: {
+    redMeatFrequency: number
+    processedMeatFrequency: number
+    fishFrequency: number
+  } | null
+  waterData?: {
+    plasticBottlesPerWeek: number
+  } | null
 }
 
 const STEPS = [
@@ -72,7 +80,7 @@ const COUNTRIES = [
   { code: "default", name: "Other" },
 ]
 
-export function CarbonSection({ onResult }: CarbonSectionProps) {
+export function CarbonSection({ onResult, dietData, waterData }: CarbonSectionProps) {
   const [step, setStep] = useState(1)
   const [result, setResult] = useState<CarbonResult | null>(null)
 
@@ -118,7 +126,18 @@ export function CarbonSection({ onResult }: CarbonSectionProps) {
       composting,
     }
 
-    const calcResult = calculateCarbonFootprint(inputs)
+    // Pass diet data from diet assessment if available
+    const externalDietData = dietData ? {
+      redMeatFrequency: dietData.redMeatFrequency,
+      processedMeatFrequency: dietData.processedMeatFrequency,
+    } : undefined
+
+    // Pass water/plastic data from water assessment if available
+    const externalWaterData = waterData ? {
+      plasticBottlesPerWeek: waterData.plasticBottlesPerWeek,
+    } : undefined
+
+    const calcResult = calculateCarbonFootprint(inputs, externalDietData, externalWaterData)
     setResult(calcResult)
     onResult(calcResult.score, calcResult.totalKgCO2)
   }
@@ -154,6 +173,21 @@ export function CarbonSection({ onResult }: CarbonSectionProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
+            {/* Data integration notice */}
+            {(dietData || waterData) && (
+              <div className="flex items-start gap-2 rounded-lg bg-primary/10 p-3 text-sm">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div className="text-muted-foreground">
+                  <span className="font-medium text-foreground">Integrated data: </span>
+                  {[
+                    dietData && "Diet (meat consumption)",
+                    waterData?.plasticBottlesPerWeek ? "Water (plastic bottles)" : null,
+                  ].filter(Boolean).join(", ")}
+                  {" - automatically included from your other assessments."}
+                </div>
+              </div>
+            )}
+
             {/* Main result */}
             <div className="flex flex-col items-center gap-2 rounded-lg bg-secondary p-6 text-center">
               <span className="text-5xl font-bold text-foreground">
