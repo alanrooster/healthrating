@@ -7,7 +7,9 @@ import {
   Cloud,
   Droplets,
   Dumbbell,
+  Leaf,
   Moon,
+  TreePine,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -25,6 +27,10 @@ import { getScoreColor, getGradeColor } from "@/lib/health-score"
 interface HealthDashboardProps {
   result: OverallHealthResult
   onNavigate: (section: string) => void
+  carbonData?: {
+    score: number
+    totalKgCO2: number
+  }
 }
 
 const MODULE_META: Record<
@@ -41,7 +47,7 @@ const MODULE_META: Record<
   mentalHealth: { label: "Mental Health", icon: Brain, section: "mental" },
 }
 
-export function HealthDashboard({ result, onNavigate }: HealthDashboardProps) {
+export function HealthDashboard({ result, onNavigate, carbonData }: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
     result
 
@@ -159,6 +165,51 @@ export function HealthDashboard({ result, onNavigate }: HealthDashboardProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Carbon Footprint Card */}
+      <button
+        type="button"
+        onClick={() => onNavigate("carbon")}
+        className="text-left transition-shadow hover:shadow-md w-full"
+      >
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="flex items-center justify-between gap-4 py-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Leaf className="h-7 w-7 text-primary" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Carbon Footprint
+                </span>
+                {carbonData ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-foreground">
+                      {(carbonData.totalKgCO2 / 1000).toFixed(1)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">tonnes CO2e/year</span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Calculate your environmental impact
+                  </span>
+                )}
+              </div>
+            </div>
+            {carbonData && (
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <TreePine className="h-4 w-4" />
+                  <span>{Math.ceil(carbonData.totalKgCO2 / 22)} trees to offset</span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Paris target: 2.0t
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </button>
 
       {/* Module Score Cards */}
       <div className="grid gap-4 sm:grid-cols-2">

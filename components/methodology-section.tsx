@@ -318,6 +318,54 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
+            Carbon Footprint (Environmental Impact)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Calculates annual CO2 equivalent emissions based on transportation,
+            home energy, and consumption patterns. Separate from the health score
+            as it measures environmental rather than personal health impact.
+          </p>
+          <p>
+            <strong>Components assessed:</strong>
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Transportation:</strong> Daily commute method, car type
+              and annual mileage, public transit usage. Emission factors from
+              UK DEFRA 2024 and EPA.
+            </li>
+            <li>
+              <strong>Flights:</strong> Short-haul and long-haul flights per
+              year. Includes radiative forcing multiplier (2.7x) for high-altitude
+              emissions per IPCC methodology.
+            </li>
+            <li>
+              <strong>Home Energy:</strong> Housing type/size, heating source,
+              electricity source, cooling usage, adjusted for country-specific
+              grid carbon intensity (IEA 2024).
+            </li>
+            <li>
+              <strong>Consumption:</strong> Clothing purchases, electronics,
+              recycling habits, composting.
+            </li>
+          </ul>
+          <p>
+            Results compared to Paris Agreement 2050 target (2.0 tonnes/person),
+            global average (4.7t), EU average (6.8t), and US average (14.7t).
+          </p>
+          <p className="text-xs">
+            Sources: IPCC AR6 (2023), UK DEFRA Conversion Factors (2024),
+            EPA GHG Equivalencies, IEA World Energy Outlook (2024), Our World
+            in Data Carbon Database.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
             Overall Health Score
           </CardTitle>
         </CardHeader>

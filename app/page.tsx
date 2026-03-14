@@ -13,6 +13,7 @@ import { ExerciseSection } from "@/components/exercise-section"
 import { WorkSection } from "@/components/work-section"
 import { LifestyleSection } from "@/components/lifestyle-section"
 import { MentalHealthSection } from "@/components/mental-health-section"
+import { CarbonSection } from "@/components/carbon-section"
 import { MethodologySection } from "@/components/methodology-section"
 import {
   calculateOverallHealth,
@@ -58,6 +59,11 @@ export default function Page() {
     ...EMPTY_SCORE,
     label: "Mental Health",
   })
+
+  // Carbon footprint (separate from health scores)
+  const [carbonCompleted, setCarbonCompleted] = useState(false)
+  const [carbonScore, setCarbonScore] = useState(0)
+  const [totalCO2, setTotalCO2] = useState(0)
 
   const scores: HealthScores = useMemo(
     () => ({
@@ -107,6 +113,12 @@ export default function Page() {
     setMentalHealthScore({ score, completed: true, label: "Mental Health" })
   }
 
+  function handleCarbonResult(score: number, kgCO2: number) {
+    setCarbonScore(score)
+    setCarbonCompleted(true)
+    setTotalCO2(kgCO2)
+  }
+
   function renderSection() {
     switch (activeSection) {
       case "dashboard":
@@ -114,6 +126,7 @@ export default function Page() {
           <HealthDashboard
             result={overallResult}
             onNavigate={setActiveSection}
+            carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
           />
         )
       case "body":
@@ -132,6 +145,8 @@ export default function Page() {
         return <LifestyleSection onResult={handleLifestyleResult} />
       case "mental":
         return <MentalHealthSection onResult={handleMentalHealthResult} />
+      case "carbon":
+        return <CarbonSection onResult={handleCarbonResult} />
       case "methodology":
         return <MethodologySection />
       default:
@@ -154,6 +169,7 @@ export default function Page() {
     work: "Work Assessment",
     lifestyle: "Lifestyle Assessment",
     mental: "Mental Health Screening",
+    carbon: "Carbon Footprint",
     methodology: "Methodology",
   }
 
@@ -163,6 +179,8 @@ export default function Page() {
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         scores={scores}
+        carbonCompleted={carbonCompleted}
+        carbonScore={carbonScore}
       />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-4">

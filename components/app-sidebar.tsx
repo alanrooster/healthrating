@@ -10,6 +10,7 @@ import {
   Dumbbell,
   Heart,
   Info,
+  Leaf,
   Moon,
   UtensilsCrossed,
 } from "lucide-react"
@@ -33,6 +34,8 @@ interface AppSidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
   scores: HealthScores
+  carbonCompleted?: boolean
+  carbonScore?: number
 }
 
 const NAV_ITEMS = [
@@ -45,6 +48,7 @@ const NAV_ITEMS = [
   { id: "work", label: "Work", icon: Briefcase },
   { id: "lifestyle", label: "Lifestyle", icon: Moon },
   { id: "mental", label: "Mental Health", icon: Brain },
+  { id: "carbon", label: "Carbon Footprint", icon: Leaf },
 ]
 
 function getScoreBadgeClass(score: number): string {
@@ -58,6 +62,8 @@ export function AppSidebar({
   activeSection,
   onSectionChange,
   scores,
+  carbonCompleted,
+  carbonScore,
 }: AppSidebarProps) {
   const scoreMap: Record<string, { score: number; completed: boolean }> = {
     body: scores.body,
@@ -68,6 +74,7 @@ export function AppSidebar({
     work: scores.work,
     lifestyle: scores.lifestyle,
     mental: scores.mentalHealth,
+    carbon: { score: carbonScore ?? 0, completed: carbonCompleted ?? false },
   }
 
   return (
