@@ -20,6 +20,7 @@ import {
   type HealthScores,
   type ModuleScore,
 } from "@/lib/health-score"
+import { calculateLifeExpectancy, type LifeExpectancyInputs } from "@/lib/life-expectancy-calculator"
 
 const EMPTY_SCORE: ModuleScore = { score: 0, completed: false, label: "" }
 
@@ -101,6 +102,42 @@ export default function Page() {
 
   const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
 
+  // Calculate life expectancy based on all available data
+  const lifeExpectancyData = useMemo(() => {
+    // Only calculate if we have at least one completed assessment
+    const hasData = Object.values(scores).some(s => s.completed)
+    if (!hasData) return undefined
+
+    const inputs: LifeExpectancyInputs = {
+      bodyScore: bodyScore.completed ? bodyScore.score : undefined,
+      airQualityScore: airScore.completed ? airScore.score : undefined,
+      waterQualityScore: waterScore.completed ? waterScore.score : undefined,
+      dietScore: dietScore.completed ? dietScore.score : undefined,
+      exerciseScore: exerciseScore.completed ? exerciseScore.score : undefined,
+      workScore: workScore.completed ? workScore.score : undefined,
+      lifestyleScore: lifestyleScore.completed ? lifestyleScore.score : undefined,
+      mentalHealthScore: mentalHealthScore.completed ? mentalHealthScore.score : undefined,
+      smokingStatus: lifestyleData?.smokingStatus,
+      alcoholFrequency: lifestyleData?.alcoholFrequency,
+      processedMeatFrequency: dietData?.processedMeatFrequency,
+    }
+
+    const result = calculateLifeExpectancy(inputs)
+    
+    return {
+      adjustedYears: result.adjustedYears,
+      totalAdjustment: result.totalAdjustment,
+      percentile: result.percentile,
+      potentialGain: result.potentialGain,
+      confidence: result.confidence,
+      topFactors: result.adjustments.slice(0, 4).map(a => ({
+        factor: a.factor,
+        years: a.years,
+        direction: a.direction as "positive" | "negative",
+      })),
+    }
+  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifestyleData, dietData])
+
   function handleBodyResult(score: number) {
     setBodyScore({ score, completed: true, label: "Body Composition" })
   }
@@ -159,6 +196,7 @@ export default function Page() {
             result={overallResult}
             onNavigate={setActiveSection}
             carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
+            lifeExpectancyData={lifeExpectancyData}
           />
         )
       case "body":

@@ -7,8 +7,12 @@ import {
   Cloud,
   Droplets,
   Dumbbell,
+  Heart,
   Leaf,
   Moon,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
   TreePine,
   UtensilsCrossed,
 } from "lucide-react"
@@ -24,6 +28,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { OverallHealthResult } from "@/lib/health-score"
 import { getScoreColor, getGradeColor } from "@/lib/health-score"
 
+interface LifeExpectancyData {
+  adjustedYears: number
+  totalAdjustment: number
+  percentile: number
+  potentialGain: number
+  confidence: "low" | "medium" | "high"
+  topFactors: { factor: string; years: number; direction: "positive" | "negative" }[]
+}
+
 interface HealthDashboardProps {
   result: OverallHealthResult
   onNavigate: (section: string) => void
@@ -31,6 +44,7 @@ interface HealthDashboardProps {
     score: number
     totalKgCO2: number
   }
+  lifeExpectancyData?: LifeExpectancyData
 }
 
 const MODULE_META: Record<
@@ -47,7 +61,7 @@ const MODULE_META: Record<
   mentalHealth: { label: "Mental Health", icon: Brain, section: "mental" },
 }
 
-export function HealthDashboard({ result, onNavigate, carbonData }: HealthDashboardProps) {
+export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData }: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
     result
 
@@ -165,6 +179,87 @@ export function HealthDashboard({ result, onNavigate, carbonData }: HealthDashbo
           </CardContent>
         </Card>
       </div>
+
+      {/* Life Expectancy Card */}
+      <Card className="border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent">
+        <CardContent className="py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-rose-500/10">
+                <Heart className="h-7 w-7 text-rose-500" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Estimated Life Expectancy
+                </span>
+                {lifeExpectancyData ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-foreground">
+                      {lifeExpectancyData.adjustedYears.toFixed(0)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">years</span>
+                    {lifeExpectancyData.totalAdjustment !== 0 && (
+                      <span className={`flex items-center gap-0.5 text-sm font-medium ${
+                        lifeExpectancyData.totalAdjustment > 0 ? "text-emerald-500" : "text-rose-500"
+                      }`}>
+                        {lifeExpectancyData.totalAdjustment > 0 ? (
+                          <TrendingUp className="h-4 w-4" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4" />
+                        )}
+                        {lifeExpectancyData.totalAdjustment > 0 ? "+" : ""}
+                        {lifeExpectancyData.totalAdjustment.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Complete assessments to estimate
+                  </span>
+                )}
+              </div>
+            </div>
+            {lifeExpectancyData && (
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="text-muted-foreground">Top {lifeExpectancyData.percentile}%</span>
+                </div>
+                {lifeExpectancyData.potentialGain > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-emerald-500">
+                    <Sparkles className="h-3 w-3" />
+                    <span>+{lifeExpectancyData.potentialGain.toFixed(0)}y potential</span>
+                  </div>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  Confidence: {lifeExpectancyData.confidence}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Top factors */}
+          {lifeExpectancyData && lifeExpectancyData.topFactors.length > 0 && (
+            <div className="mt-4 border-t border-border pt-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Key factors affecting your estimate:</p>
+              <div className="flex flex-wrap gap-2">
+                {lifeExpectancyData.topFactors.slice(0, 4).map((f) => (
+                  <span
+                    key={f.factor}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      f.direction === "positive"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "bg-rose-500/10 text-rose-600"
+                    }`}
+                  >
+                    {f.direction === "positive" ? "+" : ""}
+                    {f.years.toFixed(1)}y {f.factor}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Carbon Footprint Card */}
       <button
