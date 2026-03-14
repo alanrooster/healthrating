@@ -31,6 +31,9 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface LifestyleSectionProps {
   onResult: (score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) => void
+  storedResult?: LifestyleResult | null
+  onStoreResult?: (result: LifestyleResult) => void
+  onRetake?: () => void
 }
 
 const DEFAULT_ANSWERS: LifestyleAnswers = {
@@ -262,9 +265,9 @@ const QUESTION_GROUPS: QuestionGroup[] = [
   },
 ]
 
-export function LifestyleSection({ onResult }: LifestyleSectionProps) {
+export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake }: LifestyleSectionProps) {
   const [answers, setAnswers] = useState<LifestyleAnswers>(DEFAULT_ANSWERS)
-  const [result, setResult] = useState<LifestyleResult | null>(null)
+  const [result, setResult] = useState<LifestyleResult | null>(storedResult ?? null)
   const [currentGroup, setCurrentGroup] = useState(0)
 
   function updateAnswer(id: keyof LifestyleAnswers, value: string | number) {
@@ -286,6 +289,7 @@ export function LifestyleSection({ onResult }: LifestyleSectionProps) {
   function handleCalculate() {
     const r = calculateLifestyle(answers)
     setResult(r)
+    onStoreResult?.(r)
     // Pass smoking and alcohol data to carbon calculator
     const lifestyleExtras = {
       smokingStatus: answers.smokingStatus,
@@ -293,6 +297,13 @@ export function LifestyleSection({ onResult }: LifestyleSectionProps) {
       alcoholUnitsPerSession: answers.alcoholUnitsPerSession,
     }
     onResult(r.overallScore, lifestyleExtras)
+  }
+
+  function handleRetake() {
+    setAnswers(DEFAULT_ANSWERS)
+    setResult(null)
+    setCurrentGroup(0)
+    onRetake?.()
   }
 
   function handleReset() {
@@ -413,7 +424,7 @@ export function LifestyleSection({ onResult }: LifestyleSectionProps) {
           </div>
         </>
       ) : (
-        <LifestyleResults result={result} onReset={handleReset} />
+        <LifestyleResults result={result} onReset={handleRetake} />
       )}
     </div>
   )

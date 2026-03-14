@@ -1,10 +1,12 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import type { BMIResult } from "@/lib/bmi-calculator"
 
 interface BMIResultsProps {
   result: BMIResult
+  onRetake?: () => void
 }
 
 function BMIGauge({ bmi }: { bmi: number }) {
@@ -125,7 +127,7 @@ function MetricCard({
   )
 }
 
-export function BMIResults({ result }: BMIResultsProps) {
+export function BMIResults({ result, onRetake }: BMIResultsProps) {
   const {
     bmi,
     compositeScore,
@@ -300,6 +302,13 @@ export function BMIResults({ result }: BMIResultsProps) {
             </ul>
           </CardContent>
         </Card>
+      )}
+
+      {/* Retake Button */}
+      {onRetake && (
+        <Button variant="outline" onClick={onRetake} className="self-start">
+          Retake Assessment
+        </Button>
       )}
 
       {/* Disclaimer */}

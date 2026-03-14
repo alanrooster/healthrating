@@ -63,6 +63,9 @@ interface CarbonSectionProps {
   airData?: {
     country: string
   } | null
+  storedResult?: CarbonResult | null
+  onStoreResult?: (result: CarbonResult) => void
+  onRetake?: () => void
 }
 
 const STEPS = [
@@ -90,9 +93,9 @@ const COUNTRIES = [
   { code: "default", name: "Other" },
 ]
 
-export function CarbonSection({ onResult, dietData, waterData, lifestyleData, airData }: CarbonSectionProps) {
+export function CarbonSection({ onResult, dietData, waterData, lifestyleData, airData, storedResult, onStoreResult, onRetake }: CarbonSectionProps) {
   const [step, setStep] = useState(1)
-  const [result, setResult] = useState<CarbonResult | null>(null)
+  const [result, setResult] = useState<CarbonResult | null>(storedResult ?? null)
 
   // Form state
   const [commuteMethod, setCommuteMethod] = useState<CommuteMethod>("car")
@@ -162,6 +165,7 @@ export function CarbonSection({ onResult, dietData, waterData, lifestyleData, ai
 
     const calcResult = calculateCarbonFootprint(inputs, externalDietData, externalWaterData, externalLifestyleData, externalAirData)
     setResult(calcResult)
+    onStoreResult?.(calcResult)
     onResult(calcResult.score, calcResult.totalKgCO2)
   }
 
@@ -182,6 +186,7 @@ export function CarbonSection({ onResult, dietData, waterData, lifestyleData, ai
   function handleReset() {
     setResult(null)
     setStep(1)
+    onRetake?.()
   }
 
   // Render results

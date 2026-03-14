@@ -36,6 +36,9 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface DietSectionProps {
   onResult: (score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number; alcoholFrequency: number }) => void
+  storedResult?: DietResult | null
+  onStoreResult?: (result: DietResult) => void
+  onRetake?: () => void
 }
 
 // Group questions into logical steps with IARC classification awareness
@@ -86,10 +89,10 @@ const IARC_GROUP_COLORS = {
   "2B": "hsl(45, 93%, 47%)", // yellow
 }
 
-export function DietSection({ onResult }: DietSectionProps) {
+export function DietSection({ onResult, storedResult, onStoreResult, onRetake }: DietSectionProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<DietAnswers>({})
-  const [result, setResult] = useState<DietResult | null>(null)
+  const [result, setResult] = useState<DietResult | null>(storedResult ?? null)
 
   const totalSteps = STEPS.length
   const step = STEPS[currentStep]
@@ -125,6 +128,7 @@ export function DietSection({ onResult }: DietSectionProps) {
     if (!allAnswered) return
     const dietResult = calculateDietScore(answers)
     setResult(dietResult)
+    onStoreResult?.(dietResult)
     // Pass meat and alcohol consumption data to carbon calculator
     const meatData = {
       redMeatFrequency: answers.red_meat ?? 0,
@@ -139,6 +143,7 @@ export function DietSection({ onResult }: DietSectionProps) {
     setAnswers({})
     setResult(null)
     setCurrentStep(0)
+    onRetake?.()
   }
 
   if (result) {

@@ -16,6 +16,9 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface ExerciseSectionProps {
   onResult: (score: number) => void
+  storedResult?: ExerciseResult | null
+  onStoreResult?: (result: ExerciseResult) => void
+  onRetake?: () => void
 }
 
 const DEFAULT_INPUTS: ExerciseInputs = {
@@ -32,9 +35,9 @@ const DEFAULT_INPUTS: ExerciseInputs = {
   sedentaryHours: 8,
 }
 
-export function ExerciseSection({ onResult }: ExerciseSectionProps) {
+export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetake }: ExerciseSectionProps) {
   const [inputs, setInputs] = useState<ExerciseInputs>(DEFAULT_INPUTS)
-  const [result, setResult] = useState<ExerciseResult | null>(null)
+  const [result, setResult] = useState<ExerciseResult | null>(storedResult ?? null)
 
   const groups = useMemo(() => {
     const g: Record<string, typeof EXERCISE_QUESTIONS> = {}
@@ -57,12 +60,14 @@ export function ExerciseSection({ onResult }: ExerciseSectionProps) {
   function handleCalculate() {
     const exResult = calculateExerciseScore(inputs)
     setResult(exResult)
+    onStoreResult?.(exResult)
     onResult(exResult.score)
   }
 
   function handleReset() {
     setInputs(DEFAULT_INPUTS)
     setResult(null)
+    onRetake?.()
   }
 
   return (

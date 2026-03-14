@@ -24,13 +24,16 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface AirQualitySectionProps {
   onResult: (score: number, countryData?: { country: string }) => void
+  storedResult?: AirQualityResult | null
+  onStoreResult?: (result: AirQualityResult) => void
+  onRetake?: () => void
 }
 
-export function AirQualitySection({ onResult }: AirQualitySectionProps) {
+export function AirQualitySection({ onResult, storedResult, onStoreResult, onRetake }: AirQualitySectionProps) {
   const [continent, setContinent] = useState("")
   const [country, setCountry] = useState("")
   const [cityName, setCityName] = useState("")
-  const [result, setResult] = useState<AirQualityResult | null>(null)
+  const [result, setResult] = useState<AirQualityResult | null>(storedResult ?? null)
 
   const continents = useMemo(() => getContinents(), [])
   const countries = useMemo(() => (continent ? getCountries(continent) : []), [continent])
@@ -54,7 +57,16 @@ export function AirQualitySection({ onResult }: AirQualitySectionProps) {
     if (!selectedCity) return
     const aqResult = scoreAirQuality(selectedCity)
     setResult(aqResult)
+    onStoreResult?.(aqResult)
     onResult(aqResult.score, { country })
+  }
+
+  function handleRetake() {
+    setResult(null)
+    setContinent("")
+    setCountry("")
+    setCityName("")
+    onRetake?.()
   }
 
   return (
@@ -146,12 +158,12 @@ export function AirQualitySection({ onResult }: AirQualitySectionProps) {
       </Card>
 
       {/* Results */}
-      {result && <AirQualityResults result={result} />}
+      {result && <AirQualityResults result={result} onRetake={handleRetake} />}
     </div>
   )
 }
 
-function AirQualityResults({ result }: { result: AirQualityResult }) {
+function AirQualityResults({ result, onRetake }: { result: AirQualityResult; onRetake?: () => void }) {
   const { city, score, category, healthImpact, whoGuideline, ratio } = result
   const isGood = score >= 70
 
@@ -235,6 +247,12 @@ function AirQualityResults({ result }: { result: AirQualityResult }) {
           </div>
         </CardContent>
       </Card>
+
+      {onRetake && (
+        <Button variant="outline" onClick={onRetake} className="self-start">
+          Retake Assessment
+        </Button>
+      )}
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Data based on WHO Global Air Quality Database and IQAir World Air

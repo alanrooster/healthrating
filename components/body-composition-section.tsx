@@ -12,19 +12,28 @@ import { bmiToHealthScore } from "@/lib/health-score"
 
 interface BodyCompositionSectionProps {
   onResult: (score: number) => void
+  storedResult?: BMIResult | null
+  onStoreResult?: (result: BMIResult) => void
+  onRetake?: () => void
 }
 
-export function BodyCompositionSection({ onResult }: BodyCompositionSectionProps) {
-  const [result, setResult] = useState<BMIResult | null>(null)
+export function BodyCompositionSection({ onResult, storedResult, onStoreResult, onRetake }: BodyCompositionSectionProps) {
+  const [result, setResult] = useState<BMIResult | null>(storedResult ?? null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
   function handleCalculate(measurements: BodyMeasurements) {
     const bmiResult = calculateBMI(measurements)
     setResult(bmiResult)
+    onStoreResult?.(bmiResult)
     onResult(bmiToHealthScore(bmiResult.compositeScore))
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }, 100)
+  }
+
+  function handleRetake() {
+    setResult(null)
+    onRetake?.()
   }
 
   return (
@@ -43,7 +52,7 @@ export function BodyCompositionSection({ onResult }: BodyCompositionSectionProps
 
       {result && (
         <div ref={resultsRef}>
-          <BMIResults result={result} />
+          <BMIResults result={result} onRetake={handleRetake} />
         </div>
       )}
     </div>

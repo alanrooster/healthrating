@@ -45,6 +45,9 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface WorkSectionProps {
   onResult: (score: number) => void
+  storedResult?: WorkResult | null
+  onStoreResult?: (result: WorkResult) => void
+  onRetake?: () => void
 }
 
 const DEFAULT_ANSWERS: WorkAnswers = {
@@ -136,9 +139,9 @@ const SUPPORT_OPTIONS = [
   { value: "never", label: "Never" },
 ]
 
-export function WorkSection({ onResult }: WorkSectionProps) {
+export function WorkSection({ onResult, storedResult, onStoreResult, onRetake }: WorkSectionProps) {
   const [answers, setAnswers] = useState<WorkAnswers>(DEFAULT_ANSWERS)
-  const [result, setResult] = useState<WorkResult | null>(null)
+  const [result, setResult] = useState<WorkResult | null>(storedResult ?? null)
   const [step, setStep] = useState<StepType>("status")
 
   function updateAnswer<K extends keyof WorkAnswers>(id: K, value: WorkAnswers[K]) {
@@ -186,15 +189,18 @@ export function WorkSection({ onResult }: WorkSectionProps) {
     }
   }
 
-  function handleCalculate() {
-    const r = calculateWork(answers)
-    setResult(r)
-    onResult(r.overallScore)
+function handleCalculate() {
+  const r = calculateWork(answers)
+  setResult(r)
+  onStoreResult?.(r)
+  onResult(r.overallScore)
   }
-
+  
   function handleReset() {
-    setAnswers(DEFAULT_ANSWERS)
-    setResult(null)
+  setAnswers(DEFAULT_ANSWERS)
+  setResult(null)
+  setStep("status")
+  onRetake?.()
     setStep("status")
   }
 

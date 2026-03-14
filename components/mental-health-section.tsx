@@ -30,6 +30,9 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface MentalHealthSectionProps {
   onResult: (score: number) => void
+  storedResult?: MentalHealthResult | null
+  onStoreResult?: (result: MentalHealthResult) => void
+  onRetake?: () => void
 }
 
 const DEFAULT_ANSWERS: MentalHealthAnswers = {
@@ -139,9 +142,9 @@ const QUESTION_GROUPS: QuestionGroup[] = [
   },
 ]
 
-export function MentalHealthSection({ onResult }: MentalHealthSectionProps) {
+export function MentalHealthSection({ onResult, storedResult, onStoreResult, onRetake }: MentalHealthSectionProps) {
   const [answers, setAnswers] = useState<MentalHealthAnswers>(DEFAULT_ANSWERS)
-  const [result, setResult] = useState<MentalHealthResult | null>(null)
+  const [result, setResult] = useState<MentalHealthResult | null>(storedResult ?? null)
   const [currentGroup, setCurrentGroup] = useState(0)
 
   function updateAnswer(id: keyof MentalHealthAnswers, value: string) {
@@ -160,15 +163,18 @@ export function MentalHealthSection({ onResult }: MentalHealthSectionProps) {
     }
   }
 
-  function handleCalculate() {
-    const r = calculateMentalHealth(answers)
-    setResult(r)
-    onResult(r.overallScore)
+function handleCalculate() {
+  const r = calculateMentalHealth(answers)
+  setResult(r)
+  onStoreResult?.(r)
+  onResult(r.overallScore)
   }
-
+  
   function handleReset() {
-    setAnswers(DEFAULT_ANSWERS)
-    setResult(null)
+  setAnswers(DEFAULT_ANSWERS)
+  setResult(null)
+  setCurrentGroup(0)
+  onRetake?.()
     setCurrentGroup(0)
   }
 

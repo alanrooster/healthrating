@@ -86,6 +86,22 @@ export default function Page() {
     country: string
   } | null>(null)
 
+  // Store full results for each section to persist when navigating
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [storedResults, setStoredResults] = useState<Record<string, any>>({})
+
+  function storeResult(key: string, result: unknown) {
+    setStoredResults(prev => ({ ...prev, [key]: result }))
+  }
+
+  function clearResult(key: string) {
+    setStoredResults(prev => {
+      const newResults = { ...prev }
+      delete newResults[key]
+      return newResults
+    })
+  }
+
   const scores: HealthScores = useMemo(
     () => ({
       body: bodyScore,
@@ -200,21 +216,21 @@ export default function Page() {
           />
         )
       case "body":
-        return <BodyCompositionSection onResult={handleBodyResult} />
+        return <BodyCompositionSection onResult={handleBodyResult} storedResult={storedResults.body} onStoreResult={(r) => storeResult("body", r)} onRetake={() => clearResult("body")} />
       case "air":
-        return <AirQualitySection onResult={handleAirResult} />
+        return <AirQualitySection onResult={handleAirResult} storedResult={storedResults.air} onStoreResult={(r) => storeResult("air", r)} onRetake={() => clearResult("air")} />
       case "water":
-        return <WaterSection onResult={handleWaterResult} />
+        return <WaterSection onResult={handleWaterResult} storedResult={storedResults.water} onStoreResult={(r) => storeResult("water", r)} onRetake={() => clearResult("water")} />
       case "diet":
-        return <DietSection onResult={handleDietResult} />
+        return <DietSection onResult={handleDietResult} storedResult={storedResults.diet} onStoreResult={(r) => storeResult("diet", r)} onRetake={() => clearResult("diet")} />
       case "exercise":
-        return <ExerciseSection onResult={handleExerciseResult} />
+        return <ExerciseSection onResult={handleExerciseResult} storedResult={storedResults.exercise} onStoreResult={(r) => storeResult("exercise", r)} onRetake={() => clearResult("exercise")} />
       case "work":
-        return <WorkSection onResult={handleWorkResult} />
+        return <WorkSection onResult={handleWorkResult} storedResult={storedResults.work} onStoreResult={(r) => storeResult("work", r)} onRetake={() => clearResult("work")} />
       case "lifestyle":
-        return <LifestyleSection onResult={handleLifestyleResult} />
+        return <LifestyleSection onResult={handleLifestyleResult} storedResult={storedResults.lifestyle} onStoreResult={(r) => storeResult("lifestyle", r)} onRetake={() => clearResult("lifestyle")} />
       case "mental":
-        return <MentalHealthSection onResult={handleMentalHealthResult} />
+        return <MentalHealthSection onResult={handleMentalHealthResult} storedResult={storedResults.mental} onStoreResult={(r) => storeResult("mental", r)} onRetake={() => clearResult("mental")} />
       case "carbon":
         return (
           <CarbonSection
@@ -223,6 +239,9 @@ export default function Page() {
             waterData={waterData}
             lifestyleData={lifestyleData}
             airData={airData}
+            storedResult={storedResults.carbon}
+            onStoreResult={(r) => storeResult("carbon", r)}
+            onRetake={() => clearResult("carbon")}
           />
         )
       case "methodology":

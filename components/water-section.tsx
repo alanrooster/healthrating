@@ -48,6 +48,9 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface WaterSectionProps {
   onResult: (score: number, plasticData?: { plasticBottlesPerWeek: number; primarySourceBottled: boolean }) => void
+  storedResult?: WaterResult | null
+  onStoreResult?: (result: WaterResult) => void
+  onRetake?: () => void
 }
 
 const SOURCE_OPTIONS: { value: WaterSource; label: string; desc: string }[] = [
@@ -125,16 +128,16 @@ const STEP_INFO = [
   { title: "Daily Intake", icon: GlassWater },
 ]
 
-export function WaterSection({ onResult }: WaterSectionProps) {
+export function WaterSection({ onResult, storedResult, onStoreResult, onRetake }: WaterSectionProps) {
   const countries = useMemo(() => getWaterCountries(), [])
-
+  
   const [answers, setAnswers] = useState<Partial<WaterAnswers>>({
-    filterMaintained: true,
-    plasticBottlesPerWeek: 0,
-    knownPipeIssues: false,
-    recentRenovation: false,
+  filterMaintained: true,
+  plasticBottlesPerWeek: 0,
+  knownPipeIssues: false,
+  recentRenovation: false,
   })
-  const [result, setResult] = useState<WaterResult | null>(null)
+  const [result, setResult] = useState<WaterResult | null>(storedResult ?? null)
   const [step, setStep] = useState(0)
 
   const updateAnswer = <K extends keyof WaterAnswers>(key: K, value: WaterAnswers[K]) => {
@@ -185,12 +188,25 @@ function handleCalculate() {
   if (!canProceed(4)) return
   const waterResult = calculateWaterQuality(answers as WaterAnswers)
   setResult(waterResult)
+  onStoreResult?.(waterResult)
   // Pass plastic bottle data to carbon calculator
   const plasticData = {
     plasticBottlesPerWeek: answers.bottleType === "plastic" ? (answers.plasticBottlesPerWeek ?? 0) : 0,
     primarySourceBottled: answers.primarySource === "bottled-only" || answers.bottledFrequency === "primary",
   }
   onResult(waterResult.score, plasticData)
+  }
+
+  function handleRetake() {
+    setResult(null)
+    setAnswers({
+      filterMaintained: true,
+      plasticBottlesPerWeek: 0,
+      knownPipeIssues: false,
+      recentRenovation: false,
+    })
+    setStep(0)
+    onRetake?.()
   }
 
   const showPlasticQuestions =
@@ -288,7 +304,7 @@ function handleCalculate() {
             </CardContent>
           </Card>
 
-          <Button variant="outline" onClick={() => { setResult(null); setStep(0) }}>
+          <Button variant="outline" onClick={handleRetake}>
             Retake Assessment
           </Button>
         </div>
