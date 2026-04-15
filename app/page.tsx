@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { Menu } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { BodyCompositionSection } from "@/components/body-composition-section"
@@ -23,6 +25,38 @@ import {
 import { calculateLifeExpectancy, type LifeExpectancyInputs } from "@/lib/life-expectancy-calculator"
 
 const EMPTY_SCORE: ModuleScore = { score: 0, completed: false, label: "" }
+
+function PageHeader({ title }: { title: string }) {
+  const { toggleSidebar, isMobile } = useSidebar()
+
+  return (
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
+      {isMobile ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleSidebar}
+          className="-ml-1 flex items-center gap-2"
+        >
+          <Menu className="h-4 w-4" />
+          <span>Menu</span>
+        </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="-ml-1 h-7 w-7"
+        >
+          <Menu className="h-4 w-4" />
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      )}
+      <Separator orientation="vertical" className="mr-2 h-4" />
+      <span className="text-sm font-medium text-foreground">{title}</span>
+    </header>
+  )
+}
 
 export default function Page() {
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -280,13 +314,7 @@ export default function Page() {
         carbonScore={carbonScore}
       />
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <span className="text-sm font-medium text-foreground">
-            {sectionTitles[activeSection] ?? "Dashboard"}
-          </span>
-        </header>
+        <PageHeader title={sectionTitles[activeSection] ?? "Dashboard"} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-4xl">{renderSection()}</div>
         </main>

@@ -48,6 +48,9 @@ const NAV_ITEMS = [
   { id: "work", label: "Work", icon: Briefcase },
   { id: "lifestyle", label: "Lifestyle", icon: Moon },
   { id: "mental", label: "Mental Health", icon: Brain },
+]
+
+const EXTRAS_ITEMS = [
   { id: "carbon", label: "Carbon Footprint", icon: Leaf },
 ]
 
@@ -105,6 +108,39 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV_ITEMS.map((item) => {
+                const isActive = activeSection === item.id
+                const moduleScore = scoreMap[item.id]
+                const Icon = item.icon
+
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => onSectionChange(item.id)}
+                      tooltip={item.label}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                    {moduleScore?.completed && (
+                      <SidebarMenuBadge
+                        className={`${getScoreBadgeClass(moduleScore.score)} rounded-full px-2 text-xs font-bold`}
+                      >
+                        {moduleScore.score}
+                      </SidebarMenuBadge>
+                    )}
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Extras</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {EXTRAS_ITEMS.map((item) => {
                 const isActive = activeSection === item.id
                 const moduleScore = scoreMap[item.id]
                 const Icon = item.icon
