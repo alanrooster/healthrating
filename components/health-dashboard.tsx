@@ -52,7 +52,7 @@ interface HealthDashboardProps {
 
 const MODULE_META: Record<
   string,
-  { label: string; icon: React.ComponentType<{ className?: string }>; section: string }
+  { label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; section: string }
 > = {
   body: { label: "Body Composition", icon: Activity, section: "body" },
   airQuality: { label: "Air Quality", icon: Cloud, section: "air" },
