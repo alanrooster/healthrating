@@ -25,11 +25,13 @@
  */
 
 export interface LifestyleAnswers {
-  // Sleep
+  // Sleep (PSQI-aligned)
   sleepHoursPerNight: number // 0-12+
   sleepQuality: "very-good" | "good" | "fair" | "poor" | "very-poor"
   sleepDifficulty: "never" | "rarely" | "sometimes" | "often" | "always" // falling/staying asleep
   sleepScheduleConsistency: "very-consistent" | "consistent" | "somewhat" | "inconsistent" | "very-inconsistent"
+  sleepLatencyMinutes: number // PSQI: time to fall asleep (mins)
+  daytimeDysfunction: "never" | "rarely" | "sometimes" | "often" | "always" // PSQI: trouble staying awake/motivation
 
   // Social & Balance
   socialFrequency: "daily" | "several-weekly" | "weekly" | "monthly" | "rarely"
@@ -40,6 +42,15 @@ export interface LifestyleAnswers {
   screenTimeHours: number // 0-12+ (recreational, non-work)
   outdoorTimeMinutes: number // daily outdoor/nature time
   hobbiesEngagement: "daily" | "several-weekly" | "weekly" | "monthly" | "rarely"
+
+  // Sedentary behavior (independent mortality predictor - Patel et al. 2018)
+  sittingHoursPerDay: number // total sitting hours per day
+  sedentaryBreaks: "frequently" | "sometimes" | "rarely" | "never" // breaks every 30-60 min
+
+  // Sun exposure (Vitamin D + skin cancer balance)
+  sunExposureMinutes: number // typical daily direct sun exposure (mins)
+  sunscreenUse: "always" | "usually" | "sometimes" | "rarely" | "never"
+  sunburnsPerYear: number // 0+ (skin cancer risk indicator)
 
   // Substance use
   smokingStatus: "never" | "former" | "occasional" | "daily"
@@ -54,6 +65,8 @@ export interface LifestyleResult {
     sleep: number
     social: number
     leisure: number
+    sedentary: number
+    sun: number
     habits: number
   }
   riskFactors: string[]
@@ -127,15 +140,127 @@ function scoreSleep(answers: LifestyleAnswers): { score: number; risks: string[]
     risks.push("Irregular sleep schedule disrupts circadian rhythm and reduces sleep quality")
   }
 
+  // PSQI sleep latency - >30 mins = problematic
+  let latencyScore = 100
+  const lat = answers.sleepLatencyMinutes
+  if (lat <= 15) latencyScore = 100
+  else if (lat <= 30) latencyScore = 80
+  else if (lat <= 60) latencyScore = 50
+  else latencyScore = 20
+  if (lat > 30) {
+    risks.push(`Sleep latency of ${lat} minutes is elevated - PSQI considers >30 min problematic`)
+  }
+
+  // PSQI daytime dysfunction
+  const dysfunctionPenalty = FREQ_MAP[answers.daytimeDysfunction] * 10
+  const dysfunctionScore = Math.max(0, 100 - dysfunctionPenalty * 2)
+  if (answers.daytimeDysfunction === "often" || answers.daytimeDysfunction === "always") {
+    risks.push("Frequent daytime sleepiness suggests insufficient or poor-quality sleep")
+  }
+
   const score = Math.max(
     0,
     Math.round(
-      durationScore * 0.30 +
-      qualityScore * 0.30 +
-      (100 - difficultyPenalty * 2) * 0.20 +
-      consistencyScore * 0.20
+      durationScore * 0.25 +
+      qualityScore * 0.20 +
+      (100 - difficultyPenalty * 2) * 0.15 +
+      consistencyScore * 0.15 +
+      latencyScore * 0.15 +
+      dysfunctionScore * 0.10
     )
   )
+  return { score, risks }
+}
+
+/**
+ * Sedentary behavior score (0-100)
+ * Patel et al. (2018, 2010): prolonged sitting increases all-cause mortality
+ * INDEPENDENT of exercise. >8h/day sitting ~+40% mortality risk.
+ * Breaking up sitting every 30-60 min reduces metabolic harm.
+ */
+function scoreSedentary(answers: LifestyleAnswers): { score: number; risks: string[] } {
+  const risks: string[] = []
+  const h = answers.sittingHoursPerDay
+
+  let sittingScore: number
+  if (h <= 4) sittingScore = 100
+  else if (h <= 6) sittingScore = 80
+  else if (h <= 8) sittingScore = 55
+  else if (h <= 10) sittingScore = 30
+  else sittingScore = 10
+
+  if (h >= 8) {
+    risks.push(`Sitting ${h}+ hours daily increases all-cause mortality risk independently of exercise (Patel et al. 2018)`)
+  }
+
+  const breaksMap: Record<string, number> = {
+    frequently: 100,
+    sometimes: 70,
+    rarely: 35,
+    never: 10,
+  }
+  const breaksScore = breaksMap[answers.sedentaryBreaks] ?? 50
+
+  if (answers.sedentaryBreaks === "rarely" || answers.sedentaryBreaks === "never") {
+    risks.push("Rarely breaking up sitting time amplifies metabolic and cardiovascular risk")
+  }
+
+  const score = Math.round(sittingScore * 0.7 + breaksScore * 0.3)
+  return { score, risks }
+}
+
+/**
+ * Sun exposure score (0-100)
+ * Balance: enough for vitamin D synthesis, not so much that skin cancer risk rises.
+ * Holick (2007): 10-30 min midday sun on arms/legs several times weekly is generally sufficient.
+ * AAD: regular sunscreen + lifetime sunburns are key skin cancer predictors.
+ */
+function scoreSun(answers: LifestyleAnswers): { score: number; risks: string[] } {
+  const risks: string[] = []
+
+  // Exposure: sweet spot is 10-30 min/day
+  let exposureScore: number
+  const m = answers.sunExposureMinutes
+  if (m < 5) {
+    exposureScore = 30
+    risks.push("Very limited sun exposure increases vitamin D deficiency risk")
+  } else if (m <= 30) {
+    exposureScore = 100
+  } else if (m <= 60) {
+    exposureScore = 75
+  } else if (m <= 120) {
+    exposureScore = 50
+  } else {
+    exposureScore = 25
+    risks.push("Extended unprotected sun exposure raises skin cancer and photoaging risk")
+  }
+
+  // Sunscreen
+  const sunscreenMap: Record<string, number> = {
+    always: 100,
+    usually: 85,
+    sometimes: 60,
+    rarely: 30,
+    never: 10,
+  }
+  const sunscreenScore = sunscreenMap[answers.sunscreenUse] ?? 50
+  if (answers.sunscreenUse === "rarely" || answers.sunscreenUse === "never") {
+    risks.push("Infrequent sunscreen use is a leading modifiable skin cancer risk factor (AAD)")
+  }
+
+  // Sunburns - each blistering sunburn meaningfully raises melanoma risk
+  let burnScore: number
+  const b = answers.sunburnsPerYear
+  if (b === 0) burnScore = 100
+  else if (b === 1) burnScore = 75
+  else if (b === 2) burnScore = 50
+  else if (b <= 4) burnScore = 25
+  else burnScore = 5
+  if (b >= 2) {
+    risks.push(`${b} sunburns per year significantly increases melanoma risk`)
+  }
+
+  const score = Math.round(exposureScore * 0.4 + sunscreenScore * 0.3 + burnScore * 0.3)
   return { score, risks }
 }
 
@@ -284,21 +409,25 @@ function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[
 
 /**
  * Main lifestyle assessment function
- * Sub-domain weights: Sleep 35%, Social 25%, Leisure 20%, Habits 20%
+ * Sub-domain weights: Sleep 25%, Social 18%, Sedentary 15%, Sun 10%, Leisure 14%, Habits 18%
  */
 export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   const sl = scoreSleep(answers)
   const so = scoreSocial(answers)
   const le = scoreLeisure(answers)
+  const sd = scoreSedentary(answers)
+  const su = scoreSun(answers)
   const hb = scoreHabits(answers)
 
-  const allRisks = [...sl.risks, ...so.risks, ...le.risks, ...hb.risks]
+  const allRisks = [...sl.risks, ...so.risks, ...le.risks, ...sd.risks, ...su.risks, ...hb.risks]
 
   const overallScore = Math.round(
-    sl.score * 0.35 +
-    so.score * 0.25 +
-    le.score * 0.20 +
-    hb.score * 0.20
+    sl.score * 0.25 +
+    so.score * 0.18 +
+    le.score * 0.14 +
+    sd.score * 0.15 +
+    su.score * 0.10 +
+    hb.score * 0.18
   )
 
   const recommendations: string[] = []
@@ -306,6 +435,8 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   if (sl.score < 60) recommendations.push("Prioritize sleep hygiene: consistent schedule, dark/cool room, limit screens before bed.")
   if (so.score < 60) recommendations.push("Strengthen social connections: schedule regular time with friends/family, join community groups.")
   if (le.score < 60) recommendations.push("Balance screen time with outdoor activities and hobbies you enjoy.")
+  if (sd.score < 60) recommendations.push("Break up sitting time: stand or move every 30-60 minutes; aim for under 8 hours sitting per day.")
+  if (su.score < 60) recommendations.push("Aim for 10-30 minutes of daily sun exposure; use sunscreen and avoid sunburns to balance vitamin D and skin cancer risk.")
   if (hb.score < 60) recommendations.push("Reducing smoking and alcohol intake are among the highest-impact changes for longevity.")
 
   if (overallScore >= 80) {
@@ -318,6 +449,8 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
       sleep: sl.score,
       social: so.score,
       leisure: le.score,
+      sedentary: sd.score,
+      sun: su.score,
       habits: hb.score,
     },
     riskFactors: allRisks,

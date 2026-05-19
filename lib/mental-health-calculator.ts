@@ -64,6 +64,18 @@ export interface MentalHealthAnswers {
   wellbeing_calm: FrequencyResponse       // "...calm and relaxed?"
   wellbeing_active: FrequencyResponse     // "...active and vigorous?"
   wellbeing_rested: FrequencyResponse     // "...waking up feeling fresh and rested?"
+
+  // Cognitive Engagement (Lancet Commission 2020 - dementia prevention)
+  // Mental engagement is one of the most modifiable dementia risk factors
+  cognitive_learning: "daily" | "weekly" | "monthly" | "rarely" | "never" // active learning, courses, languages
+  cognitive_reading: "daily" | "weekly" | "monthly" | "rarely" | "never"  // reading books, articles
+  cognitive_challenges: "daily" | "weekly" | "monthly" | "rarely" | "never" // puzzles, problem-solving
+
+  // Purpose & Meaning (Boyle et al. 2009; Blue Zones research)
+  // Strong sense of purpose adds ~7 years (Hill & Turiano, 2014)
+  purpose_meaning: "strongly-agree" | "agree" | "neutral" | "disagree" | "strongly-disagree" // "I feel my life has meaning"
+  purpose_goals: "strongly-agree" | "agree" | "neutral" | "disagree" | "strongly-disagree" // "I have clear goals"
+  purpose_value: "strongly-agree" | "agree" | "neutral" | "disagree" | "strongly-disagree" // "I feel valued by others"
 }
 
 export interface MentalHealthResult {
@@ -76,6 +88,8 @@ export interface MentalHealthResult {
     gad2Score: number        // 0-6
     gad2Flag: boolean        // true if >= 3 (anxiety screen positive)
     wellbeingScore: number   // 0-100
+    cognitiveScore: number   // 0-100
+    purposeScore: number     // 0-100
   }
   distressLevel: "low" | "mild" | "moderate" | "severe"
   flags: string[]            // Clinical flags for user awareness
@@ -191,25 +205,71 @@ function scoreWellbeing(answers: MentalHealthAnswers): number {
 }
 
 /**
+ * Score cognitive engagement (0-100)
+ * Lancet Commission 2020: cognitive engagement is a major modifiable
+ * dementia risk factor, alongside hearing loss and education.
+ */
+const ENGAGEMENT_MAP: Record<string, number> = {
+  daily: 100,
+  weekly: 75,
+  monthly: 45,
+  rarely: 20,
+  never: 0,
+}
+
+function scoreCognitive(answers: MentalHealthAnswers): number {
+  const learning = ENGAGEMENT_MAP[answers.cognitive_learning] ?? 50
+  const reading = ENGAGEMENT_MAP[answers.cognitive_reading] ?? 50
+  const challenges = ENGAGEMENT_MAP[answers.cognitive_challenges] ?? 50
+  return Math.round(learning * 0.35 + reading * 0.35 + challenges * 0.30)
+}
+
+/**
+ * Score purpose & meaning (0-100)
+ * Hill & Turiano (2014): higher purpose-in-life associated with longer
+ * lifespan (~7 years) and lower all-cause mortality.
+ */
+const AGREEMENT_MAP: Record<string, number> = {
+  "strongly-agree": 100,
+  agree: 80,
+  neutral: 50,
+  disagree: 25,
+  "strongly-disagree": 0,
+}
+
+function scorePurpose(answers: MentalHealthAnswers): number {
+  const meaning = AGREEMENT_MAP[answers.purpose_meaning] ?? 50
+  const goals = AGREEMENT_MAP[answers.purpose_goals] ?? 50
+  const value = AGREEMENT_MAP[answers.purpose_value] ?? 50
+  return Math.round(meaning * 0.40 + goals * 0.30 + value * 0.30)
+}
+
+/**
  * Main mental health assessment function
  *
  * Composite score weights:
- * - K10 (general distress): 40%
- * - PHQ-2 (depression): 15%
- * - GAD-2 (anxiety): 15%
- * - Wellbeing: 30%
+ * - K10 (general distress): 30%
+ * - PHQ-2 (depression): 12%
+ * - GAD-2 (anxiety): 12%
+ * - Wellbeing (WHO-5): 22%
+ * - Cognitive engagement: 12%
+ * - Purpose & meaning: 12%
  */
 export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealthResult {
   const k10 = scoreK10(answers)
   const phq2 = scorePHQ2(answers)
   const gad2 = scoreGAD2(answers)
   const wellbeing = scoreWellbeing(answers)
+  const cognitive = scoreCognitive(answers)
+  const purpose = scorePurpose(answers)
 
   const overallScore = Math.round(
-    k10.healthScore * 0.40 +
-    phq2.healthScore * 0.15 +
-    gad2.healthScore * 0.15 +
-    wellbeing * 0.30
+    k10.healthScore * 0.30 +
+    phq2.healthScore * 0.12 +
+    gad2.healthScore * 0.12 +
+    wellbeing * 0.22 +
+    cognitive * 0.12 +
+    purpose * 0.12
   )
 
   // Determine distress level from composite
@@ -232,6 +292,12 @@ export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealt
   }
   if (wellbeing <= 50) {
     flags.push("Low wellbeing score: WHO-5 research indicates scores at or below 50% warrant further assessment for depression.")
+  }
+  if (cognitive < 40) {
+    flags.push("Low cognitive engagement: Lancet Commission 2020 identifies cognitive activity as a major modifiable dementia-prevention factor.")
+  }
+  if (purpose < 40) {
+    flags.push("Low sense of purpose: lower purpose-in-life is associated with greater all-cause mortality risk (Hill & Turiano, 2014).")
   }
 
   // Recommendations
@@ -259,6 +325,13 @@ export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealt
     recommendations.push("Your mental health screening looks positive. Continue maintaining your wellbeing practices.")
   }
 
+  if (cognitive < 60) {
+    recommendations.push("Engage your mind regularly: read books, learn new skills, solve puzzles, or take on cognitive challenges to support brain health.")
+  }
+  if (purpose < 60) {
+    recommendations.push("Cultivate a sense of purpose: clarify your values, set meaningful goals, and contribute to something larger than yourself.")
+  }
+
   recommendations.push("This screening does not replace professional evaluation. If you are in crisis, contact your local emergency services or a crisis helpline.")
 
   return {
@@ -271,6 +344,8 @@ export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealt
       gad2Score: gad2.raw,
       gad2Flag: gad2.flag,
       wellbeingScore: wellbeing,
+      cognitiveScore: cognitive,
+      purposeScore: purpose,
     },
     distressLevel,
     flags,

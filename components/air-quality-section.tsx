@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Cloud, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Cloud, AlertTriangle, CheckCircle2, Volume2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
@@ -19,6 +19,7 @@ import {
   scoreAirQuality,
   type CityAQData,
   type AirQualityResult,
+  type NoiseLevel,
 } from "@/lib/air-quality-data"
 import { getScoreColor } from "@/lib/health-score"
 
@@ -33,6 +34,7 @@ export function AirQualitySection({ onResult, storedResult, onStoreResult, onRet
   const [continent, setContinent] = useState("")
   const [country, setCountry] = useState("")
   const [cityName, setCityName] = useState("")
+  const [noiseLevel, setNoiseLevel] = useState<NoiseLevel>("moderate")
   const [result, setResult] = useState<AirQualityResult | null>(storedResult ?? null)
 
   const continents = useMemo(() => getContinents(), [])
@@ -55,7 +57,7 @@ export function AirQualitySection({ onResult, storedResult, onStoreResult, onRet
   function handleCalculate() {
     const selectedCity = cities.find((c) => c.city === cityName)
     if (!selectedCity) return
-    const aqResult = scoreAirQuality(selectedCity)
+    const aqResult = scoreAirQuality(selectedCity, noiseLevel)
     setResult(aqResult)
     onStoreResult?.(aqResult)
     onResult(aqResult.score, { country })
@@ -147,6 +149,28 @@ export function AirQualitySection({ onResult, storedResult, onStoreResult, onRet
             </div>
           </div>
 
+          <div className="flex flex-col gap-2">
+            <Label className="flex items-center gap-2 text-foreground">
+              <Volume2 className="h-4 w-4 text-primary" />
+              Typical noise level at home
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              WHO Environmental Noise Guidelines (2018) recommend below 53 dB Lden for road traffic.
+            </p>
+            <Select value={noiseLevel} onValueChange={(v) => setNoiseLevel(v as NoiseLevel)}>
+              <SelectTrigger className="max-w-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="very-quiet">Very quiet (rural, library-like)</SelectItem>
+                <SelectItem value="quiet">Quiet (suburban, residential)</SelectItem>
+                <SelectItem value="moderate">Moderate (typical urban background)</SelectItem>
+                <SelectItem value="loud">Loud (busy street, near traffic)</SelectItem>
+                <SelectItem value="very-loud">Very loud (highway, airport, industrial)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             onClick={handleCalculate}
             disabled={!cityName}
@@ -164,7 +188,7 @@ export function AirQualitySection({ onResult, storedResult, onStoreResult, onRet
 }
 
 function AirQualityResults({ result, onRetake }: { result: AirQualityResult; onRetake?: () => void }) {
-  const { city, score, category, healthImpact, whoGuideline, ratio } = result
+  const { city, score, category, healthImpact, whoGuideline, ratio, noiseScore, noiseCategory, noiseImpact } = result
   const isGood = score >= 70
 
   return (
@@ -241,6 +265,38 @@ function AirQualityResults({ result, onRetake }: { result: AirQualityResult; onR
                 </span>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {healthImpact}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Noise Pollution */}
+          <div className="rounded-lg border border-border p-4">
+            <div className="flex items-start gap-3">
+              <Volume2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <div className="flex flex-1 flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">
+                    Noise Pollution: {noiseCategory}
+                  </span>
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: getScoreColor(noiseScore) }}
+                  >
+                    {noiseScore}/100
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${noiseScore}%`,
+                      backgroundColor: getScoreColor(noiseScore),
+                    }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {noiseImpact}
                 </p>
               </div>
             </div>

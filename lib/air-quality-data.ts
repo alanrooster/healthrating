@@ -704,65 +704,121 @@ export function getCities(country: string): CityAQData[] {
 
 export interface AirQualityResult {
   city: CityAQData
-  score: number // 0-100
+  score: number // 0-100 composite (air + noise)
+  airScore: number // 0-100 PM2.5-only
+  noiseScore: number // 0-100 self-reported noise
+  noiseCategory: string
+  noiseImpact: string
   category: string
   healthImpact: string
   whoGuideline: number // 5 ug/m3
   ratio: number // how many times above WHO guideline
 }
 
+export type NoiseLevel = "very-quiet" | "quiet" | "moderate" | "loud" | "very-loud"
+
+/**
+ * Score noise pollution based on WHO Environmental Noise Guidelines (2018).
+ * WHO recommends < 53 dB Lden for road traffic noise to prevent
+ * cardiovascular disease, sleep disturbance, and cognitive impairment.
+ * Self-reported categories map to typical environmental noise ranges.
+ */
+function scoreNoise(level: NoiseLevel): { score: number; category: string; impact: string } {
+  switch (level) {
+    case "very-quiet":
+      return {
+        score: 100,
+        category: "Very Quiet",
+        impact: "Excellent acoustic environment. Below WHO thresholds for noise-related health effects.",
+      }
+    case "quiet":
+      return {
+        score: 85,
+        category: "Quiet",
+        impact: "Acceptable noise levels with minimal health impact.",
+      }
+    case "moderate":
+      return {
+        score: 60,
+        category: "Moderate",
+        impact: "Approaching WHO threshold (53 dB). Occasional sleep or focus disturbance possible.",
+      }
+    case "loud":
+      return {
+        score: 30,
+        category: "Loud",
+        impact: "Above WHO guideline. Chronic exposure linked to elevated cardiovascular disease risk and sleep disruption.",
+      }
+    case "very-loud":
+      return {
+        score: 10,
+        category: "Very Loud",
+        impact: "Well above WHO guideline. Significant risk for hypertension, sleep disorders, and cognitive impairment in children.",
+      }
+  }
+}
+
 /**
  * Score air quality based on WHO AQG 2021 guidelines.
  * WHO annual PM2.5 guideline: 5 ug/m3
  */
-export function scoreAirQuality(cityData: CityAQData): AirQualityResult {
+export function scoreAirQuality(cityData: CityAQData, noiseLevel: NoiseLevel = "moderate"): AirQualityResult {
   const pm25 = cityData.pm25
   const whoGuideline = 5
 
-  let score: number
+  let airScore: number
   let category: string
   let healthImpact: string
 
   if (pm25 <= 5) {
-    score = 100
+    airScore = 100
     category = "Excellent"
     healthImpact =
       "Air quality meets WHO guidelines. Minimal risk to health from air pollution."
   } else if (pm25 <= 10) {
-    score = 85 - ((pm25 - 5) / 5) * 15
+    airScore = 85 - ((pm25 - 5) / 5) * 15
     category = "Good"
     healthImpact =
       "Air quality is acceptable. Sensitive individuals may experience minor issues with prolonged outdoor exposure."
   } else if (pm25 <= 15) {
-    score = 70 - ((pm25 - 10) / 5) * 20
+    airScore = 70 - ((pm25 - 10) / 5) * 20
     category = "Moderate"
     healthImpact =
       "Some health risk, especially for children, elderly, and those with respiratory conditions. Consider limiting prolonged outdoor exertion."
   } else if (pm25 <= 25) {
-    score = 50 - ((pm25 - 15) / 10) * 20
+    airScore = 50 - ((pm25 - 15) / 10) * 20
     category = "Unhealthy for Sensitive Groups"
     healthImpact =
       "Increased risk of respiratory symptoms. People with asthma, heart disease, and children should limit prolonged outdoor activity."
   } else if (pm25 <= 35) {
-    score = 30 - ((pm25 - 25) / 10) * 15
+    airScore = 30 - ((pm25 - 25) / 10) * 15
     category = "Unhealthy"
     healthImpact =
       "Significant health risk. Everyone may begin to experience health effects. Use air purifiers indoors if possible."
   } else if (pm25 <= 50) {
-    score = 15 - ((pm25 - 35) / 15) * 10
+    airScore = 15 - ((pm25 - 35) / 15) * 10
     category = "Very Unhealthy"
     healthImpact =
       "Serious health effects for everyone. Avoid outdoor exercise. Use N95 masks outdoors and HEPA air purifiers indoors."
   } else {
-    score = Math.max(2, 5 - ((pm25 - 50) / 50) * 5)
+    airScore = Math.max(2, 5 - ((pm25 - 50) / 50) * 5)
     category = "Hazardous"
     healthImpact =
       "Emergency-level air pollution. Stay indoors with air filtration. Long-term exposure significantly increases cardiovascular and respiratory disease risk."
   }
 
+  airScore = Math.round(Math.max(2, Math.min(100, airScore)))
+  const noise = scoreNoise(noiseLevel)
+  // Composite: air 70%, noise 30%
+  const score = Math.round(airScore * 0.7 + noise.score * 0.3)
+
   return {
     city: cityData,
-    score: Math.round(Math.max(2, Math.min(100, score))),
+    score,
+    airScore,
+    noiseScore: noise.score,
+    noiseCategory: noise.category,
+    noiseImpact: noise.impact,
     category,
     healthImpact,
     whoGuideline,

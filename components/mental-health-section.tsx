@@ -8,6 +8,8 @@ import {
   ChevronRight,
   ShieldAlert,
   Heart,
+  BookOpen,
+  Target,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -23,8 +25,6 @@ import {
   calculateMentalHealth,
   type MentalHealthAnswers,
   type MentalHealthResult,
-  type FrequencyResponse,
-  type PhqFrequency,
 } from "@/lib/mental-health-calculator"
 import { getScoreColor } from "@/lib/health-score"
 
@@ -54,6 +54,12 @@ const DEFAULT_ANSWERS: MentalHealthAnswers = {
   wellbeing_calm: "most",
   wellbeing_active: "some",
   wellbeing_rested: "some",
+  cognitive_learning: "weekly",
+  cognitive_reading: "weekly",
+  cognitive_challenges: "weekly",
+  purpose_meaning: "agree",
+  purpose_goals: "agree",
+  purpose_value: "agree",
 }
 
 const K10_FREQUENCY_OPTIONS = [
@@ -77,6 +83,22 @@ const WELLBEING_OPTIONS = [
   { value: "some", label: "Some of the time" },
   { value: "a-little", label: "A little of the time" },
   { value: "none", label: "At no time" },
+]
+
+const ENGAGEMENT_OPTIONS = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "rarely", label: "Rarely" },
+  { value: "never", label: "Never" },
+]
+
+const AGREEMENT_OPTIONS = [
+  { value: "strongly-agree", label: "Strongly agree" },
+  { value: "agree", label: "Agree" },
+  { value: "neutral", label: "Neutral" },
+  { value: "disagree", label: "Disagree" },
+  { value: "strongly-disagree", label: "Strongly disagree" },
 ]
 
 interface QuestionGroup {
@@ -140,6 +162,28 @@ const QUESTION_GROUPS: QuestionGroup[] = [
       { id: "wellbeing_rested", label: "Waking up feeling fresh and rested?", options: WELLBEING_OPTIONS },
     ],
   },
+  {
+    title: "Cognitive Engagement",
+    description:
+      "Lancet Commission 2020 identifies cognitive engagement as a major modifiable factor for brain health and dementia prevention.",
+    icon: BookOpen,
+    questions: [
+      { id: "cognitive_learning", label: "How often do you actively learn something new (courses, languages, skills)?", options: ENGAGEMENT_OPTIONS },
+      { id: "cognitive_reading", label: "How often do you read books or long-form articles?", options: ENGAGEMENT_OPTIONS },
+      { id: "cognitive_challenges", label: "How often do you engage with puzzles, problem-solving, or strategy games?", options: ENGAGEMENT_OPTIONS },
+    ],
+  },
+  {
+    title: "Purpose & Meaning",
+    description:
+      "Higher purpose-in-life is associated with longer lifespan and lower mortality risk (Hill & Turiano, 2014).",
+    icon: Target,
+    questions: [
+      { id: "purpose_meaning", label: "I feel my life has meaning and purpose.", options: AGREEMENT_OPTIONS },
+      { id: "purpose_goals", label: "I have clear goals and direction in my life.", options: AGREEMENT_OPTIONS },
+      { id: "purpose_value", label: "I feel valued and appreciated by others.", options: AGREEMENT_OPTIONS },
+    ],
+  },
 ]
 
 export function MentalHealthSection({ onResult, storedResult, onStoreResult, onRetake }: MentalHealthSectionProps) {
@@ -148,7 +192,7 @@ export function MentalHealthSection({ onResult, storedResult, onStoreResult, onR
   const [currentGroup, setCurrentGroup] = useState(0)
 
   function updateAnswer(id: keyof MentalHealthAnswers, value: string) {
-    setAnswers((prev) => ({ ...prev, [id]: value as FrequencyResponse & PhqFrequency }))
+    setAnswers((prev) => ({ ...prev, [id]: value as MentalHealthAnswers[typeof id] }))
   }
 
   function handleNext() {
@@ -324,6 +368,16 @@ function MentalHealthResults({
       label: "Wellbeing (WHO-5 inspired)",
       description: `Score: ${subScores.wellbeingScore}/100`,
       score: subScores.wellbeingScore,
+    },
+    {
+      label: "Cognitive Engagement",
+      description: "Learning, reading, and mental challenges",
+      score: subScores.cognitiveScore,
+    },
+    {
+      label: "Purpose & Meaning",
+      description: "Sense of purpose, goals, and being valued",
+      score: subScores.purposeScore,
     },
   ]
 
