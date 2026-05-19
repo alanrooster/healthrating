@@ -10,13 +10,16 @@ import {
   Dumbbell,
   Ear,
   Heart,
+  HeartPulse,
   Leaf,
+  ListChecks,
   Moon,
   ShieldCheck,
   Sparkles,
   TrendingDown,
   TrendingUp,
   TreePine,
+  Users,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -30,6 +33,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { OverallHealthResult } from "@/lib/health-score"
 import { getScoreColor, getGradeColor } from "@/lib/health-score"
+import {
+  calculateCardiovascularRisk,
+  buildActionPlan,
+  calculatePeerComparison,
+} from "@/lib/insights-calculator"
 
 interface LifeExpectancyData {
   adjustedYears: number
@@ -69,7 +77,11 @@ const MODULE_META: Record<
 
 export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData }: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
-    result
+  result
+
+  const cvRisk = calculateCardiovascularRisk(scores)
+  const actionPlan = buildActionPlan(scores)
+  const peerComparison = calculatePeerComparison(overallScore, completedCount)
 
   const radarData = Object.entries(scores).map(([key, mod]) => ({
     subject: MODULE_META[key]?.label ?? key,
@@ -266,6 +278,143 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
           )}
         </CardContent>
       </Card>
+
+      {/* Insights Row: Cardiovascular Risk, Action Plan, Peer Comparison */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Cardiovascular Risk */}
+        <Card className={`border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <HeartPulse className="h-5 w-5 text-rose-500" />
+              Cardiovascular Risk
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <span
+              className="text-2xl font-bold"
+              style={{
+                color:
+                  cvRisk.band === "low"
+                    ? "hsl(var(--success))"
+                    : cvRisk.band === "borderline"
+                    ? "#f59e0b"
+                    : cvRisk.band === "intermediate"
+                    ? "#fb923c"
+                    : "#f43f5e",
+              }}
+            >
+              {cvRisk.label}
+            </span>
+            <p className="text-xs text-muted-foreground leading-relaxed">{cvRisk.estimate}</p>
+            {cvRisk.drivers.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {cvRisk.drivers.map((d) => (
+                  <span
+                    key={d}
+                    className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-medium text-rose-600"
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground italic">
+              Educational estimate. Not a substitute for ASCVD/QRISK3.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Action Plan */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ListChecks className="h-5 w-5 text-primary" />
+              Your Action Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {actionPlan.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Complete more assessments to receive personalized actions.
+              </p>
+            ) : (
+              actionPlan.map((item, idx) => (
+                <button
+                  key={item.module}
+                  type="button"
+                  onClick={() =>
+                    onNavigate(
+                      item.module === "mentalHealth"
+                        ? "mental"
+                        : item.module === "airQuality"
+                        ? "air"
+                        : item.module === "waterQuality"
+                        ? "water"
+                        : item.module === "preventiveCare"
+                        ? "preventive"
+                        : item.module === "sensesOral"
+                        ? "senses"
+                        : item.module === "familyHistory"
+                        ? "family"
+                        : item.module
+                    )
+                  }
+                  className="flex items-start gap-2 rounded-md border border-border p-2 text-left transition-colors hover:bg-muted/50"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {idx + 1}
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-semibold text-foreground">
+                      {item.label} ({item.currentScore}/100)
+                    </span>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {item.recommendation}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Peer Comparison */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-5 w-5 text-primary" />
+              Peer Comparison
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <div className="flex items-baseline gap-2">
+              <span
+                className="text-2xl font-bold"
+                style={{ color: getScoreColor(peerComparison.percentile) }}
+              >
+                {peerComparison.band}
+              </span>
+            </div>
+            {peerComparison.percentile > 0 && (
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${peerComparison.percentile}%`,
+                    backgroundColor: getScoreColor(peerComparison.percentile),
+                  }}
+                />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {peerComparison.message}
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground italic">
+              Approximate population-level comparison based on completed modules.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Carbon Footprint Card */}
       <button
