@@ -27,6 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import type { HealthScores } from "@/lib/health-score"
 
@@ -68,6 +69,14 @@ export function AppSidebar({
   carbonCompleted,
   carbonScore,
 }: AppSidebarProps) {
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  function handleSectionChange(section: string) {
+    onSectionChange(section)
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
   const scoreMap: Record<string, { score: number; completed: boolean }> = {
     body: scores.body,
     air: scores.airQuality,
@@ -85,7 +94,7 @@ export function AppSidebar({
       <SidebarHeader className="border-b border-border px-4 py-4">
         <button
           type="button"
-          onClick={() => onSectionChange("dashboard")}
+          onClick={() => handleSectionChange("dashboard")}
           className="flex items-center gap-3 text-left"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
@@ -116,7 +125,7 @@ export function AppSidebar({
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => onSectionChange(item.id)}
+                      onClick={() => handleSectionChange(item.id)}
                       tooltip={item.label}
                     >
                       <Icon className="h-4 w-4" />
@@ -149,7 +158,7 @@ export function AppSidebar({
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => onSectionChange(item.id)}
+                      onClick={() => handleSectionChange(item.id)}
                       tooltip={item.label}
                     >
                       <Icon className="h-4 w-4" />
@@ -173,7 +182,7 @@ export function AppSidebar({
       <SidebarFooter className="border-t border-border p-4">
         <button
           type="button"
-          onClick={() => onSectionChange("methodology")}
+          onClick={() => handleSectionChange("methodology")}
           className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <Info className="h-3.5 w-3.5" />
