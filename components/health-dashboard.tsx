@@ -5,11 +5,14 @@ import {
   Brain,
   Briefcase,
   Cloud,
+  Dna,
   Droplets,
   Dumbbell,
+  Ear,
   Heart,
   Leaf,
   Moon,
+  ShieldCheck,
   Sparkles,
   TrendingDown,
   TrendingUp,
@@ -59,6 +62,9 @@ const MODULE_META: Record<
   work: { label: "Work", icon: Briefcase, section: "work" },
   lifestyle: { label: "Lifestyle", icon: Moon, section: "lifestyle" },
   mentalHealth: { label: "Mental Health", icon: Brain, section: "mental" },
+  familyHistory: { label: "Family History", icon: Dna, section: "family" },
+  preventiveCare: { label: "Preventive Care", icon: ShieldCheck, section: "preventive" },
+  sensesOral: { label: "Senses & Oral", icon: Ear, section: "senses" },
 }
 
 export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData }: HealthDashboardProps) {

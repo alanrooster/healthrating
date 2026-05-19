@@ -15,6 +15,9 @@ import { ExerciseSection } from "@/components/exercise-section"
 import { WorkSection } from "@/components/work-section"
 import { LifestyleSection } from "@/components/lifestyle-section"
 import { MentalHealthSection } from "@/components/mental-health-section"
+import { FamilyHistorySection } from "@/components/family-history-section"
+import { PreventiveCareSection } from "@/components/preventive-care-section"
+import { SensesOralSection } from "@/components/senses-oral-section"
 import { CarbonSection } from "@/components/carbon-section"
 import { MethodologySection } from "@/components/methodology-section"
 import {
@@ -94,6 +97,18 @@ export default function Page() {
     ...EMPTY_SCORE,
     label: "Mental Health",
   })
+  const [familyHistoryScore, setFamilyHistoryScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Family History",
+  })
+  const [preventiveCareScore, setPreventiveCareScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Preventive Care",
+  })
+  const [sensesOralScore, setSensesOralScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Senses & Oral Health",
+  })
 
   // Carbon footprint (separate from health scores)
   const [carbonCompleted, setCarbonCompleted] = useState(false)
@@ -146,8 +161,11 @@ export default function Page() {
       work: workScore,
       lifestyle: lifestyleScore,
       mentalHealth: mentalHealthScore,
+      familyHistory: familyHistoryScore,
+      preventiveCare: preventiveCareScore,
+      sensesOral: sensesOralScore,
     }),
-    [bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore]
+    [bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore, sensesOralScore]
   )
 
   const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
@@ -233,6 +251,18 @@ export default function Page() {
     setMentalHealthScore({ score, completed: true, label: "Mental Health" })
   }
 
+  function handleFamilyHistoryResult(score: number) {
+    setFamilyHistoryScore({ score, completed: true, label: "Family History" })
+  }
+
+  function handlePreventiveCareResult(score: number) {
+    setPreventiveCareScore({ score, completed: true, label: "Preventive Care" })
+  }
+
+  function handleSensesOralResult(score: number) {
+    setSensesOralScore({ score, completed: true, label: "Senses & Oral Health" })
+  }
+
   function handleCarbonResult(score: number, kgCO2: number) {
     setCarbonScore(score)
     setCarbonCompleted(true)
@@ -266,6 +296,12 @@ export default function Page() {
         return <LifestyleSection onResult={handleLifestyleResult} storedResult={storedResults.lifestyle} onStoreResult={(r) => storeResult("lifestyle", r)} onRetake={() => clearResult("lifestyle")} />
       case "mental":
         return <MentalHealthSection onResult={handleMentalHealthResult} storedResult={storedResults.mental} onStoreResult={(r) => storeResult("mental", r)} onRetake={() => clearResult("mental")} />
+      case "family":
+        return <FamilyHistorySection onResult={handleFamilyHistoryResult} storedResult={storedResults.family} onStoreResult={(r) => storeResult("family", r)} onRetake={() => clearResult("family")} />
+      case "preventive":
+        return <PreventiveCareSection onResult={handlePreventiveCareResult} storedResult={storedResults.preventive} onStoreResult={(r) => storeResult("preventive", r)} onRetake={() => clearResult("preventive")} />
+      case "senses":
+        return <SensesOralSection onResult={handleSensesOralResult} storedResult={storedResults.senses} onStoreResult={(r) => storeResult("senses", r)} onRetake={() => clearResult("senses")} />
       case "carbon":
         return (
           <CarbonSection
@@ -303,6 +339,9 @@ export default function Page() {
     work: "Work Assessment",
     lifestyle: "Lifestyle Assessment",
     mental: "Mental Health Screening",
+    family: "Family Medical History",
+    preventive: "Preventive Care",
+    senses: "Senses & Oral Health",
     carbon: "Carbon Footprint",
     methodology: "Methodology",
   }

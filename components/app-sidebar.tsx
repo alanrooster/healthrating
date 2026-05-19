@@ -6,12 +6,15 @@ import {
   Brain,
   Briefcase,
   Cloud,
+  Dna,
   Droplets,
   Dumbbell,
+  Ear,
   Heart,
   Info,
   Leaf,
   Moon,
+  ShieldCheck,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -49,6 +52,9 @@ const NAV_ITEMS = [
   { id: "work", label: "Work", icon: Briefcase },
   { id: "lifestyle", label: "Lifestyle", icon: Moon },
   { id: "mental", label: "Mental Health", icon: Brain },
+  { id: "family", label: "Family History", icon: Dna },
+  { id: "preventive", label: "Preventive Care", icon: ShieldCheck },
+  { id: "senses", label: "Senses & Oral Health", icon: Ear },
 ]
 
 const EXTRAS_ITEMS = [
@@ -86,6 +92,9 @@ export function AppSidebar({
     work: scores.work,
     lifestyle: scores.lifestyle,
     mental: scores.mentalHealth,
+    family: scores.familyHistory,
+    preventive: scores.preventiveCare,
+    senses: scores.sensesOral,
     carbon: { score: carbonScore ?? 0, completed: carbonCompleted ?? false },
   }
 
