@@ -35,6 +35,9 @@ export interface LifeExpectancyInputs {
   socialConnection?: string
   processedMeatFrequency?: number
   pm25Level?: number
+  
+  // Country for baseline life expectancy
+  country?: string
 }
 
 export interface LifeExpectancyResult {
@@ -59,23 +62,64 @@ const BASELINE_LIFE_EXPECTANCY = {
   default: 73.3,
 }
 
-// Age adjustment - remaining life expectancy decreases with age
-function getRemainingLifeExpectancy(age: number, sex: "male" | "female" | "default"): number {
-  // Simplified actuarial table approximation
-  const baseline = BASELINE_LIFE_EXPECTANCY[sex]
-  if (age >= baseline) {
-    // For those who've exceeded average, use conditional expectancy
-    return Math.max(5, (100 - age) * 0.5)
+/**
+ * Country-specific life expectancy at birth (WHO 2023 / World Bank).
+ * Used to adjust the global baseline for users in countries with markedly
+ * different life expectancy (e.g., Japan ~84, Nigeria ~54).
+ */
+const COUNTRY_LIFE_EXPECTANCY: Record<string, number> = {
+  japan: 84.4, switzerland: 83.9, australia: 83.3, italy: 83.2,
+  spain: 83.2, sweden: 82.5, france: 82.5, "south korea": 82.7,
+  norway: 82.6, canada: 82.2, netherlands: 81.7, "united kingdom": 80.7,
+  uk: 80.7, germany: 80.7, "united states": 76.4, usa: 76.4,
+  china: 78.2, brazil: 75.8, mexico: 75.0, india: 70.0,
+  russia: 70.1, nigeria: 53.6, "south africa": 65.3,
+  indonesia: 71.3, egypt: 70.2, turkey: 76.0, poland: 78.0,
+  argentina: 76.6, "saudi arabia": 75.5, thailand: 76.6,
+}
+
+function getCountryBaseline(country: string | undefined, sex: "male" | "female" | "default"): number {
+  if (!country) return BASELINE_LIFE_EXPECTANCY[sex]
+  const total = COUNTRY_LIFE_EXPECTANCY[country.toLowerCase()]
+  if (!total) return BASELINE_LIFE_EXPECTANCY[sex]
+  // Adjust for sex: women typically live ~5 years longer than men in most countries
+  if (sex === "male") return total - 2.5
+  if (sex === "female") return total + 2.5
+  return total
+}
+
+/**
+ * Approximate conditional life expectancy: total years a person of age `age`
+ * is expected to reach. Uses simplified actuarial logic — for those who have
+ * already reached older ages, expected total lifespan rises above the
+ * birth-cohort average (e.g., a 70-year-old has ~85 years total expectancy,
+ * not 70.8).
+ *
+ * Formula approximation derived from WHO/SSA period life tables:
+ *   - Below age 30: total = baseline + small bonus
+ *   - 30-65: total ≈ baseline + 0.25 * (age - 30) (gradual rise)
+ *   - 65+:  total ≈ baseline + 0.25 * 35 + 0.5 * (age - 65) (steeper rise,
+ *           since survivors at older ages are healthier on average)
+ *   - Floors at age + 5 to keep estimates plausible
+ */
+function getExpectedTotalLifespan(age: number, sex: "male" | "female" | "default", country?: string): number {
+  const baseline = getCountryBaseline(country, sex)
+  let total: number
+  if (age <= 30) {
+    total = baseline
+  } else if (age <= 65) {
+    total = baseline + 0.25 * (age - 30)
+  } else {
+    total = baseline + 0.25 * 35 + 0.5 * (age - 65)
   }
-  return baseline - age
+  return Math.max(age + 5, total)
 }
 
 export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpectancyResult {
   const sex = inputs.sex || "default"
   const age = inputs.age || 40 // Default assumption
   
-  const baselineRemaining = getRemainingLifeExpectancy(age, sex)
-  const baselineTotal = age + baselineRemaining
+  const baselineTotal = getExpectedTotalLifespan(age, sex, inputs.country)
   
   const adjustments: LifeExpectancyResult["adjustments"] = []
   let totalAdjustment = 0
@@ -84,12 +128,14 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   let dataPoints = 0
   
   // === SMOKING (Lifestyle) ===
-  // Smokers lose ~10 years on average (Doll et al., BMJ 2004)
+  // Smokers lose ~10 years on average (Doll et al., BMJ 2004).
+  // Former smokers recover most of those years if they quit before 40-50
+  // (Jha et al., NEJM 2013). We use a conservative average of -1 year.
   if (inputs.smokingStatus) {
     dataPoints++
     const smokingImpact: Record<string, number> = {
       never: 0,
-      former: -2, // Former smokers still have some residual risk
+      former: -1, // Most loss recovered if quit before middle age
       occasional: -5,
       daily: -10,
     }
@@ -99,7 +145,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Smoking",
         years,
         direction: years > 0 ? "positive" : "negative",
-        source: "Doll et al., BMJ 2004",
+        source: "Doll et al., BMJ 2004; Jha et al., NEJM 2013",
       })
       totalAdjustment += years
     }
@@ -191,13 +237,16 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   
   // === ALCOHOL ===
   // Heavy drinking reduces life expectancy by 4-5 years (Wood et al., Lancet 2018)
+  // Note: Lancet 2018 (GBD Alcohol Collaborators) refuted the J-curve;
+  // no level of alcohol is protective. We treat "never" as neutral (0).
   if (inputs.alcoholFrequency) {
     dataPoints++
     const alcoholImpact: Record<string, number> = {
-      never: 0.5, // Slight advantage in some studies
+      never: 0, // No protective effect (Lancet 2018)
       rarely: 0,
       monthly: 0,
-      weekly: -1,
+      weekly: -0.5,
+      "several-weekly": -2,
       daily: -4,
     }
     const years = alcoholImpact[inputs.alcoholFrequency] ?? 0
@@ -206,7 +255,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Alcohol Consumption",
         years,
         direction: years > 0 ? "positive" : "negative",
-        source: "Wood et al., Lancet 2018",
+        source: "GBD Alcohol Collaborators, Lancet 2018",
       })
       totalAdjustment += years
     }
@@ -370,7 +419,6 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   
   // Calculate final values
   const adjustedTotal = Math.max(age + 1, baselineTotal + totalAdjustment)
-  const adjustedRemaining = adjustedTotal - age
   
   // Calculate percentile (rough approximation)
   // Assume normal distribution with SD of 10 years

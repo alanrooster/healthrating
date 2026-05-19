@@ -170,6 +170,7 @@ export default function Page() {
       smokingStatus: lifestyleData?.smokingStatus,
       alcoholFrequency: lifestyleData?.alcoholFrequency,
       processedMeatFrequency: dietData?.processedMeatFrequency,
+      country: airData?.country,
     }
 
     const result = calculateLifeExpectancy(inputs)
@@ -285,6 +286,8 @@ export default function Page() {
           <HealthDashboard
             result={overallResult}
             onNavigate={setActiveSection}
+            carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
+            lifeExpectancyData={lifeExpectancyData}
           />
         )
     }

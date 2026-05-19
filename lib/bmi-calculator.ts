@@ -375,30 +375,30 @@ function calcCompositeScore(
   bodyFat: number | null,
   waistToHeightRatio: number | null
 ): number {
-  let score = bmi
-  let blendWeight = 1.0
+  // Weighted average of available metrics, all expressed on the BMI scale
+  let weightedSum = bmi * 1.0
   let totalWeight = 1.0
 
   // Blend in body-fat-derived equivalent BMI (weight: 0.4)
   if (bodyFat !== null) {
     const sexFactor = sex === "male" ? 1 : 0
     const equivalentBMI = (bodyFat - 0.23 * age + 10.8 * sexFactor + 5.4) / 1.2
-    // Clamp to reasonable range
     const clampedEqBMI = Math.max(12, Math.min(55, equivalentBMI))
-    score = bmi * blendWeight + clampedEqBMI * 0.4
+    weightedSum += clampedEqBMI * 0.4
     totalWeight += 0.4
   }
 
-  // Adjust based on waist-to-height ratio (adds up to +/- 1.5 BMI points)
+  let blendedScore = weightedSum / totalWeight
+
+  // WHtR adjustment: applied as a small additive offset (not a separate weighted blend)
+  // 0.5 is the healthy threshold; deviation shifts the score slightly
   if (waistToHeightRatio !== null) {
-    // 0.5 is the healthy threshold; deviation from it shifts the score
     const whtrDeviation = waistToHeightRatio - 0.5
-    const whtrAdjustment = whtrDeviation * 7.5 // maps +-0.2 deviation to +-1.5 BMI points
-    score += whtrAdjustment * 0.3
-    totalWeight += 0.3
+    const whtrAdjustment = whtrDeviation * 7.5 // maps +/-0.2 deviation to +/-1.5 BMI points
+    blendedScore += whtrAdjustment * 0.3
   }
 
-  return score / totalWeight
+  return blendedScore
 }
 
 /**

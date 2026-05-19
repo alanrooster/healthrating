@@ -134,19 +134,21 @@ const CAR_EMISSIONS_PER_KM: Record<CarType, number> = {
 const PUBLIC_TRANSIT_PER_HOUR = 0.8 // kg CO2 per hour average (bus/train mix)
 const MOTORCYCLE_PER_KM = 0.1
 
-// Flight emissions (kg CO2e per flight, including radiative forcing multiplier)
+// Flight emissions (kg CO2e per one-way flight, including radiative forcing multiplier)
 const FLIGHT_EMISSIONS = {
-  shortHaul: 250, // ~1000km average
-  longHaul: 1800, // ~8000km average
+  shortHaul: 250, // ~1000km average per leg
+  longHaul: 1800, // ~8000km average per leg
 }
 
+// Multiplier represents the average number of one-way flights per year for that bracket
+// (e.g. "1-2" round trips = ~3 one-way legs)
 const FLIGHT_FREQUENCY_MULTIPLIER: Record<FlightFrequency, number> = {
   none: 0,
-  "1-2": 1.5,
-  "3-5": 4,
-  "6-10": 8,
-  "11-20": 15,
-  "20+": 25,
+  "1-2": 3,
+  "3-5": 8,
+  "6-10": 16,
+  "11-20": 30,
+  "20+": 50,
 }
 
 // Housing base energy (kg CO2 per year before heating/cooling adjustments)
@@ -232,6 +234,7 @@ const GRID_INTENSITY: Record<string, number> = {
 
 // Helper to map country names to grid codes
 function mapCountryToGridCode(country: string): string {
+  if (!country || country === "default") return "default"
   const countryMap: Record<string, string> = {
     sweden: "SE",
     france: "FR",
@@ -253,7 +256,11 @@ function mapCountryToGridCode(country: string): string {
     netherlands: "NL",
   }
   const lowerCountry = country.toLowerCase()
-  return countryMap[lowerCountry] || country.toUpperCase().slice(0, 2)
+  if (countryMap[lowerCountry]) return countryMap[lowerCountry]
+  // If country is a 2-letter code already known in GRID_INTENSITY, use it
+  const upper = country.toUpperCase()
+  if (upper.length === 2 && upper in GRID_INTENSITY) return upper
+  return "default"
 }
 
 // ============================================================================
@@ -320,8 +327,13 @@ export function calculateCarbonFootprint(
   }
 
   // Additional car use beyond commute
+  // Subtract commute km for both "car" and "mixed" modes to avoid double-counting
   if (carType !== "none") {
-    const nonCommuteKm = Math.max(0, annualCarKm - (commuteMethod === "car" ? commuteDistanceKm * 230 : 0))
+    const commuteKmIfApplicable =
+      commuteMethod === "car" || commuteMethod === "mixed"
+        ? commuteDistanceKm * 230
+        : 0
+    const nonCommuteKm = Math.max(0, annualCarKm - commuteKmIfApplicable)
     transportEmissions += nonCommuteKm * CAR_EMISSIONS_PER_KM[carType]
   }
 
@@ -473,7 +485,7 @@ export function calculateCarbonFootprint(
       "Aviation is your largest emission source. Consider trains for shorter trips or offsetting flights."
     )
   }
-  if (breakdown.transport > 3000 && carType.includes("petrol") || carType.includes("diesel")) {
+  if (breakdown.transport > 3000 && (carType.includes("petrol") || carType.includes("diesel"))) {
     recommendations.push(
       "Switching to an electric or hybrid vehicle could reduce your transport emissions by 60-80%."
     )

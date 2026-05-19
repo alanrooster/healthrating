@@ -230,8 +230,8 @@ export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealt
   if (k10.raw >= 25) {
     flags.push(`K10 score of ${k10.raw} indicates ${k10.category.toLowerCase()}. Professional mental health support is recommended.`)
   }
-  if (wellbeing <= 28) {
-    flags.push("Low wellbeing score: WHO-5 research indicates scores below 28% warrant further assessment for depression.")
+  if (wellbeing <= 50) {
+    flags.push("Low wellbeing score: WHO-5 research indicates scores at or below 50% warrant further assessment for depression.")
   }
 
   // Recommendations
