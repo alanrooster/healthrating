@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Cloud, AlertTriangle, CheckCircle2, Volume2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -23,19 +23,33 @@ import {
 } from "@/lib/air-quality-data"
 import { getScoreColor } from "@/lib/health-score"
 
+interface AirQualityInputs {
+  continent: string
+  country: string
+  cityName: string
+  noiseLevel: NoiseLevel
+}
+
 interface AirQualitySectionProps {
   onResult: (score: number, countryData?: { country: string }) => void
   storedResult?: AirQualityResult | null
   onStoreResult?: (result: AirQualityResult) => void
   onRetake?: () => void
+  storedInputs?: AirQualityInputs | null
+  onStoreInputs?: (inputs: AirQualityInputs) => void
 }
 
-export function AirQualitySection({ onResult, storedResult, onStoreResult, onRetake }: AirQualitySectionProps) {
-  const [continent, setContinent] = useState("")
-  const [country, setCountry] = useState("")
-  const [cityName, setCityName] = useState("")
-  const [noiseLevel, setNoiseLevel] = useState<NoiseLevel>("moderate")
+export function AirQualitySection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: AirQualitySectionProps) {
+  const [continent, setContinent] = useState(storedInputs?.continent ?? "")
+  const [country, setCountry] = useState(storedInputs?.country ?? "")
+  const [cityName, setCityName] = useState(storedInputs?.cityName ?? "")
+  const [noiseLevel, setNoiseLevel] = useState<NoiseLevel>(storedInputs?.noiseLevel ?? "moderate")
   const [result, setResult] = useState<AirQualityResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.({ continent, country, cityName, noiseLevel })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [continent, country, cityName, noiseLevel])
 
   const continents = useMemo(() => getContinents(), [])
   const countries = useMemo(() => (continent ? getCountries(continent) : []), [continent])
@@ -65,9 +79,6 @@ export function AirQualitySection({ onResult, storedResult, onStoreResult, onRet
 
   function handleRetake() {
     setResult(null)
-    setContinent("")
-    setCountry("")
-    setCityName("")
     onRetake?.()
   }
 

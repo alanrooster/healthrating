@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dna, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,8 @@ interface FamilyHistorySectionProps {
   storedResult?: FamilyHistoryResult | null
   onStoreResult?: (result: FamilyHistoryResult) => void
   onRetake?: () => void
+  storedInputs?: FamilyHistoryAnswers | null
+  onStoreInputs?: (inputs: FamilyHistoryAnswers) => void
 }
 
 const DEFAULT_ANSWERS: FamilyHistoryAnswers = {
@@ -58,9 +60,14 @@ const QUESTIONS: { id: keyof FamilyHistoryAnswers; label: string }[] = [
   { id: "autoimmune", label: "Autoimmune conditions (RA, lupus, MS, IBD)" },
 ]
 
-export function FamilyHistorySection({ onResult, storedResult, onStoreResult, onRetake }: FamilyHistorySectionProps) {
-  const [answers, setAnswers] = useState<FamilyHistoryAnswers>(DEFAULT_ANSWERS)
+export function FamilyHistorySection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: FamilyHistorySectionProps) {
+  const [answers, setAnswers] = useState<FamilyHistoryAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<FamilyHistoryResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function update(id: keyof FamilyHistoryAnswers, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: value as FamilyRelation }))
@@ -74,7 +81,6 @@ export function FamilyHistorySection({ onResult, storedResult, onStoreResult, on
   }
 
   function handleRetake() {
-    setAnswers(DEFAULT_ANSWERS)
     setResult(null)
     onRetake?.()
   }

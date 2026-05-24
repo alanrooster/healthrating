@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,8 @@ interface PreventiveCareSectionProps {
   storedResult?: PreventiveCareResult | null
   onStoreResult?: (result: PreventiveCareResult) => void
   onRetake?: () => void
+  storedInputs?: PreventiveCareAnswers | null
+  onStoreInputs?: (inputs: PreventiveCareAnswers) => void
 }
 
 const DEFAULT_ANSWERS: PreventiveCareAnswers = {
@@ -63,9 +65,14 @@ const QUESTIONS: { id: keyof PreventiveCareAnswers; label: string; description?:
   { id: "eyeExam", label: "Eye examination", description: "Every 1-2 years" },
 ]
 
-export function PreventiveCareSection({ onResult, storedResult, onStoreResult, onRetake }: PreventiveCareSectionProps) {
-  const [answers, setAnswers] = useState<PreventiveCareAnswers>(DEFAULT_ANSWERS)
+export function PreventiveCareSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: PreventiveCareSectionProps) {
+  const [answers, setAnswers] = useState<PreventiveCareAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<PreventiveCareResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function update(id: keyof PreventiveCareAnswers, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: value as CarePeriod }))
@@ -79,7 +86,6 @@ export function PreventiveCareSection({ onResult, storedResult, onStoreResult, o
   }
 
   function handleRetake() {
-    setAnswers(DEFAULT_ANSWERS)
     setResult(null)
     onRetake?.()
   }

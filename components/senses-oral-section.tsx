@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Eye, Ear, Smile, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -24,6 +24,8 @@ interface SensesOralSectionProps {
   storedResult?: SensesOralResult | null
   onStoreResult?: (result: SensesOralResult) => void
   onRetake?: () => void
+  storedInputs?: SensesOralAnswers | null
+  onStoreInputs?: (inputs: SensesOralAnswers) => void
 }
 
 const DEFAULT_ANSWERS: SensesOralAnswers = {
@@ -187,9 +189,14 @@ const SECTIONS: SectionDef[] = [
   },
 ]
 
-export function SensesOralSection({ onResult, storedResult, onStoreResult, onRetake }: SensesOralSectionProps) {
-  const [answers, setAnswers] = useState<SensesOralAnswers>(DEFAULT_ANSWERS)
+export function SensesOralSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: SensesOralSectionProps) {
+  const [answers, setAnswers] = useState<SensesOralAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<SensesOralResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function update(id: keyof SensesOralAnswers, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: value as SensesOralAnswers[typeof id] }))
@@ -203,7 +210,6 @@ export function SensesOralSection({ onResult, storedResult, onStoreResult, onRet
   }
 
   function handleRetake() {
-    setAnswers(DEFAULT_ANSWERS)
     setResult(null)
     onRetake?.()
   }

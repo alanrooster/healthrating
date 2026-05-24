@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Briefcase,
   Clock,
@@ -48,6 +48,8 @@ interface WorkSectionProps {
   storedResult?: WorkResult | null
   onStoreResult?: (result: WorkResult) => void
   onRetake?: () => void
+  storedInputs?: WorkAnswers | null
+  onStoreInputs?: (inputs: WorkAnswers) => void
 }
 
 const DEFAULT_ANSWERS: WorkAnswers = {
@@ -139,10 +141,15 @@ const SUPPORT_OPTIONS = [
   { value: "never", label: "Never" },
 ]
 
-export function WorkSection({ onResult, storedResult, onStoreResult, onRetake }: WorkSectionProps) {
-  const [answers, setAnswers] = useState<WorkAnswers>(DEFAULT_ANSWERS)
+export function WorkSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: WorkSectionProps) {
+  const [answers, setAnswers] = useState<WorkAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<WorkResult | null>(storedResult ?? null)
   const [step, setStep] = useState<StepType>("status")
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function updateAnswer<K extends keyof WorkAnswers>(id: K, value: WorkAnswers[K]) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -197,7 +204,6 @@ function handleCalculate() {
   }
   
   function handleReset() {
-  setAnswers(DEFAULT_ANSWERS)
   setResult(null)
   setStep("status")
   onRetake?.()

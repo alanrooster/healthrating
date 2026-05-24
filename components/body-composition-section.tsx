@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { BMIForm } from "@/components/bmi-form"
+import { BMIForm, type BMIFormInputs } from "@/components/bmi-form"
 import { BMIResults } from "@/components/bmi-results"
 import {
   calculateBMI,
@@ -15,9 +15,11 @@ interface BodyCompositionSectionProps {
   storedResult?: BMIResult | null
   onStoreResult?: (result: BMIResult) => void
   onRetake?: () => void
+  storedInputs?: BMIFormInputs | null
+  onStoreInputs?: (inputs: BMIFormInputs) => void
 }
 
-export function BodyCompositionSection({ onResult, storedResult, onStoreResult, onRetake }: BodyCompositionSectionProps) {
+export function BodyCompositionSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: BodyCompositionSectionProps) {
   const [result, setResult] = useState<BMIResult | null>(storedResult ?? null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
@@ -48,7 +50,7 @@ export function BodyCompositionSection({ onResult, storedResult, onStoreResult, 
         </p>
       </div>
 
-      <BMIForm onCalculate={handleCalculate} />
+      <BMIForm onCalculate={handleCalculate} initialInputs={storedInputs} onInputsChange={onStoreInputs} />
 
       {result && (
         <div ref={resultsRef}>

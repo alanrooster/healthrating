@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   UtensilsCrossed,
   CheckCircle2,
@@ -39,6 +39,8 @@ interface DietSectionProps {
   storedResult?: DietResult | null
   onStoreResult?: (result: DietResult) => void
   onRetake?: () => void
+  storedInputs?: DietAnswers | null
+  onStoreInputs?: (inputs: DietAnswers) => void
 }
 
 // Group questions into logical steps with IARC classification awareness
@@ -89,10 +91,15 @@ const IARC_GROUP_COLORS = {
   "2B": "hsl(45, 93%, 47%)", // yellow
 }
 
-export function DietSection({ onResult, storedResult, onStoreResult, onRetake }: DietSectionProps) {
+export function DietSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: DietSectionProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const [answers, setAnswers] = useState<DietAnswers>({})
+  const [answers, setAnswers] = useState<DietAnswers>(storedInputs ?? {})
   const [result, setResult] = useState<DietResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   const totalSteps = STEPS.length
   const step = STEPS[currentStep]
@@ -140,7 +147,6 @@ export function DietSection({ onResult, storedResult, onStoreResult, onRetake }:
   }
 
   function handleReset() {
-    setAnswers({})
     setResult(null)
     setCurrentStep(0)
     onRetake?.()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Moon,
   Users,
@@ -34,10 +34,12 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface LifestyleSectionProps {
-  onResult: (score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) => void
+  onResult: (score: number) => void
   storedResult?: LifestyleResult | null
   onStoreResult?: (result: LifestyleResult) => void
   onRetake?: () => void
+  storedInputs?: LifestyleAnswers | null
+  onStoreInputs?: (inputs: LifestyleAnswers) => void
 }
 
 const DEFAULT_ANSWERS: LifestyleAnswers = {
@@ -400,10 +402,15 @@ const QUESTION_GROUPS: QuestionGroup[] = [
   },
 ]
 
-export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake }: LifestyleSectionProps) {
-  const [answers, setAnswers] = useState<LifestyleAnswers>(DEFAULT_ANSWERS)
+export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: LifestyleSectionProps) {
+  const [answers, setAnswers] = useState<LifestyleAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<LifestyleResult | null>(storedResult ?? null)
   const [currentGroup, setCurrentGroup] = useState(0)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function updateAnswer(id: keyof LifestyleAnswers, value: string | number) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -435,14 +442,12 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
   }
 
   function handleRetake() {
-    setAnswers(DEFAULT_ANSWERS)
     setResult(null)
     setCurrentGroup(0)
     onRetake?.()
   }
 
   function handleReset() {
-    setAnswers(DEFAULT_ANSWERS)
     setResult(null)
     setCurrentGroup(0)
   }

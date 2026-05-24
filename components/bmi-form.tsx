@@ -2,15 +2,28 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { BodyMeasurements, Sex, Ethnicity } from "@/lib/bmi-calculator"
 
+export interface BMIFormInputs {
+  sex: Sex
+  ethnicity: Ethnicity
+  age: string
+  weight: string
+  height: string
+  waist: string
+  neck: string
+  wrist: string
+}
+
 interface BMIFormProps {
   onCalculate: (measurements: BodyMeasurements) => void
+  initialInputs?: BMIFormInputs | null
+  onInputsChange?: (inputs: BMIFormInputs) => void
 }
 
 const ETHNICITY_OPTIONS: { value: Ethnicity; label: string }[] = [
@@ -24,16 +37,21 @@ const ETHNICITY_OPTIONS: { value: Ethnicity; label: string }[] = [
   { value: "pacific-islander", label: "Pacific Islander" },
 ]
 
-export function BMIForm({ onCalculate }: BMIFormProps) {
-  const [sex, setSex] = useState<Sex>("male")
-  const [ethnicity, setEthnicity] = useState<Ethnicity>("caucasian")
-  const [age, setAge] = useState("")
-  const [weight, setWeight] = useState("")
-  const [height, setHeight] = useState("")
-  const [waist, setWaist] = useState("")
-  const [neck, setNeck] = useState("")
-  const [wrist, setWrist] = useState("")
+export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormProps) {
+  const [sex, setSex] = useState<Sex>(initialInputs?.sex ?? "male")
+  const [ethnicity, setEthnicity] = useState<Ethnicity>(initialInputs?.ethnicity ?? "caucasian")
+  const [age, setAge] = useState(initialInputs?.age ?? "")
+  const [weight, setWeight] = useState(initialInputs?.weight ?? "")
+  const [height, setHeight] = useState(initialInputs?.height ?? "")
+  const [waist, setWaist] = useState(initialInputs?.waist ?? "")
+  const [neck, setNeck] = useState(initialInputs?.neck ?? "")
+  const [wrist, setWrist] = useState(initialInputs?.wrist ?? "")
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    onInputsChange?.({ sex, ethnicity, age, weight, height, waist, neck, wrist })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sex, ethnicity, age, weight, height, waist, neck, wrist])
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}

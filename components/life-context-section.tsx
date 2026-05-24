@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Heart, Users, GraduationCap, Wallet, Sparkles, AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,8 @@ interface LifeContextSectionProps {
   storedResult?: LifeContextResult | null
   onStoreResult?: (result: LifeContextResult) => void
   onRetake?: () => void
+  storedInputs?: LifeContextAnswers | null
+  onStoreInputs?: (inputs: LifeContextAnswers) => void
 }
 
 const DEFAULTS: LifeContextAnswers = {
@@ -267,9 +269,14 @@ const GROUPS: Array<{
   },
 ]
 
-export function LifeContextSection({ onResult, storedResult, onStoreResult, onRetake }: LifeContextSectionProps) {
-  const [answers, setAnswers] = useState<LifeContextAnswers>(DEFAULTS)
+export function LifeContextSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: LifeContextSectionProps) {
+  const [answers, setAnswers] = useState<LifeContextAnswers>(storedInputs ?? DEFAULTS)
   const [result, setResult] = useState<LifeContextResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function update<K extends keyof LifeContextAnswers>(id: K, value: LifeContextAnswers[K]) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -283,7 +290,6 @@ export function LifeContextSection({ onResult, storedResult, onStoreResult, onRe
   }
 
   function handleRetake() {
-    setAnswers(DEFAULTS)
     setResult(null)
     onRetake?.()
   }

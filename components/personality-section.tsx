@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Smile, Sparkles, AlertTriangle, CheckCircle2, Laugh, Heart, Compass } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -24,6 +24,8 @@ interface PersonalitySectionProps {
   storedResult?: PersonalityResult | null
   onStoreResult?: (result: PersonalityResult) => void
   onRetake?: () => void
+  storedInputs?: PersonalityAnswers | null
+  onStoreInputs?: (inputs: PersonalityAnswers) => void
 }
 
 const DEFAULTS: PersonalityAnswers = {
@@ -171,9 +173,14 @@ const GROUPS: Array<{
   },
 ]
 
-export function PersonalitySection({ onResult, storedResult, onStoreResult, onRetake }: PersonalitySectionProps) {
-  const [answers, setAnswers] = useState<PersonalityAnswers>(DEFAULTS)
+export function PersonalitySection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: PersonalitySectionProps) {
+  const [answers, setAnswers] = useState<PersonalityAnswers>(storedInputs ?? DEFAULTS)
   const [result, setResult] = useState<PersonalityResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function updateLikert(id: keyof PersonalityAnswers, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: Number(value) as 1 | 2 | 3 | 4 | 5 }))
@@ -191,7 +198,6 @@ export function PersonalitySection({ onResult, storedResult, onStoreResult, onRe
   }
 
   function handleRetake() {
-    setAnswers(DEFAULTS)
     setResult(null)
     onRetake?.()
   }

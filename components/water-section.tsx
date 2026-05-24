@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Droplets,
   AlertTriangle,
@@ -51,6 +51,8 @@ interface WaterSectionProps {
   storedResult?: WaterResult | null
   onStoreResult?: (result: WaterResult) => void
   onRetake?: () => void
+  storedInputs?: Partial<WaterAnswers> | null
+  onStoreInputs?: (inputs: Partial<WaterAnswers>) => void
 }
 
 const SOURCE_OPTIONS: { value: WaterSource; label: string; desc: string }[] = [
@@ -128,10 +130,10 @@ const STEP_INFO = [
   { title: "Daily Intake", icon: GlassWater },
 ]
 
-export function WaterSection({ onResult, storedResult, onStoreResult, onRetake }: WaterSectionProps) {
+export function WaterSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: WaterSectionProps) {
   const countries = useMemo(() => getWaterCountries(), [])
   
-  const [answers, setAnswers] = useState<Partial<WaterAnswers>>({
+  const [answers, setAnswers] = useState<Partial<WaterAnswers>>(storedInputs ?? {
   filterMaintained: true,
   plasticBottlesPerWeek: 0,
   knownPipeIssues: false,
@@ -139,6 +141,11 @@ export function WaterSection({ onResult, storedResult, onStoreResult, onRetake }
   })
   const [result, setResult] = useState<WaterResult | null>(storedResult ?? null)
   const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   const updateAnswer = <K extends keyof WaterAnswers>(key: K, value: WaterAnswers[K]) => {
     setAnswers((prev) => ({ ...prev, [key]: value }))
@@ -199,12 +206,6 @@ function handleCalculate() {
 
   function handleRetake() {
     setResult(null)
-    setAnswers({
-      filterMaintained: true,
-      plasticBottlesPerWeek: 0,
-      knownPipeIssues: false,
-      recentRenovation: false,
-    })
     setStep(0)
     onRetake?.()
   }

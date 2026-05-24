@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Brain,
   AlertTriangle,
@@ -33,6 +33,8 @@ interface MentalHealthSectionProps {
   storedResult?: MentalHealthResult | null
   onStoreResult?: (result: MentalHealthResult) => void
   onRetake?: () => void
+  storedInputs?: MentalHealthAnswers | null
+  onStoreInputs?: (inputs: MentalHealthAnswers) => void
 }
 
 const DEFAULT_ANSWERS: MentalHealthAnswers = {
@@ -186,10 +188,15 @@ const QUESTION_GROUPS: QuestionGroup[] = [
   },
 ]
 
-export function MentalHealthSection({ onResult, storedResult, onStoreResult, onRetake }: MentalHealthSectionProps) {
-  const [answers, setAnswers] = useState<MentalHealthAnswers>(DEFAULT_ANSWERS)
+export function MentalHealthSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: MentalHealthSectionProps) {
+  const [answers, setAnswers] = useState<MentalHealthAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<MentalHealthResult | null>(storedResult ?? null)
   const [currentGroup, setCurrentGroup] = useState(0)
+
+  useEffect(() => {
+    onStoreInputs?.(answers)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers])
 
   function updateAnswer(id: keyof MentalHealthAnswers, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: value as MentalHealthAnswers[typeof id] }))
@@ -215,7 +222,6 @@ function handleCalculate() {
   }
   
   function handleReset() {
-  setAnswers(DEFAULT_ANSWERS)
   setResult(null)
   setCurrentGroup(0)
   onRetake?.()

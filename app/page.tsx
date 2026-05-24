@@ -148,6 +148,10 @@ export default function Page() {
   // Store full results for each section to persist when navigating
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [storedResults, setStoredResults] = useState<Record<string, any>>({})
+  // Store form inputs for each section so answers persist across navigation
+  // and across "Retake assessment" (which clears results but keeps answers)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [storedInputs, setStoredInputs] = useState<Record<string, any>>({})
 
   function storeResult(key: string, result: unknown) {
     setStoredResults(prev => ({ ...prev, [key]: result }))
@@ -159,6 +163,10 @@ export default function Page() {
       delete newResults[key]
       return newResults
     })
+  }
+
+  function storeInputs(key: string, inputs: unknown) {
+    setStoredInputs(prev => ({ ...prev, [key]: inputs }))
   }
 
   const scores: HealthScores = useMemo(
@@ -303,31 +311,31 @@ export default function Page() {
           />
         )
       case "body":
-        return <BodyCompositionSection onResult={handleBodyResult} storedResult={storedResults.body} onStoreResult={(r) => storeResult("body", r)} onRetake={() => clearResult("body")} />
+        return <BodyCompositionSection onResult={handleBodyResult} storedResult={storedResults.body} onStoreResult={(r) => storeResult("body", r)} onRetake={() => clearResult("body")} storedInputs={storedInputs.body} onStoreInputs={(i) => storeInputs("body", i)} />
       case "air":
-        return <AirQualitySection onResult={handleAirResult} storedResult={storedResults.air} onStoreResult={(r) => storeResult("air", r)} onRetake={() => clearResult("air")} />
+        return <AirQualitySection onResult={handleAirResult} storedResult={storedResults.air} onStoreResult={(r) => storeResult("air", r)} onRetake={() => clearResult("air")} storedInputs={storedInputs.air} onStoreInputs={(i) => storeInputs("air", i)} />
       case "water":
-        return <WaterSection onResult={handleWaterResult} storedResult={storedResults.water} onStoreResult={(r) => storeResult("water", r)} onRetake={() => clearResult("water")} />
+        return <WaterSection onResult={handleWaterResult} storedResult={storedResults.water} onStoreResult={(r) => storeResult("water", r)} onRetake={() => clearResult("water")} storedInputs={storedInputs.water} onStoreInputs={(i) => storeInputs("water", i)} />
       case "diet":
-        return <DietSection onResult={handleDietResult} storedResult={storedResults.diet} onStoreResult={(r) => storeResult("diet", r)} onRetake={() => clearResult("diet")} />
+        return <DietSection onResult={handleDietResult} storedResult={storedResults.diet} onStoreResult={(r) => storeResult("diet", r)} onRetake={() => clearResult("diet")} storedInputs={storedInputs.diet} onStoreInputs={(i) => storeInputs("diet", i)} />
       case "exercise":
-        return <ExerciseSection onResult={handleExerciseResult} storedResult={storedResults.exercise} onStoreResult={(r) => storeResult("exercise", r)} onRetake={() => clearResult("exercise")} />
+        return <ExerciseSection onResult={handleExerciseResult} storedResult={storedResults.exercise} onStoreResult={(r) => storeResult("exercise", r)} onRetake={() => clearResult("exercise")} storedInputs={storedInputs.exercise} onStoreInputs={(i) => storeInputs("exercise", i)} />
       case "work":
-        return <WorkSection onResult={handleWorkResult} storedResult={storedResults.work} onStoreResult={(r) => storeResult("work", r)} onRetake={() => clearResult("work")} />
+        return <WorkSection onResult={handleWorkResult} storedResult={storedResults.work} onStoreResult={(r) => storeResult("work", r)} onRetake={() => clearResult("work")} storedInputs={storedInputs.work} onStoreInputs={(i) => storeInputs("work", i)} />
       case "lifestyle":
-        return <LifestyleSection onResult={handleLifestyleResult} storedResult={storedResults.lifestyle} onStoreResult={(r) => storeResult("lifestyle", r)} onRetake={() => clearResult("lifestyle")} />
+        return <LifestyleSection onResult={handleLifestyleResult} storedResult={storedResults.lifestyle} onStoreResult={(r) => storeResult("lifestyle", r)} onRetake={() => clearResult("lifestyle")} storedInputs={storedInputs.lifestyle} onStoreInputs={(i) => storeInputs("lifestyle", i)} />
       case "mental":
-        return <MentalHealthSection onResult={handleMentalHealthResult} storedResult={storedResults.mental} onStoreResult={(r) => storeResult("mental", r)} onRetake={() => clearResult("mental")} />
+        return <MentalHealthSection onResult={handleMentalHealthResult} storedResult={storedResults.mental} onStoreResult={(r) => storeResult("mental", r)} onRetake={() => clearResult("mental")} storedInputs={storedInputs.mental} onStoreInputs={(i) => storeInputs("mental", i)} />
       case "family":
-        return <FamilyHistorySection onResult={handleFamilyHistoryResult} storedResult={storedResults.family} onStoreResult={(r) => storeResult("family", r)} onRetake={() => clearResult("family")} />
+        return <FamilyHistorySection onResult={handleFamilyHistoryResult} storedResult={storedResults.family} onStoreResult={(r) => storeResult("family", r)} onRetake={() => clearResult("family")} storedInputs={storedInputs.family} onStoreInputs={(i) => storeInputs("family", i)} />
       case "preventive":
-        return <PreventiveCareSection onResult={handlePreventiveCareResult} storedResult={storedResults.preventive} onStoreResult={(r) => storeResult("preventive", r)} onRetake={() => clearResult("preventive")} />
+        return <PreventiveCareSection onResult={handlePreventiveCareResult} storedResult={storedResults.preventive} onStoreResult={(r) => storeResult("preventive", r)} onRetake={() => clearResult("preventive")} storedInputs={storedInputs.preventive} onStoreInputs={(i) => storeInputs("preventive", i)} />
       case "senses":
-        return <SensesOralSection onResult={handleSensesOralResult} storedResult={storedResults.senses} onStoreResult={(r) => storeResult("senses", r)} onRetake={() => clearResult("senses")} />
+        return <SensesOralSection onResult={handleSensesOralResult} storedResult={storedResults.senses} onStoreResult={(r) => storeResult("senses", r)} onRetake={() => clearResult("senses")} storedInputs={storedInputs.senses} onStoreInputs={(i) => storeInputs("senses", i)} />
       case "lifecontext":
-        return <LifeContextSection onResult={handleLifeContextResult} storedResult={storedResults.lifecontext} onStoreResult={(r) => storeResult("lifecontext", r)} onRetake={() => clearResult("lifecontext")} />
+        return <LifeContextSection onResult={handleLifeContextResult} storedResult={storedResults.lifecontext} onStoreResult={(r) => storeResult("lifecontext", r)} onRetake={() => clearResult("lifecontext")} storedInputs={storedInputs.lifecontext} onStoreInputs={(i) => storeInputs("lifecontext", i)} />
       case "personality":
-        return <PersonalitySection onResult={handlePersonalityResult} storedResult={storedResults.personality} onStoreResult={(r) => storeResult("personality", r)} onRetake={() => clearResult("personality")} />
+        return <PersonalitySection onResult={handlePersonalityResult} storedResult={storedResults.personality} onStoreResult={(r) => storeResult("personality", r)} onRetake={() => clearResult("personality")} storedInputs={storedInputs.personality} onStoreInputs={(i) => storeInputs("personality", i)} />
       case "carbon":
         return (
           <CarbonSection

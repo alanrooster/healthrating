@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Dumbbell, CheckCircle2, AlertTriangle, Activity } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -26,6 +26,8 @@ interface ExerciseSectionProps {
   storedResult?: ExerciseResult | null
   onStoreResult?: (result: ExerciseResult) => void
   onRetake?: () => void
+  storedInputs?: ExerciseInputs | null
+  onStoreInputs?: (inputs: ExerciseInputs) => void
 }
 
 const DEFAULT_INPUTS: ExerciseInputs = {
@@ -46,9 +48,14 @@ const DEFAULT_INPUTS: ExerciseInputs = {
   restingHeartRate: 70,
 }
 
-export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetake }: ExerciseSectionProps) {
-  const [inputs, setInputs] = useState<ExerciseInputs>(DEFAULT_INPUTS)
+export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: ExerciseSectionProps) {
+  const [inputs, setInputs] = useState<ExerciseInputs>(storedInputs ?? DEFAULT_INPUTS)
   const [result, setResult] = useState<ExerciseResult | null>(storedResult ?? null)
+
+  useEffect(() => {
+    onStoreInputs?.(inputs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputs])
 
   const groups = useMemo(() => {
     const g: Record<string, typeof EXERCISE_QUESTIONS> = {}
@@ -76,7 +83,6 @@ export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetak
   }
 
   function handleReset() {
-    setInputs(DEFAULT_INPUTS)
     setResult(null)
     onRetake?.()
   }
