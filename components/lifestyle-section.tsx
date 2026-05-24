@@ -34,7 +34,7 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface LifestyleSectionProps {
-  onResult: (score: number) => void
+  onResult: (score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) => void
   storedResult?: LifestyleResult | null
   onStoreResult?: (result: LifestyleResult) => void
   onRetake?: () => void
