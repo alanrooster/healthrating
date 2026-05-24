@@ -52,6 +52,12 @@ export interface LifestyleAnswers {
   sunscreenUse: "always" | "usually" | "sometimes" | "rarely" | "never"
   sunburnsPerYear: number // 0+ (skin cancer risk indicator)
 
+  // Commute (Hansson et al. 2011 - long commutes raise depression/obesity risk)
+  commuteMinutesOneWay: number // 0+ minutes one-way
+
+  // Sauna (Laukkanen et al. 2015 JAMA - 4-7 sessions/week = -40% mortality vs 1/week)
+  saunaSessionsPerWeek: number // 0-7+
+
   // Substance use
   smokingStatus: "never" | "former" | "occasional" | "daily"
   alcoholFrequency: "never" | "monthly" | "weekly" | "several-weekly" | "daily"
@@ -67,6 +73,8 @@ export interface LifestyleResult {
     leisure: number
     sedentary: number
     sun: number
+    commute: number
+    sauna: number
     habits: number
   }
   riskFactors: string[]
@@ -408,8 +416,52 @@ function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[
 }
 
 /**
+ * Commute time score (0-100)
+ * Hansson et al. 2011 (Sweden): commutes >45 min one-way associated with
+ * +33% depression, +21% obesity, lower wellbeing. Each 10-min increment
+ * correlates with worse health outcomes.
+ */
+function scoreCommute(answers: LifestyleAnswers): { score: number; risks: string[] } {
+  const risks: string[] = []
+  const m = answers.commuteMinutesOneWay
+  let score: number
+  if (m <= 5) score = 100 // remote/very close
+  else if (m <= 15) score = 95
+  else if (m <= 30) score = 80
+  else if (m <= 45) score = 60
+  else if (m <= 60) score = 40
+  else if (m <= 90) score = 20
+  else score = 5
+
+  if (m >= 45) {
+    risks.push(`Commute of ${m}+ minutes one-way is associated with elevated depression and obesity risk (Hansson et al. 2011)`)
+  }
+  return { score, risks }
+}
+
+/**
+ * Sauna use score (0-100)
+ * Laukkanen et al. 2015 (JAMA): 4-7 sauna sessions/week associated with
+ * 40% lower all-cause mortality and 50% lower cardiovascular mortality
+ * vs 1 session/week. Robust Finnish cohort with dose-response.
+ */
+function scoreSauna(answers: LifestyleAnswers): { score: number; risks: string[] } {
+  const risks: string[] = []
+  const s = answers.saunaSessionsPerWeek
+  // Default baseline 50 (most people don't sauna; not a deficit per se)
+  let score: number
+  if (s === 0) score = 50
+  else if (s === 1) score = 65
+  else if (s <= 3) score = 80
+  else if (s <= 7) score = 100
+  else score = 90 // diminishing/no extra benefit
+  return { score, risks }
+}
+
+/**
  * Main lifestyle assessment function
- * Sub-domain weights: Sleep 25%, Social 18%, Sedentary 15%, Sun 10%, Leisure 14%, Habits 18%
+ * Sub-domain weights: Sleep 22%, Social 16%, Sedentary 13%, Sun 8%,
+ * Leisure 12%, Commute 8%, Sauna 5%, Habits 16%
  */
 export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   const sl = scoreSleep(answers)
@@ -417,17 +469,21 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   const le = scoreLeisure(answers)
   const sd = scoreSedentary(answers)
   const su = scoreSun(answers)
+  const cm = scoreCommute(answers)
+  const sa = scoreSauna(answers)
   const hb = scoreHabits(answers)
 
-  const allRisks = [...sl.risks, ...so.risks, ...le.risks, ...sd.risks, ...su.risks, ...hb.risks]
+  const allRisks = [...sl.risks, ...so.risks, ...le.risks, ...sd.risks, ...su.risks, ...cm.risks, ...sa.risks, ...hb.risks]
 
   const overallScore = Math.round(
-    sl.score * 0.25 +
-    so.score * 0.18 +
-    le.score * 0.14 +
-    sd.score * 0.15 +
-    su.score * 0.10 +
-    hb.score * 0.18
+    sl.score * 0.22 +
+    so.score * 0.16 +
+    le.score * 0.12 +
+    sd.score * 0.13 +
+    su.score * 0.08 +
+    cm.score * 0.08 +
+    sa.score * 0.05 +
+    hb.score * 0.16
   )
 
   const recommendations: string[] = []
@@ -437,6 +493,8 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   if (le.score < 60) recommendations.push("Balance screen time with outdoor activities and hobbies you enjoy.")
   if (sd.score < 60) recommendations.push("Break up sitting time: stand or move every 30-60 minutes; aim for under 8 hours sitting per day.")
   if (su.score < 60) recommendations.push("Aim for 10-30 minutes of daily sun exposure; use sunscreen and avoid sunburns to balance vitamin D and skin cancer risk.")
+  if (cm.score < 60) recommendations.push("Long commutes harm health: consider remote work, moving closer to work, or using commute time productively (audiobooks, podcasts, transit reading).")
+  if (sa.score < 60) recommendations.push("Regular sauna use (4+ sessions/week) is associated with major cardiovascular benefits in long-term Finnish data.")
   if (hb.score < 60) recommendations.push("Reducing smoking and alcohol intake are among the highest-impact changes for longevity.")
 
   if (overallScore >= 80) {
@@ -451,6 +509,8 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
       leisure: le.score,
       sedentary: sd.score,
       sun: su.score,
+      commute: cm.score,
+      sauna: sa.score,
       habits: hb.score,
     },
     riskFactors: allRisks,

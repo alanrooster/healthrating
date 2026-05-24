@@ -12,6 +12,8 @@ import {
   TreePine,
   Armchair,
   Sun,
+  Car,
+  Flame,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -56,6 +58,8 @@ const DEFAULT_ANSWERS: LifestyleAnswers = {
   sunExposureMinutes: 20,
   sunscreenUse: "sometimes",
   sunburnsPerYear: 0,
+  commuteMinutesOneWay: 20,
+  saunaSessionsPerWeek: 0,
   smokingStatus: "never",
   alcoholFrequency: "monthly",
   alcoholUnitsPerSession: 2,
@@ -311,6 +315,38 @@ const QUESTION_GROUPS: QuestionGroup[] = [
     ],
   },
   {
+    title: "Commute",
+    icon: Car,
+    questions: [
+      {
+        id: "commuteMinutesOneWay",
+        label: "Typical one-way commute time",
+        description: "Hansson et al. 2011: 45+ min commutes raise depression and obesity risk. Use 0 if remote.",
+        type: "number",
+        min: 0,
+        max: 240,
+        step: 5,
+        unit: "minutes",
+      },
+    ],
+  },
+  {
+    title: "Sauna",
+    icon: Flame,
+    questions: [
+      {
+        id: "saunaSessionsPerWeek",
+        label: "Sauna sessions per week",
+        description: "Laukkanen et al. 2015 (JAMA): 4-7 sessions/week associated with 40% lower mortality vs 1/week.",
+        type: "number",
+        min: 0,
+        max: 14,
+        step: 1,
+        unit: "sessions",
+      },
+    ],
+  },
+  {
     title: "Habits",
     icon: Cigarette,
     questions: [
@@ -544,6 +580,8 @@ function LifestyleResults({
     { label: "Leisure & Balance", score: subScores.leisure, icon: Tv },
     { label: "Sedentary Time", score: subScores.sedentary, icon: Armchair },
     { label: "Sun Exposure", score: subScores.sun, icon: Sun },
+    { label: "Commute", score: subScores.commute, icon: Car },
+    { label: "Sauna", score: subScores.sauna, icon: Flame },
     { label: "Habits", score: subScores.habits, icon: Cigarette },
   ]
 

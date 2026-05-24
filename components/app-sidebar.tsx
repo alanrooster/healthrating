@@ -11,10 +11,12 @@ import {
   Dumbbell,
   Ear,
   Heart,
+  HeartHandshake,
   Info,
   Leaf,
   Moon,
   ShieldCheck,
+  Smile,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -55,6 +57,8 @@ const NAV_ITEMS = [
   { id: "family", label: "Family History", icon: Dna },
   { id: "preventive", label: "Preventive Care", icon: ShieldCheck },
   { id: "senses", label: "Senses & Oral Health", icon: Ear },
+  { id: "lifecontext", label: "Life Context", icon: HeartHandshake },
+  { id: "personality", label: "Personality & Outlook", icon: Smile },
 ]
 
 const EXTRAS_ITEMS = [
@@ -95,6 +99,8 @@ export function AppSidebar({
     family: scores.familyHistory,
     preventive: scores.preventiveCare,
     senses: scores.sensesOral,
+    lifecontext: scores.lifeContext,
+    personality: scores.personality,
     carbon: { score: carbonScore ?? 0, completed: carbonCompleted ?? false },
   }
 

@@ -29,6 +29,15 @@ export interface ExerciseInputs {
 
   // Sedentary behavior
   sedentaryHours: number // hours per day sitting
+
+  // Functional fitness (self-report proxies for clinical measures)
+  // Studenski et al. 2011 (JAMA): walking speed predicts survival
+  // Leong et al. 2015 (Lancet): grip strength predicts mortality (5kg = +16%)
+  // Mandsager 2018 (JAMA): cardiorespiratory fitness reduces mortality up to 5x
+  stairsCapacity: "easy-4plus" | "ok-4" | "ok-2" | "struggle-1" | "cannot" // 4 flights without stopping
+  walkingPace: "very-fast" | "brisk" | "average" | "slow" | "very-slow" // self-reported usual pace
+  gripStrength: "very-strong" | "strong" | "average" | "weak" | "very-weak" // jars/groceries proxy
+  restingHeartRate: number // bpm at rest (typical: 60-100)
 }
 
 export interface ExerciseQuestion {
@@ -164,7 +173,9 @@ export const EXERCISE_QUESTIONS: ExerciseQuestion[] = [
 
 export interface ExerciseResult {
   totalMETMinutes: number
-  score: number // 0-100
+  score: number // 0-100 composite (activity + functional)
+  activityScore: number // 0-100 from MET-minutes
+  functionalScore: number // 0-100 from functional fitness markers
   category: string
   feedback: string
   breakdown: {
@@ -178,6 +189,40 @@ export interface ExerciseResult {
   sedentaryPenalty: number
   sedentaryRisk: string
   meetsWHOGuideline: boolean
+  functionalFlags: string[]
+}
+
+const STAIRS_MAP: Record<string, number> = {
+  "easy-4plus": 100,
+  "ok-4": 80,
+  "ok-2": 55,
+  "struggle-1": 25,
+  cannot: 0,
+}
+const WALK_MAP: Record<string, number> = {
+  "very-fast": 100,
+  brisk: 85,
+  average: 60,
+  slow: 30,
+  "very-slow": 10,
+}
+const GRIP_MAP: Record<string, number> = {
+  "very-strong": 100,
+  strong: 80,
+  average: 60,
+  weak: 30,
+  "very-weak": 10,
+}
+
+function scoreRestingHeartRate(rhr: number): number {
+  // Optimal: 50-65; above 80 raises mortality risk (CARDIA, Whitehall)
+  if (rhr <= 0) return 50
+  if (rhr < 50) return 90 // very low - athletic, but check for symptoms
+  if (rhr <= 65) return 100
+  if (rhr <= 75) return 80
+  if (rhr <= 85) return 55
+  if (rhr <= 95) return 30
+  return 10
 }
 
 export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
@@ -249,26 +294,62 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
   }
 
   const score = Math.max(0, Math.min(100, baseScore - sedentaryPenalty))
+  const activityScore = score
   const meetsWHOGuideline = totalMETMinutes >= 600
 
+  // Functional fitness composite
+  const stairs = STAIRS_MAP[inputs.stairsCapacity] ?? 60
+  const walk = WALK_MAP[inputs.walkingPace] ?? 60
+  const grip = GRIP_MAP[inputs.gripStrength] ?? 60
+  const rhr = scoreRestingHeartRate(inputs.restingHeartRate)
+  // Weights: stairs 30% (CRF proxy), walk 30% (Studenski), grip 25% (Leong), RHR 15%
+  const functionalScore = Math.round(stairs * 0.3 + walk * 0.3 + grip * 0.25 + rhr * 0.15)
+
+  const functionalFlags: string[] = []
+  if (inputs.stairsCapacity === "struggle-1" || inputs.stairsCapacity === "cannot") {
+    functionalFlags.push(
+      "Difficulty climbing stairs suggests low cardiorespiratory fitness - a stronger mortality predictor than smoking (Mandsager 2018)"
+    )
+  }
+  if (inputs.walkingPace === "slow" || inputs.walkingPace === "very-slow") {
+    functionalFlags.push(
+      "Slow gait speed predicts mortality as strongly as age + sex + chronic conditions combined (Studenski 2011)"
+    )
+  }
+  if (inputs.gripStrength === "weak" || inputs.gripStrength === "very-weak") {
+    functionalFlags.push(
+      "Low grip strength is a stronger mortality predictor than systolic blood pressure (Leong 2015, Lancet)"
+    )
+  }
+  if (inputs.restingHeartRate >= 80) {
+    functionalFlags.push(
+      `Resting heart rate of ${inputs.restingHeartRate} bpm is elevated; lower RHR (50-65) is associated with longer life`
+    )
+  }
+
+  // Composite final score: 70% activity, 30% functional
+  const composite = Math.round(activityScore * 0.7 + functionalScore * 0.3)
+
   let feedback: string
-  if (score >= 85) {
+  if (composite >= 85) {
     feedback =
-      "Excellent physical activity level! You significantly exceed WHO recommendations. Your active lifestyle provides strong protection against chronic diseases."
-  } else if (score >= 60) {
+      "Excellent overall fitness! High activity levels combined with strong functional capacity provide major protection against chronic disease."
+  } else if (composite >= 60) {
     feedback =
-      "Good activity level that meets WHO recommendations. Consider adding more vigorous activity or increasing duration for even greater health benefits."
-  } else if (score >= 30) {
+      "Good fitness profile. Consider strengthening any low functional markers (gait, grip, stairs) - these are stronger mortality predictors than activity volume alone."
+  } else if (composite >= 30) {
     feedback =
-      "You are doing some physical activity but not enough to meet WHO recommendations of 150-300 minutes of moderate activity per week. Try to gradually increase your activity."
+      "Moderate fitness. Both activity and functional capacity matter. Resistance training improves grip, and high-intensity intervals improve cardiorespiratory fitness."
   } else {
     feedback =
-      "Your physical activity level is very low. WHO recommends at least 150 minutes of moderate activity per week. Start with short walks and gradually build up."
+      "Low fitness profile. Even small increases in walking pace, stair climbing, and grip strength meaningfully reduce mortality risk."
   }
 
   return {
     totalMETMinutes,
-    score,
+    score: composite,
+    activityScore,
+    functionalScore,
     category,
     feedback,
     breakdown: {
@@ -282,5 +363,6 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
     sedentaryPenalty,
     sedentaryRisk,
     meetsWHOGuideline,
+    functionalFlags,
   }
 }

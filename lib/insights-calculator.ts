@@ -52,6 +52,8 @@ const MODULE_LABELS: Record<keyof HealthScores, string> = {
   familyHistory: "Family History",
   preventiveCare: "Preventive Care",
   sensesOral: "Senses & Oral Health",
+  lifeContext: "Life Context",
+  personality: "Personality & Outlook",
 }
 
 const ACTION_RECOMMENDATIONS: Record<keyof HealthScores, string> = {
@@ -66,6 +68,8 @@ const ACTION_RECOMMENDATIONS: Record<keyof HealthScores, string> = {
   familyHistory: "Share family history with your doctor to personalize screening intervals.",
   preventiveCare: "Catch up on screenings, vaccinations, dental and eye exams.",
   sensesOral: "Treat hearing/vision issues early and maintain daily oral hygiene.",
+  lifeContext: "Strengthen relationships, financial security, and community involvement - these have multi-year longevity effects.",
+  personality: "Cultivate optimism, conscientiousness, and forgiveness - these traits add measurable years.",
 }
 
 /**
@@ -149,8 +153,10 @@ const IMPACT_WEIGHTS: Record<keyof HealthScores, number> = {
   lifestyle: 0.12,
   mentalHealth: 0.15,
   familyHistory: 0.06,
-  preventiveCare: 0.07,
-  sensesOral: 0.05,
+  preventiveCare: 0.06,
+  sensesOral: 0.04,
+  lifeContext: 0.06,
+  personality: 0.05,
 }
 
 export function buildActionPlan(scores: HealthScores): ActionItem[] {

@@ -1,11 +1,18 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Dumbbell, CheckCircle2, AlertTriangle } from "lucide-react"
+import { Dumbbell, CheckCircle2, AlertTriangle, Activity } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   EXERCISE_QUESTIONS,
   calculateExerciseScore,
@@ -33,6 +40,10 @@ const DEFAULT_INPUTS: ExerciseInputs = {
   recModDays: 0,
   recModMin: 0,
   sedentaryHours: 8,
+  stairsCapacity: "ok-4",
+  walkingPace: "average",
+  gripStrength: "average",
+  restingHeartRate: 70,
 }
 
 export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetake }: ExerciseSectionProps) {
@@ -120,6 +131,112 @@ export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetak
             </Card>
           ))}
 
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Activity className="h-5 w-5 text-primary" />
+                Functional Fitness
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Self-reported markers that predict mortality independently of activity levels
+                (Studenski 2011, Leong 2015 Lancet, Mandsager 2018 JAMA).
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-sm text-foreground">
+                  Climbing 4 flights of stairs without stopping
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Strong proxy for cardiorespiratory fitness (VO2 max)
+                </p>
+                <Select
+                  value={inputs.stairsCapacity}
+                  onValueChange={(v) =>
+                    setInputs((p) => ({ ...p, stairsCapacity: v as ExerciseInputs["stairsCapacity"] }))
+                  }
+                >
+                  <SelectTrigger className="max-w-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy-4plus">Easy - I can do more than 4 flights</SelectItem>
+                    <SelectItem value="ok-4">Comfortable with 4 flights</SelectItem>
+                    <SelectItem value="ok-2">Can manage 2 flights</SelectItem>
+                    <SelectItem value="struggle-1">Struggle even with 1 flight</SelectItem>
+                    <SelectItem value="cannot">Cannot climb stairs</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-sm text-foreground">Usual walking pace</Label>
+                <p className="text-xs text-muted-foreground">
+                  Gait speed predicts survival as well as age + sex + chronic conditions combined
+                </p>
+                <Select
+                  value={inputs.walkingPace}
+                  onValueChange={(v) =>
+                    setInputs((p) => ({ ...p, walkingPace: v as ExerciseInputs["walkingPace"] }))
+                  }
+                >
+                  <SelectTrigger className="max-w-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="very-fast">Very fast (overtake most people)</SelectItem>
+                    <SelectItem value="brisk">Brisk</SelectItem>
+                    <SelectItem value="average">Average</SelectItem>
+                    <SelectItem value="slow">Slow</SelectItem>
+                    <SelectItem value="very-slow">Very slow / use mobility aid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-sm text-foreground">Grip strength (self-rated)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Opening jars, carrying groceries, holding heavy bags
+                </p>
+                <Select
+                  value={inputs.gripStrength}
+                  onValueChange={(v) =>
+                    setInputs((p) => ({ ...p, gripStrength: v as ExerciseInputs["gripStrength"] }))
+                  }
+                >
+                  <SelectTrigger className="max-w-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="very-strong">Very strong - never struggle</SelectItem>
+                    <SelectItem value="strong">Strong</SelectItem>
+                    <SelectItem value="average">Average</SelectItem>
+                    <SelectItem value="weak">Weak - sometimes need help</SelectItem>
+                    <SelectItem value="very-weak">Very weak - often need help</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-sm text-foreground">Resting heart rate</Label>
+                <p className="text-xs text-muted-foreground">
+                  Take pulse for 60 seconds while seated and relaxed. Optimal range: 50-65 bpm.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={inputs.restingHeartRate}
+                    onChange={(e) =>
+                      setInputs((p) => ({
+                        ...p,
+                        restingHeartRate: Math.max(30, Math.min(150, Number.parseFloat(e.target.value) || 0)),
+                      }))
+                    }
+                    min={30}
+                    max={150}
+                    step={1}
+                    className="w-28"
+                  />
+                  <span className="text-sm text-muted-foreground">bpm</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Button onClick={handleCalculate} className="self-start" size="lg">
             Calculate Exercise Score
           </Button>
@@ -141,12 +258,15 @@ function ExerciseResults({
   const {
     totalMETMinutes,
     score,
+    activityScore,
+    functionalScore,
     category,
     feedback,
     breakdown,
     sedentaryPenalty,
     sedentaryRisk,
     meetsWHOGuideline,
+    functionalFlags,
   } = result
 
   const breakdownItems = [
@@ -236,6 +356,53 @@ function ExerciseResults({
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Sub-score split */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Activity</span>
+                <span className="text-base font-bold" style={{ color: getScoreColor(activityScore) }}>
+                  {activityScore}
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${activityScore}%`, backgroundColor: getScoreColor(activityScore) }}
+                />
+              </div>
+            </div>
+            <div className="rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Functional Fitness</span>
+                <span className="text-base font-bold" style={{ color: getScoreColor(functionalScore) }}>
+                  {functionalScore}
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${functionalScore}%`, backgroundColor: getScoreColor(functionalScore) }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {functionalFlags.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-foreground">Functional Markers to Address</span>
+              {functionalFlags.map((f, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-2 rounded-lg border border-[hsl(var(--accent))]/30 bg-[hsl(var(--accent))]/5 p-3"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--accent))]" />
+                  <span className="text-xs text-muted-foreground leading-relaxed">{f}</span>
+                </div>
+              ))}
             </div>
           )}
 

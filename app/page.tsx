@@ -18,6 +18,8 @@ import { MentalHealthSection } from "@/components/mental-health-section"
 import { FamilyHistorySection } from "@/components/family-history-section"
 import { PreventiveCareSection } from "@/components/preventive-care-section"
 import { SensesOralSection } from "@/components/senses-oral-section"
+import { LifeContextSection } from "@/components/life-context-section"
+import { PersonalitySection } from "@/components/personality-section"
 import { CarbonSection } from "@/components/carbon-section"
 import { MethodologySection } from "@/components/methodology-section"
 import {
@@ -109,6 +111,14 @@ export default function Page() {
     ...EMPTY_SCORE,
     label: "Senses & Oral Health",
   })
+  const [lifeContextScore, setLifeContextScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Life Context",
+  })
+  const [personalityScore, setPersonalityScore] = useState<ModuleScore>({
+    ...EMPTY_SCORE,
+    label: "Personality & Outlook",
+  })
 
   // Carbon footprint (separate from health scores)
   const [carbonCompleted, setCarbonCompleted] = useState(false)
@@ -164,8 +174,10 @@ export default function Page() {
       familyHistory: familyHistoryScore,
       preventiveCare: preventiveCareScore,
       sensesOral: sensesOralScore,
+      lifeContext: lifeContextScore,
+      personality: personalityScore,
     }),
-    [bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore, sensesOralScore]
+    [bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore, sensesOralScore, lifeContextScore, personalityScore]
   )
 
   const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
@@ -185,6 +197,8 @@ export default function Page() {
       workScore: workScore.completed ? workScore.score : undefined,
       lifestyleScore: lifestyleScore.completed ? lifestyleScore.score : undefined,
       mentalHealthScore: mentalHealthScore.completed ? mentalHealthScore.score : undefined,
+      lifeContextScore: lifeContextScore.completed ? lifeContextScore.score : undefined,
+      personalityScore: personalityScore.completed ? personalityScore.score : undefined,
       smokingStatus: lifestyleData?.smokingStatus,
       alcoholFrequency: lifestyleData?.alcoholFrequency,
       processedMeatFrequency: dietData?.processedMeatFrequency,
@@ -205,7 +219,7 @@ export default function Page() {
         direction: a.direction as "positive" | "negative",
       })),
     }
-  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifestyleData, dietData])
+  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, lifestyleData, dietData])
 
   function handleBodyResult(score: number) {
     setBodyScore({ score, completed: true, label: "Body Composition" })
@@ -263,6 +277,14 @@ export default function Page() {
     setSensesOralScore({ score, completed: true, label: "Senses & Oral Health" })
   }
 
+  function handleLifeContextResult(score: number) {
+    setLifeContextScore({ score, completed: true, label: "Life Context" })
+  }
+
+  function handlePersonalityResult(score: number) {
+    setPersonalityScore({ score, completed: true, label: "Personality & Outlook" })
+  }
+
   function handleCarbonResult(score: number, kgCO2: number) {
     setCarbonScore(score)
     setCarbonCompleted(true)
@@ -302,6 +324,10 @@ export default function Page() {
         return <PreventiveCareSection onResult={handlePreventiveCareResult} storedResult={storedResults.preventive} onStoreResult={(r) => storeResult("preventive", r)} onRetake={() => clearResult("preventive")} />
       case "senses":
         return <SensesOralSection onResult={handleSensesOralResult} storedResult={storedResults.senses} onStoreResult={(r) => storeResult("senses", r)} onRetake={() => clearResult("senses")} />
+      case "lifecontext":
+        return <LifeContextSection onResult={handleLifeContextResult} storedResult={storedResults.lifecontext} onStoreResult={(r) => storeResult("lifecontext", r)} onRetake={() => clearResult("lifecontext")} />
+      case "personality":
+        return <PersonalitySection onResult={handlePersonalityResult} storedResult={storedResults.personality} onStoreResult={(r) => storeResult("personality", r)} onRetake={() => clearResult("personality")} />
       case "carbon":
         return (
           <CarbonSection
@@ -342,6 +368,8 @@ export default function Page() {
     family: "Family Medical History",
     preventive: "Preventive Care",
     senses: "Senses & Oral Health",
+    lifecontext: "Life Context",
+    personality: "Personality & Outlook",
     carbon: "Carbon Footprint",
     methodology: "Methodology",
   }

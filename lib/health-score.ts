@@ -16,6 +16,8 @@ export interface HealthScores {
   familyHistory: ModuleScore
   preventiveCare: ModuleScore
   sensesOral: ModuleScore
+  lifeContext: ModuleScore
+  personality: ModuleScore
 }
 
 export interface OverallHealthResult {
@@ -28,17 +30,19 @@ export interface OverallHealthResult {
 }
 
 const WEIGHTS = {
-  body: 0.13,
-  airQuality: 0.06,
-  waterQuality: 0.05,
-  diet: 0.13,
+  body: 0.12,
+  airQuality: 0.05,
+  waterQuality: 0.04,
+  diet: 0.12,
   exercise: 0.10,
-  work: 0.08,
-  lifestyle: 0.12,
-  mentalHealth: 0.15,
-  familyHistory: 0.06,
-  preventiveCare: 0.07,
-  sensesOral: 0.05,
+  work: 0.07,
+  lifestyle: 0.11,
+  mentalHealth: 0.13,
+  familyHistory: 0.05,
+  preventiveCare: 0.06,
+  sensesOral: 0.04,
+  lifeContext: 0.06,
+  personality: 0.05,
 }
 
 /**
@@ -116,7 +120,7 @@ export function calculateOverallHealth(scores: HealthScores): OverallHealthResul
       overallScore: 0,
       letterGrade: "-",
       completedCount: 0,
-      totalModules: 11,
+      totalModules: 13,
       scores,
       summary: "Complete at least one assessment to see your health score.",
     }

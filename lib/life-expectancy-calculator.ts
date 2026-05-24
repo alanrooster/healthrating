@@ -26,6 +26,8 @@ export interface LifeExpectancyInputs {
   workScore?: number
   lifestyleScore?: number
   mentalHealthScore?: number
+  lifeContextScore?: number
+  personalityScore?: number
   
   // Specific risk factors (from various modules)
   smokingStatus?: string
@@ -417,6 +419,60 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     }
   }
   
+  // === LIFE CONTEXT (relationships, education, income, religion, pets, volunteering) ===
+  // High impact - marriage, education, income individually contribute multi-year effects
+  // Robles 2014, Lancet 2024 (education), Chetty 2016 JAMA (income), VanderWeele 2017 (religion)
+  if (inputs.lifeContextScore !== undefined) {
+    dataPoints++
+    let years = 0
+    if (inputs.lifeContextScore >= 85) {
+      years = 4 // Marriage + education + income + religion + pets stack up
+    } else if (inputs.lifeContextScore >= 70) {
+      years = 2.5
+    } else if (inputs.lifeContextScore >= 55) {
+      years = 1
+    } else if (inputs.lifeContextScore < 30) {
+      years = -3.5 // Divorce/widowed + low education + low income + ACEs
+    } else if (inputs.lifeContextScore < 50) {
+      years = -1.5
+    }
+    if (years !== 0) {
+      adjustments.push({
+        factor: "Life Context & Relationships",
+        years,
+        direction: years > 0 ? "positive" : "negative",
+        source: "Robles 2014, Chetty 2016 JAMA, Lancet 2024 (education), Felitti 1998 (ACEs)",
+      })
+      totalAdjustment += years
+    }
+  }
+
+  // === PERSONALITY & OUTLOOK ===
+  // Lee 2019 PNAS: optimists live 11-15% longer (~7 years)
+  // Friedman & Kern 2014: high conscientiousness = +4 years
+  if (inputs.personalityScore !== undefined) {
+    dataPoints++
+    let years = 0
+    if (inputs.personalityScore >= 85) {
+      years = 3
+    } else if (inputs.personalityScore >= 70) {
+      years = 1.5
+    } else if (inputs.personalityScore < 30) {
+      years = -2
+    } else if (inputs.personalityScore < 50) {
+      years = -0.5
+    }
+    if (years !== 0) {
+      adjustments.push({
+        factor: "Personality & Outlook",
+        years,
+        direction: years > 0 ? "positive" : "negative",
+        source: "Lee et al. 2019 PNAS, Friedman & Kern 2014",
+      })
+      totalAdjustment += years
+    }
+  }
+
   // Calculate final values
   const adjustedTotal = Math.max(age + 1, baselineTotal + totalAdjustment)
   

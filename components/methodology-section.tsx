@@ -170,10 +170,38 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Based on the WHO Global Physical Activity Questionnaire (GPAQ)
-            covering work activity, active transport, and recreational exercise.
-            Scored using MET-minutes per week with a sedentary behavior penalty.
+            Combined activity volume (70%) and functional fitness (30%) score.
+            Activity is measured by the WHO Global Physical Activity Questionnaire
+            (GPAQ) covering work, transport, and recreation in MET-minutes/week,
+            with a sedentary behavior penalty.
           </p>
+          <p>
+            <strong>Functional Fitness sub-score</strong> uses self-reported
+            proxies for clinically validated mortality predictors:
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Stair-climbing capacity (30%):</strong> Proxy for
+              cardiorespiratory fitness (VO2 max). Mandsager et al. (JAMA 2018)
+              found CRF predicts mortality more strongly than smoking; the lowest
+              fitness quartile had 5x mortality vs elite fitness.
+            </li>
+            <li>
+              <strong>Walking pace (30%):</strong> Studenski et al. (JAMA 2011)
+              demonstrated gait speed predicts survival as well as age + sex +
+              chronic conditions combined.
+            </li>
+            <li>
+              <strong>Grip strength (25%):</strong> Leong et al. (Lancet 2015,
+              PURE study, n=140k): each 5kg lower grip strength = +16%
+              all-cause mortality. Stronger predictor than systolic blood pressure.
+            </li>
+            <li>
+              <strong>Resting heart rate (15%):</strong> Lower RHR (50-65 bpm)
+              associated with longer life. Above 80 bpm raises CV mortality
+              (CARDIA, Whitehall studies).
+            </li>
+          </ul>
           <p>
             WHO recommends at least 150-300 minutes of moderate-intensity or
             75-150 minutes of vigorous-intensity physical activity per week
@@ -181,7 +209,9 @@ export function MethodologySection() {
           </p>
           <p className="text-xs">
             Sources: WHO Guidelines on Physical Activity and Sedentary Behaviour
-            (2020), GPAQ Analysis Guide.
+            (2020), GPAQ Analysis Guide, Mandsager et al. JAMA Network Open
+            (2018), Studenski et al. JAMA (2011), Leong et al. Lancet (2015,
+            PURE Study).
           </p>
         </CardContent>
       </Card>
@@ -262,24 +292,186 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Covers four sub-domains: sleep quality (35%), social connection
-            (25%), leisure & balance (20%), and substance use habits (20%).
+            Eight sub-domains measuring daily lifestyle factors with established
+            longevity effects. Weights: Sleep 22%, Social Connection 16%,
+            Habits 16%, Sedentary Time 13%, Leisure & Balance 12%, Sun
+            Exposure 8%, Commute 8%, Sauna 5%.
           </p>
-          <p>
-            Sleep scoring follows Pittsburgh Sleep Quality Index principles
-            with WHO recommendations of 7-9 hours for adults. Includes
-            assessment of sleep duration, quality, difficulty, and schedule
-            consistency.
-          </p>
-          <p>
-            Social connection scoring based on Holt-Lunstad meta-analyses
-            (2010, 2015) showing social isolation increases mortality risk by
-            29%. Leisure assessment covers screen time, outdoor exposure, and
-            hobby engagement.
-          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Sleep:</strong> Pittsburgh Sleep Quality Index (PSQI)
+              principles - duration, quality, latency, consistency, daytime
+              dysfunction. WHO recommendation 7-9h.
+            </li>
+            <li>
+              <strong>Social Connection:</strong> Holt-Lunstad meta-analyses
+              (2010, 2015) - social isolation increases mortality 29%,
+              comparable to smoking 15 cigarettes/day.
+            </li>
+            <li>
+              <strong>Sedentary Time:</strong> Patel et al. (2018, 2010) -
+              sitting 8+ hours/day raises all-cause mortality independently
+              of exercise. Breaking up sitting reduces metabolic harm.
+            </li>
+            <li>
+              <strong>Sun Exposure:</strong> Holick (2007) for vitamin D
+              synthesis (10-30 min/day optimal); AAD on sunscreen and sunburn
+              skin cancer risk.
+            </li>
+            <li>
+              <strong>Commute:</strong> Hansson et al. 2011 (Sweden) -
+              commutes &gt;45 min one-way associated with +33% depression and
+              +21% obesity. Each 10-min increment correlates with worse outcomes.
+            </li>
+            <li>
+              <strong>Sauna:</strong> Laukkanen et al. 2015 (JAMA Internal
+              Medicine, Finland, n=2,315) - 4-7 sauna sessions/week
+              associated with 40% lower all-cause mortality and 50% lower
+              cardiovascular mortality vs 1 session/week.
+            </li>
+            <li>
+              <strong>Leisure & Balance:</strong> Recreational screen time,
+              outdoor/nature exposure, hobby engagement.
+            </li>
+            <li>
+              <strong>Habits:</strong> Smoking (WHO - 8M deaths/year),
+              alcohol (WHO - no safe level), caffeine.
+            </li>
+          </ul>
           <p className="text-xs">
-            Sources: PSQI, WHO Sleep Guidelines, Holt-Lunstad et al. (2010,
-            2015), WHO/CDC substance use evidence.
+            Sources: PSQI (Buysse et al. 1989), WHO Sleep Guidelines, Holt-Lunstad
+            et al. (2010, 2015 PNAS), Patel et al. American Journal of Epidemiology
+            (2018, 2010), Holick NEJM (2007), Hansson et al. BMC Public Health
+            (2011), Laukkanen et al. JAMA Internal Medicine (2015), WHO/CDC
+            substance use evidence.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
+            Life Context & Relationships (6% of overall score)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Captures social, economic, and biographical factors with documented
+            multi-year longevity effects. Weights: Relationship & Family 22%,
+            Education 13%, Income & Financial Stress 18%, Religion/Spirituality 8%,
+            Pet Ownership 4%, Volunteering 8%, Childhood Adversity (ACEs) 17%,
+            Self-Reported Health 10%.
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Marital/Relationship Status & Quality:</strong> Robles
+              et al. 2014 meta-analysis - married individuals live ~2-3 years
+              longer; relationship quality matters more than status. Unhappy
+              marriages can be worse than being single.
+            </li>
+            <li>
+              <strong>Parenthood:</strong> Modlin et al. 2024 - parents have
+              ~5-10% lower all-cause mortality, with strongest effect at 2-3
+              children.
+            </li>
+            <li>
+              <strong>Education:</strong> Lancet 2024 global meta-analysis -
+              each additional year of schooling associated with ~1.7 years
+              longer life. College degree adds ~7-9 years vs no high school
+              (US data). Strongest non-medical predictor after smoking.
+            </li>
+            <li>
+              <strong>Income & Financial Literacy:</strong> Chetty et al.
+              2016 (JAMA) - top 1% vs bottom 1% income gap = 14.6 years
+              (men), 10.1 years (women) in US. Ryan et al. 2014 - financial
+              stress = +13% all-cause mortality. Sweet et al. 2013 - debt
+              stress correlates with hypertension and depression.
+            </li>
+            <li>
+              <strong>Religious/Spiritual Practice:</strong> VanderWeele et al.
+              2017 (JAMA Psychiatry, n=74,534) - weekly religious attendance
+              associated with 33% lower all-cause mortality. Effect persists
+              after controlling for social connection.
+            </li>
+            <li>
+              <strong>Pet Ownership:</strong> AHA Scientific Statement (2013)
+              - dog owners have ~24% lower all-cause mortality, especially
+              for cardiovascular outcomes.
+            </li>
+            <li>
+              <strong>Volunteering:</strong> Kim et al. 2020 (Harvard, AJPM)
+              - 100+ hours/year volunteering = 44% lower mortality vs none.
+            </li>
+            <li>
+              <strong>Childhood Adversity (ACEs):</strong> Felitti et al. 1998
+              + 25+ years of follow-up - 4+ ACEs associated with up to 20-year
+              shorter lifespan. Strong predictor independent of adult behaviors.
+            </li>
+          </ul>
+          <p className="text-xs">
+            Sources: Robles et al. Psychological Bulletin (2014), Modlin et al.
+            (2024), Education and Life Expectancy Lancet meta-analysis (2024),
+            Chetty et al. JAMA (2016), Ryan et al. (2014), Sweet et al. (2013),
+            VanderWeele et al. JAMA Psychiatry (2017), AHA Scientific Statement
+            on Pets (2013), Kim et al. American Journal of Preventive Medicine
+            (2020), Felitti et al. ACE Study (1998 + follow-ups).
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
+            Personality & Outlook (5% of overall score)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Five validated psychological traits with documented effects on
+            longevity. Weights: Optimism 28%, Conscientiousness 22%, Sense of
+            Control 16%, Forgiveness 12%, Humor 8%, Purpose &amp; Meaning 14%.
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Optimism:</strong> Lee et al. 2019 (PNAS, n=70,000+
+              women, follow-up Nurses&apos; Health Study + VA cohort) - top
+              quartile optimists live 11-15% longer with 50-70% higher chance
+              of reaching age 85. Measured via Life Orientation Test-Revised
+              (LOT-R, Scheier &amp; Carver).
+            </li>
+            <li>
+              <strong>Conscientiousness:</strong> Friedman &amp; Kern 2014
+              meta-analysis - high conscientiousness associated with ~4 years
+              longer life. Big Five trait covering organization, reliability,
+              and self-discipline.
+            </li>
+            <li>
+              <strong>Sense of Control / Self-Efficacy:</strong> High internal
+              locus of control associated with longer survival and better
+              health outcomes.
+            </li>
+            <li>
+              <strong>Forgiveness:</strong> Toussaint et al. 2012 - forgiveness
+              associated with longevity, mediated through reduced chronic
+              stress and inflammation.
+            </li>
+            <li>
+              <strong>Humor:</strong> Romundstad et al. 2016 (Norway HUNT
+              study, n=53,556) - high cognitive humor associated with 35%
+              lower mortality from infection and lower cardiac death.
+            </li>
+            <li>
+              <strong>Purpose &amp; Meaning:</strong> Hill &amp; Turiano 2014
+              - sense of purpose associated with reduced all-cause mortality
+              across the lifespan.
+            </li>
+          </ul>
+          <p className="text-xs">
+            Sources: Lee et al. PNAS (2019), Scheier &amp; Carver LOT-R (1985,
+            1994), Friedman &amp; Kern Annual Review of Psychology (2014),
+            Toussaint et al. Journal of Behavioral Medicine (2012),
+            Romundstad et al. Psychosomatic Medicine (2016), Hill &amp;
+            Turiano Psychological Science (2014).
           </p>
         </CardContent>
       </Card>
@@ -371,10 +563,12 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            The overall score is a weighted composite: Mental Health 18%,
-            Body Composition 16%, Diet 15%, Lifestyle 14%, Exercise 12%,
-            Work 11%, Air Quality 7%, Water Quality 7%. Only completed modules
-            contribute to the score, with weights re-normalized among them.
+            The overall score is a weighted composite across 13 modules:
+            Mental Health 13%, Body Composition 12%, Diet 12%, Lifestyle 11%,
+            Exercise 10%, Work 7%, Life Context 6%, Preventive Care 6%,
+            Air Quality 5%, Family History 5%, Personality &amp; Outlook 5%,
+            Water Quality 4%, Senses &amp; Oral Health 4%. Only completed
+            modules contribute to the score, with weights re-normalized among them.
           </p>
           <p>
             Letter grades: A (90-100), B (75-89), C (60-74), D (40-59),

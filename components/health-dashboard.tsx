@@ -10,11 +10,13 @@ import {
   Dumbbell,
   Ear,
   Heart,
+  HeartHandshake,
   HeartPulse,
   Leaf,
   ListChecks,
   Moon,
   ShieldCheck,
+  Smile,
   Sparkles,
   TrendingDown,
   TrendingUp,
@@ -73,6 +75,8 @@ const MODULE_META: Record<
   familyHistory: { label: "Family History", icon: Dna, section: "family" },
   preventiveCare: { label: "Preventive Care", icon: ShieldCheck, section: "preventive" },
   sensesOral: { label: "Senses & Oral", icon: Ear, section: "senses" },
+  lifeContext: { label: "Life Context", icon: HeartHandshake, section: "lifecontext" },
+  personality: { label: "Personality", icon: Smile, section: "personality" },
 }
 
 export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData }: HealthDashboardProps) {
