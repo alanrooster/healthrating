@@ -12,6 +12,7 @@ import {
   Ear,
   Heart,
   HeartHandshake,
+  House,
   Info,
   Leaf,
   Moon,
@@ -59,6 +60,7 @@ const NAV_ITEMS = [
   { id: "senses", label: "Senses & Oral Health", icon: Ear },
   { id: "lifecontext", label: "Life Context", icon: HeartHandshake },
   { id: "personality", label: "Personality & Outlook", icon: Smile },
+  { id: "home", label: "Home Environment", icon: House },
 ]
 
 const EXTRAS_ITEMS = [
@@ -101,6 +103,7 @@ export function AppSidebar({
     senses: scores.sensesOral,
     lifecontext: scores.lifeContext,
     personality: scores.personality,
+    home: scores.homeEnvironment,
     carbon: { score: carbonScore ?? 0, completed: carbonCompleted ?? false },
   }
 

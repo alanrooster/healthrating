@@ -54,6 +54,7 @@ const MODULE_LABELS: Record<keyof HealthScores, string> = {
   sensesOral: "Senses & Oral Health",
   lifeContext: "Life Context",
   personality: "Personality & Outlook",
+  homeEnvironment: "Home Environment",
 }
 
 const ACTION_RECOMMENDATIONS: Record<keyof HealthScores, string> = {
@@ -70,6 +71,7 @@ const ACTION_RECOMMENDATIONS: Record<keyof HealthScores, string> = {
   sensesOral: "Treat hearing/vision issues early and maintain daily oral hygiene.",
   lifeContext: "Strengthen relationships, financial security, and community involvement - these have multi-year longevity effects.",
   personality: "Cultivate optimism, conscientiousness, and forgiveness - these traits add measurable years.",
+  homeEnvironment: "Swap scratched nonstick & plastic for glass/steel, use low-VOC cleaners, and ventilate (radon test, range hood).",
 }
 
 /**
@@ -157,6 +159,7 @@ const IMPACT_WEIGHTS: Record<keyof HealthScores, number> = {
   sensesOral: 0.04,
   lifeContext: 0.06,
   personality: 0.05,
+  homeEnvironment: 0.04,
 }
 
 export function buildActionPlan(scores: HealthScores): ActionItem[] {

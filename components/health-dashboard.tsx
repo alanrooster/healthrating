@@ -12,6 +12,7 @@ import {
   Heart,
   HeartHandshake,
   HeartPulse,
+  House,
   Leaf,
   ListChecks,
   Moon,
@@ -77,6 +78,7 @@ const MODULE_META: Record<
   sensesOral: { label: "Senses & Oral", icon: Ear, section: "senses" },
   lifeContext: { label: "Life Context", icon: HeartHandshake, section: "lifecontext" },
   personality: { label: "Personality", icon: Smile, section: "personality" },
+  homeEnvironment: { label: "Home Environment", icon: House, section: "home" },
 }
 
 export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData }: HealthDashboardProps) {

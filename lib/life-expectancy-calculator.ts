@@ -28,6 +28,7 @@ export interface LifeExpectancyInputs {
   mentalHealthScore?: number
   lifeContextScore?: number
   personalityScore?: number
+  homeEnvironmentScore?: number
   
   // Specific risk factors (from various modules)
   smokingStatus?: string
@@ -468,6 +469,35 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         years,
         direction: years > 0 ? "positive" : "negative",
         source: "Lee et al. 2019 PNAS, Friedman & Kern 2014",
+      })
+      totalAdjustment += years
+    }
+  }
+
+  // === HOME ENVIRONMENT & HOUSEHOLD EXPOSURES ===
+  // Cumulative low-level exposures (PFAS/microplastics from cookware, BPA/phthalates,
+  // cleaning-spray VOCs, indoor NO2, damp/mould, radon, secondhand smoke).
+  // Individually modest but additive; radon & indoor air carry the largest signal.
+  // Svanes 2018 (cleaning sprays), Gruenwald 2023 (gas-stove asthma), WHO 2009 (damp/mould),
+  // US EPA (radon = 2nd leading lung-cancer cause), Luo 2022 / Hussain 2023 (micro/nanoplastics).
+  if (inputs.homeEnvironmentScore !== undefined) {
+    dataPoints++
+    let years = 0
+    if (inputs.homeEnvironmentScore >= 85) {
+      years = 1
+    } else if (inputs.homeEnvironmentScore >= 70) {
+      years = 0.5
+    } else if (inputs.homeEnvironmentScore < 30) {
+      years = -2
+    } else if (inputs.homeEnvironmentScore < 50) {
+      years = -1
+    }
+    if (years !== 0) {
+      adjustments.push({
+        factor: "Home Environment",
+        years,
+        direction: years > 0 ? "positive" : "negative",
+        source: "Svanes 2018; Gruenwald 2023; WHO 2009 (damp); US EPA (radon)",
       })
       totalAdjustment += years
     }

@@ -479,6 +479,74 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
+            Home Environment & Exposures (4% of overall score)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Evaluates modifiable household exposures across three clusters:
+            cookware &amp; food-contact plastics (30%), food safety &amp;
+            cleaning (33%), and indoor air quality (37%). Individually each
+            exposure is small, but they are chronic and additive over a lifetime.
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Cookware (PFAS / microplastics):</strong> Luo et al. 2022
+              (Science of the Total Environment) found a single scratch in
+              nonstick (PTFE/Teflon) coating can release ~9,100 microplastic
+              particles, and a badly broken coating up to ~2.3 million particles
+              during cooking. Stainless steel, cast iron, glass and ceramic are
+              inert alternatives.
+            </li>
+            <li>
+              <strong>Food-contact plastics:</strong> Hussain et al. 2023
+              (Environ. Sci. Technol.) showed microwaving polypropylene
+              containers can release &gt;2 billion nanoplastics + ~4 million
+              microplastics per cm² in 3 minutes. Plastic storage also leaches
+              BPA/phthalates; switching to glass lowers urinary BPA (Carwile
+              et al. 2011).
+            </li>
+            <li>
+              <strong>Mold &amp; mycotoxins:</strong> Aflatoxin B1 from moldy
+              grains/nuts is an IARC Group 1 human carcinogen (liver cancer).
+              Mycotoxins penetrate beyond visible mold, so soft moldy foods
+              should be discarded whole, not trimmed (USDA / IARC).
+            </li>
+            <li>
+              <strong>House dust:</strong> Mitro et al. 2016 (Environ. Sci.
+              Technol.) identified dozens of endocrine-disrupting chemicals
+              (PBDEs, phthalates, PFAS, lead) concentrated in house dust;
+              regular wet-dusting and HEPA vacuuming reduce exposure.
+            </li>
+            <li>
+              <strong>Cleaning products:</strong> Svanes et al. 2018 (Am. J.
+              Respir. Crit. Care Med.) linked regular cleaning-spray use to
+              accelerated lung-function decline over 20 years, comparable to
+              smoking 10-20 cigarettes/day. Fragrance-free / low-VOC ("bio")
+              products and ventilation reduce this.
+            </li>
+            <li>
+              <strong>Indoor air:</strong> Gruenwald et al. 2023 attributed
+              ~12.7% of US childhood asthma to gas-stove NO2 (vented hoods cut
+              this sharply). WHO 2009 ties indoor damp/mould to ~30-50% higher
+              respiratory illness. Radon is the 2nd leading cause of lung cancer
+              (~21,000 US deaths/yr, US EPA) and is only detectable by testing.
+            </li>
+          </ul>
+          <p className="text-xs">
+            Sources: Luo et al. Sci. Total Environ. (2022), Hussain et al.
+            Environ. Sci. Technol. (2023), Carwile et al. Environ. Health
+            Perspect. (2011), Mitro et al. Environ. Sci. Technol. (2016),
+            Svanes et al. AJRCCM (2018), Gruenwald et al. Int. J. Environ. Res.
+            Public Health (2023), WHO Guidelines for Indoor Air Quality:
+            Dampness and Mould (2009), US EPA Radon Guidance, IARC Monographs.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
             Mental Health Screening (20% of overall score)
           </CardTitle>
         </CardHeader>
@@ -563,12 +631,13 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            The overall score is a weighted composite across 13 modules:
-            Mental Health 13%, Body Composition 12%, Diet 12%, Lifestyle 11%,
+            The overall score is a weighted composite across 14 modules:
+            Mental Health 12%, Body Composition 11%, Diet 11%, Lifestyle 10%,
             Exercise 10%, Work 7%, Life Context 6%, Preventive Care 6%,
             Air Quality 5%, Family History 5%, Personality &amp; Outlook 5%,
-            Water Quality 4%, Senses &amp; Oral Health 4%. Only completed
-            modules contribute to the score, with weights re-normalized among them.
+            Water Quality 4%, Senses &amp; Oral Health 4%, Home Environment 4%.
+            Only completed modules contribute to the score, with weights
+            re-normalized among them.
           </p>
           <p>
             Letter grades: A (90-100), B (75-89), C (60-74), D (40-59),
