@@ -126,6 +126,13 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   
   const adjustments: LifeExpectancyResult["adjustments"] = []
   let totalAdjustment = 0
+
+  // Tracks the best-case (maximum positive) adjustment achievable from ONLY
+  // the modules the user has actually completed. This makes `potentialGain`
+  // accurate: it reflects how much better the user could realistically do on
+  // what they've assessed, rather than comparing against a fixed ceiling that
+  // assumes every module is filled in.
+  let maxPossibleAdjustment = 0
   
   // Count how many modules provided data for confidence calculation
   let dataPoints = 0
@@ -158,6 +165,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // 150 min/week moderate exercise adds 3-4 years (Moore et al., PLOS Medicine 2012)
   if (inputs.exerciseScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 4 // best case: highly active
     let years = 0
     if (inputs.exerciseScore >= 80) {
       years = 4 // Highly active
@@ -183,6 +191,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Obesity reduces life expectancy by 3-10 years (Lancet 2016 meta-analysis)
   if (inputs.bmiCategory || inputs.bodyScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 1 // best case: normal BMI
     let years = 0
     if (inputs.bmiCategory === "severely_obese") {
       years = -8
@@ -213,6 +222,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Processed meat (IARC Group 1) reduces life expectancy
   if (inputs.dietScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 3 // best case: excellent diet, no processed-meat penalty
     let years = 0
     if (inputs.dietScore >= 80) {
       years = 3
@@ -273,11 +283,13 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
       // Direct PM2.5 calculation
       const excessPM25 = Math.max(0, inputs.pm25Level - 5) // WHO guideline is 5
       years = -(excessPM25 / 10) * 0.8
+      // Best achievable via measured PM2.5 is 0 (clean air = no penalty, no bonus)
     } else if (inputs.airQualityScore !== undefined) {
       // Use score as proxy
       if (inputs.airQualityScore >= 90) years = 0.5 // Clean air bonus
       else if (inputs.airQualityScore < 40) years = -2
       else if (inputs.airQualityScore < 60) years = -1
+      maxPossibleAdjustment += 0.5 // best case: clean-air bonus
     }
     if (Math.abs(years) > 0.1) {
       adjustments.push({
@@ -294,6 +306,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Optimal sleep (7-8h) vs poor sleep affects mortality (Cappuccio et al., Sleep 2010)
   if (inputs.sleepHours !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 1 // best case: optimal 7-8h sleep
     let years = 0
     if (inputs.sleepHours >= 7 && inputs.sleepHours <= 8) {
       years = 1 // Optimal
@@ -314,6 +327,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   } else if (inputs.lifestyleScore !== undefined) {
     // Use lifestyle score as partial proxy for sleep
     dataPoints++
+    maxPossibleAdjustment += 0.5 // best case: healthy lifestyle proxy
     let years = 0
     if (inputs.lifestyleScore >= 80) years = 0.5
     else if (inputs.lifestyleScore < 40) years = -1
@@ -332,6 +346,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Strong social ties add 2-5 years (Holt-Lunstad et al., PLOS Medicine 2010)
   if (inputs.socialConnection) {
     dataPoints++
+    maxPossibleAdjustment += 3 // best case: strong social ties
     const socialImpact: Record<string, number> = {
       strong: 3,
       moderate: 1,
@@ -354,6 +369,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Depression/chronic stress reduces life expectancy by 2-7 years
   if (inputs.mentalHealthScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 1.5 // best case: good mental health
     let years = 0
     if (inputs.mentalHealthScore >= 80) {
       years = 1.5 // Good mental health is protective
@@ -377,6 +393,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Chronic work stress reduces life expectancy by 1-3 years
   if (inputs.workScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 0.5 // best case: low-stress work
     let years = 0
     if (inputs.workScore >= 80) {
       years = 0.5 // Low stress work environment
@@ -401,6 +418,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Contaminated water linked to various diseases (WHO 2022)
   if (inputs.waterQualityScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 0.5 // best case: clean, well-filtered water
     let years = 0
     if (inputs.waterQualityScore >= 80) {
       years = 0.5 // Clean water, good filtration
@@ -425,6 +443,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Robles 2014, Lancet 2024 (education), Chetty 2016 JAMA (income), VanderWeele 2017 (religion)
   if (inputs.lifeContextScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 4 // best case: strong relationships, education, income
     let years = 0
     if (inputs.lifeContextScore >= 85) {
       years = 4 // Marriage + education + income + religion + pets stack up
@@ -453,6 +472,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Friedman & Kern 2014: high conscientiousness = +4 years
   if (inputs.personalityScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 3 // best case: optimism + conscientiousness
     let years = 0
     if (inputs.personalityScore >= 85) {
       years = 3
@@ -482,6 +502,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // US EPA (radon = 2nd leading lung-cancer cause), Luo 2022 / Hussain 2023 (micro/nanoplastics).
   if (inputs.homeEnvironmentScore !== undefined) {
     dataPoints++
+    maxPossibleAdjustment += 1 // best case: clean cookware, low-VOC, well-ventilated
     let years = 0
     if (inputs.homeEnvironmentScore >= 85) {
       years = 1
@@ -511,9 +532,11 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   const deviationFromMean = totalAdjustment
   const percentile = Math.min(99, Math.max(1, 50 + (deviationFromMean / 10) * 34))
   
-  // Calculate potential gain (difference between current and optimal)
-  const optimalAdjustment = 15 // Maximum possible with perfect lifestyle
-  const potentialGain = Math.max(0, optimalAdjustment - totalAdjustment)
+  // Calculate potential gain: how many more years the user could realistically
+  // add by improving to the best-case outcome on the modules they've completed.
+  // Comparing against `maxPossibleAdjustment` (not a fixed constant) keeps this
+  // accurate regardless of how many modules have been filled in.
+  const potentialGain = Math.max(0, maxPossibleAdjustment - totalAdjustment)
   
   // Confidence based on data points
   let confidence: "low" | "medium" | "high" = "low"
