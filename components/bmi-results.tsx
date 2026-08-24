@@ -293,7 +293,7 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
             <ul className="flex flex-col gap-3">
               {recommendations.map((rec) => (
                 <li key={rec} className="flex items-start gap-3">
-                  <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
+                  <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                   <span className="text-sm leading-relaxed text-foreground">
                     {rec}
                   </span>

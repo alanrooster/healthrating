@@ -205,7 +205,7 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
       </div>
 
       {/* Life Expectancy Card */}
-      <Card className="border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent">
+      <Card className="border-rose-500/20 bg-linear-to-br from-rose-500/5 to-transparent">
         <CardContent className="py-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -428,7 +428,7 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
         onClick={() => onNavigate("carbon")}
         className="text-left transition-shadow hover:shadow-md w-full"
       >
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <Card className="border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
           <CardContent className="flex items-center justify-between gap-4 py-5">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/10">

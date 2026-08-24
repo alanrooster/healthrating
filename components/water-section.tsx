@@ -266,10 +266,10 @@ function handleCalculate() {
               </div>
 
               {/* Microplastic Alert */}
-              {result.microplasticRisk !== "none" && (
+              {result.microplasticRisk !== "low" && (
                 <div
                   className={`flex items-start gap-3 rounded-lg border p-4 ${
-                    result.microplasticRisk === "high" || result.microplasticRisk === "very-high"
+                    result.microplasticRisk === "high"
                       ? "border-[hsl(var(--accent))] bg-[hsl(var(--accent))]/10"
                       : "border-[hsl(var(--warning))] bg-[hsl(var(--warning))]/10"
                   }`}
