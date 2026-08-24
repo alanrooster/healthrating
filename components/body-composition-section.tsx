@@ -11,7 +11,7 @@ import {
 import { bmiToHealthScore } from "@/lib/health-score"
 
 interface BodyCompositionSectionProps {
-  onResult: (score: number) => void
+  onResult: (score: number, demographics?: { age: number; sex: "male" | "female" }) => void
   storedResult?: BMIResult | null
   onStoreResult?: (result: BMIResult) => void
   onRetake?: () => void
@@ -27,7 +27,10 @@ export function BodyCompositionSection({ onResult, storedResult, onStoreResult, 
     const bmiResult = calculateBMI(measurements)
     setResult(bmiResult)
     onStoreResult?.(bmiResult)
-    onResult(bmiToHealthScore(bmiResult.compositeScore))
+    onResult(bmiToHealthScore(bmiResult.compositeScore), {
+      age: measurements.age,
+      sex: measurements.sex === "female" ? "female" : "male",
+    })
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }, 100)

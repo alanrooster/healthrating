@@ -12,6 +12,7 @@ import {
   Heart,
   HeartHandshake,
   HeartPulse,
+  Hourglass,
   House,
   Leaf,
   ListChecks,
@@ -51,6 +52,16 @@ interface LifeExpectancyData {
   topFactors: { factor: string; years: number; direction: "positive" | "negative" }[]
 }
 
+interface BiologicalAgeData {
+  biologicalAge: number
+  chronologicalAge: number
+  delta: number
+  paceOfAging: number
+  band: "younger" | "aligned" | "older"
+  confidence: "low" | "medium" | "high"
+  summary: string
+}
+
 interface HealthDashboardProps {
   result: OverallHealthResult
   onNavigate: (section: string) => void
@@ -59,6 +70,7 @@ interface HealthDashboardProps {
     totalKgCO2: number
   }
   lifeExpectancyData?: LifeExpectancyData
+  biologicalAgeData?: BiologicalAgeData
 }
 
 const MODULE_META: Record<
@@ -81,7 +93,7 @@ const MODULE_META: Record<
   homeEnvironment: { label: "Home Environment", icon: House, section: "home" },
 }
 
-export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData }: HealthDashboardProps) {
+export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData, biologicalAgeData }: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
   result
 
@@ -280,6 +292,87 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Biological Age Card */}
+      <Card className="border-violet-500/20 bg-linear-to-br from-violet-500/5 to-transparent">
+        <CardContent className="py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-violet-500/10">
+                <Hourglass className="h-7 w-7 text-violet-500" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Estimated Biological Age
+                </span>
+                {biologicalAgeData ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-foreground">
+                      {biologicalAgeData.biologicalAge.toFixed(1)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      vs {biologicalAgeData.chronologicalAge} calendar years
+                    </span>
+                    {biologicalAgeData.delta !== 0 && (
+                      <span
+                        className={`flex items-center gap-0.5 text-sm font-medium ${
+                          biologicalAgeData.delta < 0 ? "text-emerald-500" : "text-rose-500"
+                        }`}
+                      >
+                        {biologicalAgeData.delta < 0 ? (
+                          <TrendingDown className="h-4 w-4" />
+                        ) : (
+                          <TrendingUp className="h-4 w-4" />
+                        )}
+                        {biologicalAgeData.delta > 0 ? "+" : ""}
+                        {biologicalAgeData.delta.toFixed(1)}y
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Complete the Body Composition assessment (age required) to estimate
+                  </span>
+                )}
+              </div>
+            </div>
+            {biologicalAgeData && (
+              <div className="flex flex-col items-end gap-1.5">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    biologicalAgeData.band === "younger"
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : biologicalAgeData.band === "older"
+                        ? "bg-rose-500/10 text-rose-600"
+                        : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {biologicalAgeData.band === "younger"
+                    ? "Aging slower"
+                    : biologicalAgeData.band === "older"
+                      ? "Aging faster"
+                      : "On track"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Pace: {biologicalAgeData.paceOfAging.toFixed(2)}x per year
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Confidence: {biologicalAgeData.confidence}
+                </span>
+              </div>
+            )}
+          </div>
+          {biologicalAgeData && (
+            <div className="mt-4 border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">{biologicalAgeData.summary}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground italic">
+                Lifestyle-based estimate (Levine PhenoAge 2018, Belsky Dunedin 2015 framework). Not a
+                clinical biomarker measurement.
+              </p>
             </div>
           )}
         </CardContent>

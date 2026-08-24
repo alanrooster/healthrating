@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
+import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
 import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
 import { WaterSection } from "@/components/water-section"
@@ -149,6 +150,10 @@ export default function Page() {
   const [airData, setAirData] = useState<{
     country: string
   } | null>(null)
+  const [bodyDemographics, setBodyDemographics] = useState<{
+    age: number
+    sex: "male" | "female"
+  } | null>(null)
 
   // Store full results for each section to persist when navigating
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -203,6 +208,8 @@ export default function Page() {
     if (!hasData) return undefined
 
     const inputs: LifeExpectancyInputs = {
+      age: bodyDemographics?.age,
+      sex: bodyDemographics?.sex,
       bodyScore: bodyScore.completed ? bodyScore.score : undefined,
       airQualityScore: airScore.completed ? airScore.score : undefined,
       waterQualityScore: waterScore.completed ? waterScore.score : undefined,
@@ -234,10 +241,24 @@ export default function Page() {
         direction: a.direction as "positive" | "negative",
       })),
     }
-  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, homeEnvironmentScore, lifestyleData, dietData])
+  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, homeEnvironmentScore, lifestyleData, dietData, airData, bodyDemographics])
 
-  function handleBodyResult(score: number) {
+  // Biological age requires a known chronological age (from the Body module)
+  const biologicalAgeData = useMemo(() => {
+    if (!bodyDemographics || !lifeExpectancyData) return undefined
+    const completedCount = Object.values(scores).filter(s => s.completed).length
+    return calculateBiologicalAge({
+      chronologicalAge: bodyDemographics.age,
+      totalAdjustment: lifeExpectancyData.totalAdjustment,
+      dataPoints: completedCount,
+    })
+  }, [bodyDemographics, lifeExpectancyData, scores])
+
+  function handleBodyResult(score: number, demographics?: { age: number; sex: "male" | "female" }) {
     setBodyScore({ score, completed: true, label: "Body Composition" })
+    if (demographics) {
+      setBodyDemographics(demographics)
+    }
   }
 
   function handleAirResult(score: number, countryData?: { country: string }) {
@@ -319,6 +340,7 @@ export default function Page() {
             onNavigate={setActiveSection}
             carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
             lifeExpectancyData={lifeExpectancyData}
+            biologicalAgeData={biologicalAgeData}
           />
         )
       case "body":
@@ -371,6 +393,7 @@ export default function Page() {
             onNavigate={setActiveSection}
             carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
             lifeExpectancyData={lifeExpectancyData}
+            biologicalAgeData={biologicalAgeData}
           />
         )
     }
