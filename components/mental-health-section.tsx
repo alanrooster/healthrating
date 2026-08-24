@@ -167,7 +167,7 @@ const QUESTION_GROUPS: QuestionGroup[] = [
   {
     title: "Cognitive Engagement",
     description:
-      "Lancet Commission 2020 identifies cognitive engagement as a major modifiable factor for brain health and dementia prevention.",
+      "Lancet Commission 2024 identifies cognitive engagement as a major modifiable factor for brain health and dementia prevention.",
     icon: BookOpen,
     questions: [
       { id: "cognitive_learning", label: "How often do you actively learn something new (courses, languages, skills)?", options: ENGAGEMENT_OPTIONS },

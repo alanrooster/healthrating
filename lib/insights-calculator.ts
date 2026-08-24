@@ -145,16 +145,18 @@ export function calculateCardiovascularRisk(scores: HealthScores): Cardiovascula
  * Action Plan - rank up to 3 modules with the largest improvement headroom,
  * weighted by their impact on overall health and life expectancy.
  */
+// Mirrors WEIGHTS in health-score.ts (must stay in sync) so the action plan
+// prioritizes modules by their true contribution to the overall score.
 const IMPACT_WEIGHTS: Record<keyof HealthScores, number> = {
-  body: 0.13,
-  airQuality: 0.06,
-  waterQuality: 0.05,
-  diet: 0.13,
+  body: 0.11,
+  airQuality: 0.05,
+  waterQuality: 0.04,
+  diet: 0.11,
   exercise: 0.10,
-  work: 0.08,
-  lifestyle: 0.12,
-  mentalHealth: 0.15,
-  familyHistory: 0.06,
+  work: 0.07,
+  lifestyle: 0.10,
+  mentalHealth: 0.12,
+  familyHistory: 0.05,
   preventiveCare: 0.06,
   sensesOral: 0.04,
   lifeContext: 0.06,

@@ -138,6 +138,32 @@ export const DIET_QUESTIONS: DietQuestion[] = [
       { label: "Daily or more", value: 4 },
     ],
   },
+  {
+    id: "fermented_foods",
+    question: "How often do you eat fermented foods?",
+    description: "Yogurt, kefir, kimchi, sauerkraut, miso, kombucha, tempeh (gut microbiome support)",
+    isHealthy: true,
+    options: [
+      { label: "Rarely or never", value: 0 },
+      { label: "1-2 times per week", value: 1 },
+      { label: "3-4 times per week", value: 2 },
+      { label: "5-6 times per week", value: 3 },
+      { label: "Daily or more", value: 4 },
+    ],
+  },
+  {
+    id: "hydration",
+    question: "How much water do you drink per day?",
+    description: "Plain water, unsweetened tea/coffee count; sugary drinks do not",
+    isHealthy: true,
+    options: [
+      { label: "Less than 2 glasses", value: 0 },
+      { label: "2-4 glasses", value: 1 },
+      { label: "4-6 glasses", value: 2 },
+      { label: "6-8 glasses", value: 3 },
+      { label: "8+ glasses (~2L or more)", value: 4 },
+    ],
+  },
 
   // IARC Group 1: Carcinogenic to humans
   {
@@ -313,6 +339,16 @@ const FEEDBACK: Record<string, { good: string; moderate: string; poor: string }>
     good: "Excellent fish and plant protein intake!",
     moderate: "Try to include fish or plant-based protein 3+ times per week.",
     poor: "Consider adding more fish or plant proteins. They are healthier than red meat.",
+  },
+  fermented_foods: {
+    good: "Excellent! Fermented foods increase gut microbiome diversity and lower inflammatory markers (Wastyk 2021, Cell).",
+    moderate: "Adding fermented foods more often (yogurt, kefir, kimchi) supports gut microbiome diversity and lowers inflammation.",
+    poor: "Consider adding fermented foods: a Stanford study (Wastyk 2021, Cell) found they boost microbiome diversity and reduce 19 inflammatory markers.",
+  },
+  hydration: {
+    good: "Great hydration! Adequate fluid intake supports kidney function and is linked to slower biological aging.",
+    moderate: "Try to increase daily water intake toward ~2 liters (8 glasses).",
+    poor: "Low hydration: poor hydration is associated with faster biological aging and higher chronic disease risk (Dmitrieva 2023, eBioMedicine/NIH).",
   },
   processed_meat: {
     good: "Excellent! You are avoiding processed meat, a Group 1 carcinogen.",

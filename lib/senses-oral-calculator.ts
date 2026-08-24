@@ -4,7 +4,9 @@
  * Combines hearing, vision, and oral health assessments. Often overlooked,
  * but each is independently associated with major outcomes:
  *
- * - Hearing loss: #1 modifiable dementia risk factor (Lancet 2020)
+ * - Hearing loss: one of the largest modifiable dementia risk factors,
+ *   ~7% population-attributable fraction (Lancet Commission 2024 update;
+ *   originally identified as #1 in the 2020 Commission)
  * - Vision impairment: linked to cognitive decline, falls, depression
  * - Oral health: periodontal disease linked to CVD; tooth count is a
  *   surprisingly strong longevity predictor (Friedman & Lamster, 2016)
@@ -46,7 +48,7 @@ function scoreHearing(a: SensesOralAnswers): { score: number; flags: string[]; r
   const nMap = { low: 100, moderate: 65, high: 30 }
 
   if (a.hearingDifficulty === "moderate" || a.hearingDifficulty === "severe") {
-    flags.push("Self-reported hearing difficulty - untreated hearing loss is the #1 modifiable dementia risk factor (Lancet 2020).")
+    flags.push("Self-reported hearing difficulty - untreated hearing loss is among the largest modifiable dementia risk factors (Lancet Commission 2024).")
     recs.push("Schedule a hearing evaluation; treatment (e.g., hearing aids) is associated with reduced cognitive decline.")
   }
   if (a.noiseExposure === "high") {

@@ -65,7 +65,7 @@ export interface MentalHealthAnswers {
   wellbeing_active: FrequencyResponse     // "...active and vigorous?"
   wellbeing_rested: FrequencyResponse     // "...waking up feeling fresh and rested?"
 
-  // Cognitive Engagement (Lancet Commission 2020 - dementia prevention)
+  // Cognitive Engagement (Lancet Commission 2024 - dementia prevention)
   // Mental engagement is one of the most modifiable dementia risk factors
   cognitive_learning: "daily" | "weekly" | "monthly" | "rarely" | "never" // active learning, courses, languages
   cognitive_reading: "daily" | "weekly" | "monthly" | "rarely" | "never"  // reading books, articles
@@ -206,7 +206,7 @@ function scoreWellbeing(answers: MentalHealthAnswers): number {
 
 /**
  * Score cognitive engagement (0-100)
- * Lancet Commission 2020: cognitive engagement is a major modifiable
+ * Lancet Commission 2024: cognitive engagement is a major modifiable
  * dementia risk factor, alongside hearing loss and education.
  */
 const ENGAGEMENT_MAP: Record<string, number> = {
@@ -294,7 +294,7 @@ export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealt
     flags.push("Low wellbeing score: WHO-5 research indicates scores at or below 50% warrant further assessment for depression.")
   }
   if (cognitive < 40) {
-    flags.push("Low cognitive engagement: Lancet Commission 2020 identifies cognitive activity as a major modifiable dementia-prevention factor.")
+    flags.push("Low cognitive engagement: Lancet Commission 2024 identifies cognitive activity as a major modifiable dementia-prevention factor.")
   }
   if (purpose < 40) {
     flags.push("Low sense of purpose: lower purpose-in-life is associated with greater all-cause mortality risk (Hill & Turiano, 2014).")

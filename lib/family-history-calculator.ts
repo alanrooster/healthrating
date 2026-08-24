@@ -10,7 +10,7 @@
  * - American Heart Association: family history of premature CVD
  * - NCI/CDC: family history and cancer risk
  * - ADA: type 2 diabetes family risk multipliers
- * - Lancet Commission 2020: family history of dementia
+ * - Lancet Commission 2024: family history of dementia
  *
  * Score interpretation: 100 = no notable family history, lower = more risk.
  * NOTE: Family history identifies risk but does NOT determine outcomes;

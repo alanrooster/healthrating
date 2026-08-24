@@ -13,6 +13,7 @@ import {
   Flame,
   Wine,
   AlertOctagon,
+  Droplets,
   Fish,
   Info,
 } from "lucide-react"
@@ -82,6 +83,12 @@ const STEPS = [
     description: "Saturated fat and sodium intake",
     icon: Leaf,
     questionIds: ["saturated_fat", "salt"],
+  },
+  {
+    title: "Gut Microbiome & Hydration",
+    description: "Fermented foods and daily water intake",
+    icon: Droplets,
+    questionIds: ["fermented_foods", "hydration"],
   },
 ]
 

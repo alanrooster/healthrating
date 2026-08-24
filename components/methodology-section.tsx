@@ -16,7 +16,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Body Composition (30% of overall score)
+            Body Composition (11% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -40,7 +40,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Air Quality (15% of overall score)
+            Air Quality (5% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -63,7 +63,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Water Quality (7% of overall score)
+            Water Quality (4% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -118,14 +118,15 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Diet Assessment (15% of overall score)
+            Diet Assessment (11% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            16 questions covering key dietary indicators from WHO guidelines and
+            18 questions covering key dietary indicators from WHO guidelines and
             IARC (International Agency for Research on Cancer) carcinogen
-            classifications. Integrates both nutritional quality and cancer risk.
+            classifications. Integrates nutritional quality, cancer risk, gut
+            microbiome support, and hydration.
           </p>
           <p>
             <strong>IARC Carcinogen Classifications (food-related):</strong>
@@ -153,11 +154,20 @@ export function MethodologySection() {
             less than 10% energy from free sugars, less than 5g salt/day,
             limited saturated fats and ultra-processed foods.
           </p>
+          <p>
+            <strong>Gut Microbiome &amp; Hydration:</strong> Fermented foods
+            (yogurt, kefir, kimchi, miso) increase gut microbiome diversity and
+            reduce 19 inflammatory markers (Wastyk et al. 2021, Cell — Stanford
+            fermented-food trial). Adequate hydration is associated with slower
+            biological aging and lower chronic disease risk (Dmitrieva et al.
+            2023, eBioMedicine/NIH — serum sodium as hydration marker).
+          </p>
           <p className="text-xs">
             Sources: IARC Monographs Vol. 114 (Red Meat, Processed Meat, 2015),
             IARC Monographs Vol. 100E (Alcohol, 2012), IARC Monographs Vol. 116
             (Hot Beverages, 2018), WHO Healthy Diet Fact Sheet (2024), WHO HDMI
-            Guidance (2024).
+            Guidance (2024), Wastyk et al. Cell (2021), Dmitrieva et al.
+            eBioMedicine (2023).
           </p>
         </CardContent>
       </Card>
@@ -165,7 +175,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Exercise Assessment (25% of overall score)
+            Exercise Assessment (10% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -219,7 +229,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Work Assessment (12% of overall score)
+            Work Assessment (7% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -287,7 +297,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Lifestyle Assessment (15% of overall score)
+            Lifestyle Assessment (10% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
@@ -547,7 +557,7 @@ export function MethodologySection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg text-foreground">
-            Mental Health Screening (20% of overall score)
+            Mental Health Screening (12% of overall score)
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
