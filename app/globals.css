@@ -192,4 +192,20 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Tailwind v4 changed buttons to cursor: default.
+     Restore the pointer (hand) cursor for all enabled interactive elements. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="tab"]:not(:disabled),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  select:not(:disabled),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
 }
