@@ -33,7 +33,6 @@ export interface LifeExpectancyInputs {
   // Specific risk factors (from various modules)
   smokingStatus?: string
   alcoholFrequency?: string
-  exerciseFrequency?: string
   sleepHours?: number
   socialConnection?: string
   processedMeatFrequency?: number

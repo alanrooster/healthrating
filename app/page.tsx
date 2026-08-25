@@ -151,6 +151,7 @@ export default function Page() {
   } | null>(null)
   const [airData, setAirData] = useState<{
     country: string
+    pm25Level?: number
   } | null>(null)
   const [bodyDemographics, setBodyDemographics] = useState<{
     age: number
@@ -230,6 +231,7 @@ export default function Page() {
       socialConnection: lifestyleData?.socialConnection,
       bmiCategory: bodyDemographics?.bmiCategory,
       processedMeatFrequency: dietData?.processedMeatFrequency,
+      pm25Level: airData?.pm25Level,
       country: airData?.country,
     }
 
@@ -274,7 +276,7 @@ export default function Page() {
     }
   }
 
-  function handleAirResult(score: number, countryData?: { country: string }) {
+  function handleAirResult(score: number, countryData?: { country: string; pm25Level?: number }) {
     setAirScore({ score, completed: true, label: "Air Quality" })
     if (countryData) {
       setAirData(countryData)
@@ -303,7 +305,16 @@ export default function Page() {
     setWorkScore({ score, completed: true, label: "Work" })
   }
 
-  function handleLifestyleResult(score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) {
+  function handleLifestyleResult(
+    score: number,
+    lifestyleExtras?: {
+      smokingStatus: string
+      alcoholFrequency: string
+      alcoholUnitsPerSession: number
+      sleepHours?: number
+      socialConnection?: "strong" | "moderate" | "weak" | "isolated"
+    },
+  ) {
     setLifestyleScore({ score, completed: true, label: "Lifestyle" })
     if (lifestyleExtras) {
       setLifestyleData(lifestyleExtras)

@@ -31,7 +31,7 @@ interface AirQualityInputs {
 }
 
 interface AirQualitySectionProps {
-  onResult: (score: number, countryData?: { country: string }) => void
+  onResult: (score: number, countryData?: { country: string; pm25Level?: number }) => void
   storedResult?: AirQualityResult | null
   onStoreResult?: (result: AirQualityResult) => void
   onRetake?: () => void
@@ -74,7 +74,7 @@ export function AirQualitySection({ onResult, storedResult, onStoreResult, onRet
     const aqResult = scoreAirQuality(selectedCity, noiseLevel)
     setResult(aqResult)
     onStoreResult?.(aqResult)
-    onResult(aqResult.score, { country })
+    onResult(aqResult.score, { country, pm25Level: selectedCity.pm25 })
   }
 
   function handleRetake() {
