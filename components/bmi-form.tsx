@@ -71,13 +71,14 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
     if (!height || heightNum < 50 || heightNum > 280) {
       newErrors.height = "Enter a valid height (50-280 cm)"
     }
-    if (!waist || waistNum < 30 || waistNum > 200) {
+    // Body measurements are optional — only validate the range if a value is entered.
+    if (waist && (waistNum < 30 || waistNum > 200)) {
       newErrors.waist = "Enter a valid waist (30-200 cm)"
     }
-    if (!neck || neckNum < 20 || neckNum > 80) {
+    if (neck && (neckNum < 20 || neckNum > 80)) {
       newErrors.neck = "Enter a valid neck (20-80 cm)"
     }
-    if (!wrist || wristNum < 10 || wristNum > 30) {
+    if (wrist && (wristNum < 10 || wristNum > 30)) {
       newErrors.wrist = "Enter a valid wrist (10-30 cm)"
     }
 
@@ -95,9 +96,9 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
       ethnicity,
       weightKg: Number(weight),
       heightCm: Number(height),
-      waistCm: Number(waist),
-      neckCm: Number(neck),
-      wristCm: Number(wrist),
+      waistCm: waist ? Number(waist) : undefined,
+      neckCm: neck ? Number(neck) : undefined,
+      wristCm: wrist ? Number(wrist) : undefined,
     })
   }
 
@@ -270,14 +271,19 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
       {/* Body Measurements */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold text-foreground">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold text-foreground">
             Body Measurements
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              Optional
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">
-            Waist and neck measurements are used for body fat estimation (U.S.
-            Navy + Deurenberg methods). Wrist circumference helps determine body
+            These fields are optional — you can calculate your score without them.
+            However, for a more precise result we recommend filling them in: waist
+            and neck unlock body-fat % estimation (U.S. Navy + Deurenberg methods)
+            and your waist-to-height ratio, while wrist helps determine your body
             frame size.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -286,7 +292,10 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
                 htmlFor="waist"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Waist (cm) <span className="text-destructive">*</span>
+                Waist (cm){" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (recommended)
+                </span>
               </Label>
               <Input
                 id="waist"
@@ -306,7 +315,10 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
                 htmlFor="neck"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Neck (cm) <span className="text-destructive">*</span>
+                Neck (cm){" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (recommended)
+                </span>
               </Label>
               <Input
                 id="neck"
@@ -326,7 +338,10 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
                 htmlFor="wrist"
                 className="text-sm font-medium text-muted-foreground"
               >
-                Wrist (cm) <span className="text-destructive">*</span>
+                Wrist (cm){" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (recommended)
+                </span>
               </Label>
               <Input
                 id="wrist"

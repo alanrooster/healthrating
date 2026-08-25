@@ -255,10 +255,14 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
             )}
             {bodyFatPercentage !== null && (
               <MetricCard
-                label="Body Fat (Navy)"
+                label="Body Fat"
                 value={bodyFatPercentage}
                 unit="%"
-                sublabel="U.S. Navy method"
+                sublabel={
+                  hasBodyMeasurements
+                    ? "U.S. Navy + Deurenberg"
+                    : "Deurenberg estimate"
+                }
               />
             )}
             {waistToHeightRatio !== null && (

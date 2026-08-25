@@ -16,9 +16,11 @@ export interface BodyMeasurements {
   ethnicity: Ethnicity
   weightKg: number
   heightCm: number
-  waistCm: number
-  neckCm: number
-  wristCm: number
+  // Optional circumference measurements. When provided they unlock body-fat %
+  // (U.S. Navy method) and waist-to-height ratio for a more precise score.
+  waistCm?: number
+  neckCm?: number
+  wristCm?: number
 }
 
 export interface BMIResult {
@@ -125,6 +127,24 @@ function calcBodyFatCombined(
     return Math.max(2, Math.min(combined, 60))
   }
 
+  return Math.max(2, Math.min(deurenberg, 60))
+}
+
+/**
+ * Body Fat % using the Deurenberg formula only (no circumference measurements).
+ * Used as a fallback when waist/neck are not provided.
+ *   BF% = 1.2*BMI + 0.23*age - 10.8*sexFactor - 5.4
+ */
+function calcBodyFatDeurenberg(
+  sex: Sex,
+  age: number,
+  heightCm: number,
+  weightKg: number
+): number {
+  const sexFactor = sex === "male" ? 1 : 0
+  const heightM = heightCm / 100
+  const bmi = weightKg / (heightM * heightM)
+  const deurenberg = 1.2 * bmi + 0.23 * age - 10.8 * sexFactor - 5.4
   return Math.max(2, Math.min(deurenberg, 60))
 }
 
@@ -415,12 +435,23 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   const ethnicityAdjustment = getEthnicityBMIAdjustment(ethnicity)
   const ethnicityAdjustedBMI = adjustedBMI + ethnicityAdjustment
 
-  // Body fat (combined Navy + Deurenberg method)
-  const bodyFatRaw = calcBodyFatCombined(sex, age, heightCm, weightKg, waistCm, neckCm)
+  // Body measurements are optional. Waist + neck unlock the Navy body-fat method
+  // and waist-to-height ratio. Without them we fall back to a BMI-only estimate.
+  const hasBodyMeasurements =
+    typeof waistCm === "number" && typeof neckCm === "number"
+
+  // Body fat (combined Navy + Deurenberg method).
+  // With measurements: Navy + Deurenberg averaged. Without: Deurenberg (BMI/age/sex) only.
+  const bodyFatRaw = hasBodyMeasurements
+    ? calcBodyFatCombined(sex, age, heightCm, weightKg, waistCm!, neckCm!)
+    : calcBodyFatDeurenberg(sex, age, heightCm, weightKg)
   const bodyFatPercentage = Math.round(bodyFatRaw * 10) / 10
 
-  // Waist-to-height ratio
-  const waistToHeightRatio = Math.round(calcWHtR(waistCm, heightCm) * 100) / 100
+  // Waist-to-height ratio (only when waist is provided)
+  const waistToHeightRatio =
+    typeof waistCm === "number"
+      ? Math.round(calcWHtR(waistCm, heightCm) * 100) / 100
+      : null
 
   // Composite score that incorporates body measurements + ethnicity
   const compositeScore = Math.round(
@@ -488,7 +519,7 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
     bodyFatPercentage,
     waistToHeightRatio,
     riskLevel,
-    hasBodyMeasurements: true,
+    hasBodyMeasurements,
   }
 
   const recommendations = getRecommendations(partialResult, measurements)
