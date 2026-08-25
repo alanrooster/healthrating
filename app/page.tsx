@@ -146,6 +146,8 @@ export default function Page() {
     smokingStatus: string
     alcoholFrequency: string
     alcoholUnitsPerSession: number
+    sleepHours?: number
+    socialConnection?: "strong" | "moderate" | "weak" | "isolated"
   } | null>(null)
   const [airData, setAirData] = useState<{
     country: string
@@ -153,6 +155,7 @@ export default function Page() {
   const [bodyDemographics, setBodyDemographics] = useState<{
     age: number
     sex: "male" | "female"
+    bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
   } | null>(null)
 
   // Store full results for each section to persist when navigating
@@ -223,6 +226,9 @@ export default function Page() {
       homeEnvironmentScore: homeEnvironmentScore.completed ? homeEnvironmentScore.score : undefined,
       smokingStatus: lifestyleData?.smokingStatus,
       alcoholFrequency: lifestyleData?.alcoholFrequency,
+      sleepHours: lifestyleData?.sleepHours,
+      socialConnection: lifestyleData?.socialConnection,
+      bmiCategory: bodyDemographics?.bmiCategory,
       processedMeatFrequency: dietData?.processedMeatFrequency,
       country: airData?.country,
     }
@@ -254,7 +260,14 @@ export default function Page() {
     })
   }, [bodyDemographics, lifeExpectancyData, scores])
 
-  function handleBodyResult(score: number, demographics?: { age: number; sex: "male" | "female" }) {
+  function handleBodyResult(
+    score: number,
+    demographics?: {
+      age: number
+      sex: "male" | "female"
+      bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
+    },
+  ) {
     setBodyScore({ score, completed: true, label: "Body Composition" })
     if (demographics) {
       setBodyDemographics(demographics)

@@ -34,7 +34,16 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface LifestyleSectionProps {
-  onResult: (score: number, lifestyleExtras?: { smokingStatus: string; alcoholFrequency: string; alcoholUnitsPerSession: number }) => void
+  onResult: (
+    score: number,
+    lifestyleExtras?: {
+      smokingStatus: string
+      alcoholFrequency: string
+      alcoholUnitsPerSession: number
+      sleepHours: number
+      socialConnection: "strong" | "moderate" | "weak" | "isolated"
+    },
+  ) => void
   storedResult?: LifestyleResult | null
   onStoreResult?: (result: LifestyleResult) => void
   onRetake?: () => void
@@ -402,6 +411,31 @@ const QUESTION_GROUPS: QuestionGroup[] = [
   },
 ]
 
+/**
+ * Maps lifestyle social answers to Holt-Lunstad (2010) connection categories
+ * used by the life expectancy model (strong +3y ... isolated -3y).
+ */
+function deriveSocialConnection(a: LifestyleAnswers): "strong" | "moderate" | "weak" | "isolated" {
+  const freqPoints: Record<string, number> = {
+    daily: 4, "several-weekly": 3, weekly: 2, monthly: 1, rarely: 0,
+  }
+  const qualityPoints: Record<string, number> = {
+    excellent: 4, good: 3, fair: 2, poor: 1, "very-poor": 0,
+  }
+  const lonelinessPoints: Record<string, number> = {
+    never: 4, rarely: 3, sometimes: 2, often: 1, always: 0,
+  }
+  const total =
+    (freqPoints[a.socialFrequency] ?? 2) +
+    (qualityPoints[a.qualityRelationships] ?? 2) +
+    (lonelinessPoints[a.lonelinessFrequency] ?? 2)
+  // Max 12 points
+  if (total >= 9) return "strong"
+  if (total >= 6) return "moderate"
+  if (total >= 3) return "weak"
+  return "isolated"
+}
+
 export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: LifestyleSectionProps) {
   const [answers, setAnswers] = useState<LifestyleAnswers>(storedInputs ?? DEFAULT_ANSWERS)
   const [result, setResult] = useState<LifestyleResult | null>(storedResult ?? null)
@@ -432,11 +466,16 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
     const r = calculateLifestyle(answers)
     setResult(r)
     onStoreResult?.(r)
-    // Pass smoking and alcohol data to carbon calculator
+    // Derive social connection level (Holt-Lunstad 2010 categories) from the
+    // social sub-score answers so the life expectancy model can use it.
+    const socialConnection = deriveSocialConnection(answers)
+    // Pass smoking, alcohol, sleep, and social data up for downstream calculators
     const lifestyleExtras = {
       smokingStatus: answers.smokingStatus,
       alcoholFrequency: answers.alcoholFrequency,
       alcoholUnitsPerSession: answers.alcoholUnitsPerSession,
+      sleepHours: answers.sleepHoursPerNight,
+      socialConnection,
     }
     onResult(r.overallScore, lifestyleExtras)
   }

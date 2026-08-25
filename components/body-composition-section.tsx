@@ -10,8 +10,24 @@ import {
 } from "@/lib/bmi-calculator"
 import { bmiToHealthScore } from "@/lib/health-score"
 
+type LEBmiCategory = "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
+
+/** Maps the BMI calculator's display category to the life expectancy model's enum */
+function toLEBmiCategory(category: string): LEBmiCategory {
+  const c = category.toLowerCase()
+  if (c.includes("underweight")) return "underweight"
+  if (c.includes("normal")) return "normal"
+  if (c.includes("overweight")) return "overweight"
+  if (c.includes("class ii") || c.includes("class iii")) return "severely_obese"
+  if (c.includes("obese")) return "obese"
+  return "normal"
+}
+
 interface BodyCompositionSectionProps {
-  onResult: (score: number, demographics?: { age: number; sex: "male" | "female" }) => void
+  onResult: (
+    score: number,
+    demographics?: { age: number; sex: "male" | "female"; bmiCategory: LEBmiCategory },
+  ) => void
   storedResult?: BMIResult | null
   onStoreResult?: (result: BMIResult) => void
   onRetake?: () => void
@@ -30,6 +46,7 @@ export function BodyCompositionSection({ onResult, storedResult, onStoreResult, 
     onResult(bmiToHealthScore(bmiResult.compositeScore), {
       age: measurements.age,
       sex: measurements.sex === "female" ? "female" : "male",
+      bmiCategory: toLEBmiCategory(bmiResult.category),
     })
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
