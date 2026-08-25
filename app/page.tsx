@@ -8,6 +8,7 @@ import { Menu } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
+import { calculateDiabetesRisk } from "@/lib/diabetes-risk-calculator"
 import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
 import { WaterSection } from "@/components/water-section"
@@ -157,6 +158,8 @@ export default function Page() {
     age: number
     sex: "male" | "female"
     bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
+    bmi?: number
+    waistCm?: number
   } | null>(null)
 
   // Store full results for each section to persist when navigating
@@ -262,12 +265,29 @@ export default function Page() {
     })
   }, [bodyDemographics, lifeExpectancyData, scores])
 
+  // Type 2 diabetes risk screen (FINDRISC-adapted) — computed entirely from
+  // data already collected in the Body, Exercise, Diet, and Family History modules
+  const diabetesRiskData = useMemo(() => {
+    const r = calculateDiabetesRisk({
+      age: bodyDemographics?.age,
+      sex: bodyDemographics?.sex,
+      bmi: bodyDemographics?.bmi,
+      waistCm: bodyDemographics?.waistCm,
+      exerciseScore: exerciseScore.completed ? exerciseScore.score : undefined,
+      dietScore: dietScore.completed ? dietScore.score : undefined,
+      familyDiabetes: storedInputs.family?.diabetes,
+    })
+    return r ?? undefined
+  }, [bodyDemographics, exerciseScore, dietScore, storedInputs.family])
+
   function handleBodyResult(
     score: number,
     demographics?: {
       age: number
       sex: "male" | "female"
       bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
+      bmi?: number
+      waistCm?: number
     },
   ) {
     setBodyScore({ score, completed: true, label: "Body Composition" })
@@ -365,6 +385,7 @@ export default function Page() {
             carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
+            diabetesRiskData={diabetesRiskData}
           />
         )
       case "body":
@@ -418,6 +439,7 @@ export default function Page() {
             carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
+            diabetesRiskData={diabetesRiskData}
           />
         )
     }

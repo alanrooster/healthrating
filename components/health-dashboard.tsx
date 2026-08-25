@@ -4,6 +4,7 @@ import {
   Activity,
   Brain,
   Briefcase,
+  Candy,
   Cloud,
   Dna,
   Droplets,
@@ -71,6 +72,19 @@ interface HealthDashboardProps {
   }
   lifeExpectancyData?: LifeExpectancyData
   biologicalAgeData?: BiologicalAgeData
+  diabetesRiskData?: DiabetesRiskData
+}
+
+interface DiabetesRiskData {
+  points: number
+  maxPoints: number
+  band: "low" | "slightly-elevated" | "moderate" | "high"
+  bandLabel: string
+  tenYearRisk: string
+  dataPointsUsed: number
+  totalDataPoints: number
+  drivers: string[]
+  note: string
 }
 
 const MODULE_META: Record<
@@ -93,7 +107,7 @@ const MODULE_META: Record<
   homeEnvironment: { label: "Home Environment", icon: House, section: "home" },
 }
 
-export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData, biologicalAgeData }: HealthDashboardProps) {
+export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancyData, biologicalAgeData, diabetesRiskData }: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
   result
 
@@ -378,8 +392,8 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
         </CardContent>
       </Card>
 
-      {/* Insights Row: Cardiovascular Risk, Action Plan, Peer Comparison */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Insights Row: Cardiovascular Risk, Diabetes Risk, Action Plan, Peer Comparison */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* Cardiovascular Risk */}
         <Card className={`border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
           <CardHeader className="pb-2">
@@ -420,6 +434,70 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
             <p className="mt-1 text-[10px] text-muted-foreground italic">
               Educational estimate. Not a substitute for ASCVD/QRISK3.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Type 2 Diabetes Risk (FINDRISC-adapted) */}
+        <Card
+          className={
+            diabetesRiskData?.band === "high"
+              ? "border-rose-500/20"
+              : diabetesRiskData?.band === "moderate"
+                ? "border-orange-500/20"
+                : diabetesRiskData?.band === "slightly-elevated"
+                  ? "border-amber-500/20"
+                  : "border-emerald-500/20"
+          }
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Candy className="h-5 w-5 text-orange-500" />
+              Type 2 Diabetes Risk
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {diabetesRiskData ? (
+              <>
+                <span
+                  className="text-2xl font-bold"
+                  style={{
+                    color:
+                      diabetesRiskData.band === "low"
+                        ? "hsl(var(--success))"
+                        : diabetesRiskData.band === "slightly-elevated"
+                          ? "#f59e0b"
+                          : diabetesRiskData.band === "moderate"
+                            ? "#fb923c"
+                            : "#f43f5e",
+                  }}
+                >
+                  {diabetesRiskData.bandLabel}
+                </span>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  FINDRISC-adapted screen: {diabetesRiskData.points}/{diabetesRiskData.maxPoints} points
+                  {" "}({diabetesRiskData.tenYearRisk} 10-year risk). Based on{" "}
+                  {diabetesRiskData.dataPointsUsed} of {diabetesRiskData.totalDataPoints} factors.
+                </p>
+                {diabetesRiskData.drivers.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {diabetesRiskData.drivers.map((d) => (
+                      <span
+                        key={d}
+                        className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-medium text-orange-600"
+                      >
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-1 text-[10px] text-muted-foreground italic">{diabetesRiskData.note}</p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Complete the Body Composition assessment to screen your type 2 diabetes
+                risk. Exercise, Diet, and Family History further refine it.
+              </p>
+            )}
           </CardContent>
         </Card>
 

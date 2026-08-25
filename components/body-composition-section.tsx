@@ -26,7 +26,13 @@ function toLEBmiCategory(category: string): LEBmiCategory {
 interface BodyCompositionSectionProps {
   onResult: (
     score: number,
-    demographics?: { age: number; sex: "male" | "female"; bmiCategory: LEBmiCategory },
+    demographics?: {
+      age: number
+      sex: "male" | "female"
+      bmiCategory: LEBmiCategory
+      bmi?: number
+      waistCm?: number
+    },
   ) => void
   storedResult?: BMIResult | null
   onStoreResult?: (result: BMIResult) => void
@@ -47,6 +53,8 @@ export function BodyCompositionSection({ onResult, storedResult, onStoreResult, 
       age: measurements.age,
       sex: measurements.sex === "female" ? "female" : "male",
       bmiCategory: toLEBmiCategory(bmiResult.category),
+      bmi: bmiResult.bmi,
+      waistCm: measurements.waistCm,
     })
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
