@@ -47,11 +47,11 @@ interface AppSidebarProps {
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { id: "body", label: "Body Composition", icon: Activity },
   { id: "air", label: "Air Quality", icon: Cloud },
   { id: "water", label: "Water Quality", icon: Droplets },
   { id: "diet", label: "Diet Assessment", icon: UtensilsCrossed },
   { id: "exercise", label: "Exercise", icon: Dumbbell },
+  { id: "body", label: "Body Composition", icon: Activity },
   { id: "work", label: "Work", icon: Briefcase },
   { id: "lifestyle", label: "Lifestyle", icon: Moon },
   { id: "mental", label: "Mental Health", icon: Brain },

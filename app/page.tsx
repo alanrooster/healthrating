@@ -188,11 +188,11 @@ export default function Page() {
 
   const scores: HealthScores = useMemo(
     () => ({
-      body: bodyScore,
       airQuality: airScore,
       waterQuality: waterScore,
       diet: dietScore,
       exercise: exerciseScore,
+      body: bodyScore,
       work: workScore,
       lifestyle: lifestyleScore,
       mentalHealth: mentalHealthScore,
