@@ -271,11 +271,8 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
       {/* Body Measurements */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold text-foreground">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Body Measurements
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              Optional
-            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
