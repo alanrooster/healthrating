@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { SidebarProvider, SidebarInset, useSidebar } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
@@ -169,6 +169,83 @@ export default function Page() {
   // and across "Retake assessment" (which clears results but keeps answers)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [storedInputs, setStoredInputs] = useState<Record<string, any>>({})
+
+  // ---- localStorage persistence ----
+  // All assessment data is saved to the browser so it survives page refreshes.
+  const STORAGE_KEY = "health-hub-state-v1"
+  // Must be state (not a ref): saving is only safe on the re-render AFTER the
+  // restored values have been applied. A ref flips too early and the save
+  // effect would overwrite storage with the initial empty state on mount.
+  const [hydrated, setHydrated] = useState(false)
+
+  // Hydrate once on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const s = JSON.parse(raw)
+        if (s.bodyScore) setBodyScore(s.bodyScore)
+        if (s.airScore) setAirScore(s.airScore)
+        if (s.waterScore) setWaterScore(s.waterScore)
+        if (s.dietScore) setDietScore(s.dietScore)
+        if (s.exerciseScore) setExerciseScore(s.exerciseScore)
+        if (s.workScore) setWorkScore(s.workScore)
+        if (s.lifestyleScore) setLifestyleScore(s.lifestyleScore)
+        if (s.mentalHealthScore) setMentalHealthScore(s.mentalHealthScore)
+        if (s.familyHistoryScore) setFamilyHistoryScore(s.familyHistoryScore)
+        if (s.preventiveCareScore) setPreventiveCareScore(s.preventiveCareScore)
+        if (s.sensesOralScore) setSensesOralScore(s.sensesOralScore)
+        if (s.lifeContextScore) setLifeContextScore(s.lifeContextScore)
+        if (s.personalityScore) setPersonalityScore(s.personalityScore)
+        if (s.homeEnvironmentScore) setHomeEnvironmentScore(s.homeEnvironmentScore)
+        if (typeof s.carbonCompleted === "boolean") setCarbonCompleted(s.carbonCompleted)
+        if (typeof s.carbonScore === "number") setCarbonScore(s.carbonScore)
+        if (typeof s.totalCO2 === "number") setTotalCO2(s.totalCO2)
+        if (s.dietData) setDietData(s.dietData)
+        if (s.waterData) setWaterData(s.waterData)
+        if (s.lifestyleData) setLifestyleData(s.lifestyleData)
+        if (s.airData) setAirData(s.airData)
+        if (s.bodyDemographics) setBodyDemographics(s.bodyDemographics)
+        if (s.storedResults) setStoredResults(s.storedResults)
+        if (s.storedInputs) setStoredInputs(s.storedInputs)
+      }
+    } catch {
+      // Corrupt or inaccessible storage — start fresh
+    }
+    // Batched with the restore setters above, so the save effect only runs
+    // once the restored state is actually in place.
+    setHydrated(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Save after every change (only once hydrated, to avoid wiping saved data
+  // with the initial empty state)
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore,
+          lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore,
+          sensesOralScore, lifeContextScore, personalityScore, homeEnvironmentScore,
+          carbonCompleted, carbonScore, totalCO2,
+          dietData, waterData, lifestyleData, airData, bodyDemographics,
+          storedResults, storedInputs,
+        }),
+      )
+    } catch {
+      // Storage full or unavailable — fail silently, app still works in-memory
+    }
+  }, [
+    hydrated,
+    bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore,
+    lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore,
+    sensesOralScore, lifeContextScore, personalityScore, homeEnvironmentScore,
+    carbonCompleted, carbonScore, totalCO2,
+    dietData, waterData, lifestyleData, airData, bodyDemographics,
+    storedResults, storedInputs,
+  ])
 
   function storeResult(key: string, result: unknown) {
     setStoredResults(prev => ({ ...prev, [key]: result }))
