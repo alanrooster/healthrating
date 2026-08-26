@@ -501,6 +501,7 @@ export default function Page() {
             waterData={waterData}
             lifestyleData={lifestyleData}
             airData={airData}
+            bodyData={bodyDemographics?.bmi ? { bmi: bodyDemographics.bmi } : null}
             storedResult={storedResults.carbon}
             onStoreResult={(r) => storeResult("carbon", r)}
             onRetake={() => clearResult("carbon")}

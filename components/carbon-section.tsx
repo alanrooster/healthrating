@@ -63,6 +63,9 @@ interface CarbonSectionProps {
   airData?: {
     country: string
   } | null
+  bodyData?: {
+    bmi: number
+  } | null
   storedResult?: CarbonResult | null
   onStoreResult?: (result: CarbonResult) => void
   onRetake?: () => void
@@ -93,7 +96,7 @@ const COUNTRIES = [
   { code: "default", name: "Other" },
 ]
 
-export function CarbonSection({ onResult, dietData, waterData, lifestyleData, airData, storedResult, onStoreResult, onRetake }: CarbonSectionProps) {
+export function CarbonSection({ onResult, dietData, waterData, lifestyleData, airData, bodyData, storedResult, onStoreResult, onRetake }: CarbonSectionProps) {
   const [step, setStep] = useState(1)
   const [result, setResult] = useState<CarbonResult | null>(storedResult ?? null)
 
@@ -163,7 +166,10 @@ export function CarbonSection({ onResult, dietData, waterData, lifestyleData, ai
       country: airData.country,
     } : undefined
 
-    const calcResult = calculateCarbonFootprint(inputs, externalDietData, externalWaterData, externalLifestyleData, externalAirData)
+    // Pass BMI from body composition to scale food emissions by caloric intake
+    const externalBodyData = bodyData ? { bmi: bodyData.bmi } : undefined
+
+    const calcResult = calculateCarbonFootprint(inputs, externalDietData, externalWaterData, externalLifestyleData, externalAirData, externalBodyData)
     setResult(calcResult)
     onStoreResult?.(calcResult)
     onResult(calcResult.score, calcResult.totalKgCO2)

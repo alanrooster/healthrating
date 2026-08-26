@@ -288,6 +288,13 @@ export function calculateCarbonFootprint(
   // Optional: pass in country from air quality for grid intensity
   airData?: {
     country: string
+  },
+  // Optional: pass in body data (from Body Composition) to scale food-related
+  // emissions with estimated caloric intake. Higher BMI implies higher energy
+  // (food) throughput and therefore higher food-system emissions
+  // (Squalli 2017; Magkos et al. 2020: obesity ≈ +20% food GHG emissions).
+  bodyData?: {
+    bmi: number
   }
 ): CarbonResult {
   const {
@@ -380,25 +387,45 @@ export function calculateCarbonFootprint(
     consumptionEmissions += COMPOSTING_OFFSET
   }
 
+  // Caloric-intake multiplier from BMI (Body Composition assessment).
+  // Food-system emissions scale with energy intake: ~+1.5% per BMI unit above
+  // the reference midpoint (BMI 22), clamped to 0.90-1.30. An obese diet
+  // (BMI 35+) carries ~20-30% more food GHG than a normal-weight one
+  // (Squalli 2017, Ecological Economics; Magkos et al. 2020).
+  const energyIntakeMultiplier = bodyData
+    ? Math.min(1.3, Math.max(0.9, 1 + 0.015 * (bodyData.bmi - 22)))
+    : 1.0
+
   // Add diet impact if available (from diet assessment)
   if (dietData) {
+    let foodEmissions = 0
+
     // Red meat: ~27kg CO2 per kg, average 150g per serving
     // Scale: 0=never, 1=rarely, 2=weekly, 3=several/week, 4=daily
     const meatServingsPerYear = [0, 12, 52, 156, 365][dietData.redMeatFrequency] ?? 0
-    consumptionEmissions += meatServingsPerYear * 0.15 * 27
+    foodEmissions += meatServingsPerYear * 0.15 * 27
 
     // Processed meat: ~12kg CO2 per kg
     const processedServings = [0, 12, 52, 156, 365][dietData.processedMeatFrequency] ?? 0
-    consumptionEmissions += processedServings * 0.1 * 12
+    foodEmissions += processedServings * 0.1 * 12
 
     // Fish: ~5kg CO2 per kg, average 150g per serving
     if (dietData.fishFrequency !== undefined) {
       const fishServingsPerYear = [0, 12, 52, 156, 365][dietData.fishFrequency] ?? 0
-      consumptionEmissions += fishServingsPerYear * 0.15 * 5
+      foodEmissions += fishServingsPerYear * 0.15 * 5
     }
+
+    // Baseline non-meat food (staples, dairy, produce, eggs): ~900 kg CO2/year
+    // for an average diet (Poore & Nemecek 2018, Science). Without this the
+    // food footprint only counted meat/fish extras.
+    foodEmissions += 900
+
+    // Scale all food by estimated caloric intake (BMI-based)
+    consumptionEmissions += foodEmissions * energyIntakeMultiplier
 
     // Alcohol: ~3kg CO2 per liter (average across beer/wine/spirits)
     // Scale: 0=never, 1=rarely, 2=monthly, 3=weekly, 4=daily
+    // (not scaled by BMI — drinking volume is captured directly)
     if (dietData.alcoholFrequency !== undefined) {
       const drinkOccasionsPerYear = [0, 12, 24, 52, 365][dietData.alcoholFrequency] ?? 0
       // Average 0.5L per drinking occasion
@@ -519,6 +546,11 @@ if (dietData && dietData.redMeatFrequency >= 3) {
   recommendations.push(
   "Reducing red meat consumption to 1-2 times per week could save 500+ kg CO2/year."
   )
+  }
+  if (bodyData && energyIntakeMultiplier >= 1.08 && dietData) {
+    recommendations.push(
+      "Your estimated caloric intake (based on body composition) raises your food footprint. Gradually moving toward a healthy weight benefits both your health and your carbon footprint."
+    )
   }
   if (lifestyleData?.smokingStatus === "daily") {
   recommendations.push(
