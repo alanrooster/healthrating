@@ -12,6 +12,7 @@ import {
   Ear,
   Heart,
   HeartHandshake,
+  Home,
   House,
   Info,
   Leaf,
@@ -45,8 +46,12 @@ interface AppSidebarProps {
   carbonScore?: number
 }
 
-const NAV_ITEMS = [
+const OVERVIEW_ITEMS = [
+  { id: "welcome", label: "Home", icon: Home },
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+]
+
+const NAV_ITEMS = [
   { id: "air", label: "Air Quality", icon: Cloud },
   { id: "water", label: "Water Quality", icon: Droplets },
   { id: "diet", label: "Diet Assessment", icon: UtensilsCrossed },
@@ -112,7 +117,7 @@ export function AppSidebar({
       <SidebarHeader className="border-b border-border px-4 py-4">
         <button
           type="button"
-          onClick={() => handleSectionChange("dashboard")}
+          onClick={() => handleSectionChange("welcome")}
           className="flex items-center gap-3 text-left"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
@@ -130,6 +135,30 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {OVERVIEW_ITEMS.map((item) => {
+                const isActive = activeSection === item.id
+                const Icon = item.icon
+
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => handleSectionChange(item.id)}
+                      tooltip={item.label}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Assessments</SidebarGroupLabel>
           <SidebarGroupContent>

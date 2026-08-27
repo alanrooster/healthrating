@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
 import { calculateDiabetesRisk } from "@/lib/diabetes-risk-calculator"
+import { HomeSection } from "@/components/home-section"
 import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
 import { WaterSection } from "@/components/water-section"
@@ -67,7 +68,7 @@ function PageHeader({ title }: { title: string }) {
 }
 
 export default function Page() {
-  const [activeSection, setActiveSection] = useState("dashboard")
+  const [activeSection, setActiveSection] = useState("welcome")
 
   // Module scores
   const [bodyScore, setBodyScore] = useState<ModuleScore>({
@@ -454,6 +455,14 @@ export default function Page() {
 
   function renderSection() {
     switch (activeSection) {
+      case "welcome":
+        return (
+          <HomeSection
+            completedCount={Object.values(scores).filter((s) => s.completed).length}
+            totalCount={Object.values(scores).length}
+            onNavigate={setActiveSection}
+          />
+        )
       case "dashboard":
         return (
           <HealthDashboard
@@ -524,6 +533,7 @@ export default function Page() {
   }
 
   const sectionTitles: Record<string, string> = {
+    welcome: "Home",
     dashboard: "Dashboard",
     body: "Body Composition",
     air: "Air Quality",
