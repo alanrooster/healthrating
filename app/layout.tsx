@@ -8,9 +8,18 @@ const _inter = Inter({ subsets: ['latin'] })
 const _spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Health Calculator - Comprehensive Health Assessment',
+  metadataBase: new URL('https://healthrating.org'),
+  title: 'HealthRating.org — The Most Comprehensive Health Score on the Web',
   description:
-    'Comprehensive health calculator combining body composition, air quality, diet assessment, and exercise evaluation based on WHO guidelines.',
+    'Discover your life expectancy, biological age, and disease risks with 14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research. Free, private, no sign-up.',
+  openGraph: {
+    title: 'HealthRating.org — The Most Comprehensive Health Score on the Web',
+    description:
+      'Life expectancy, biological age, and disease risk screens from 14 in-depth assessments grounded in 60+ peer-reviewed studies. Free and private.',
+    url: 'https://healthrating.org',
+    siteName: 'HealthRating.org',
+    type: 'website',
+  },
 }
 
 export const viewport: Viewport = {

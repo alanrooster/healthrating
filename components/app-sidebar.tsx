@@ -124,11 +124,11 @@ export function AppSidebar({
             <Heart className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-foreground">
-              Health Calculator
+            <span className="font-mono text-sm font-bold text-foreground">
+              healthrating.org
             </span>
             <span className="text-xs text-muted-foreground">
-              Comprehensive Assessment
+              Comprehensive Health Scoring
             </span>
           </div>
         </button>

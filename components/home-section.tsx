@@ -77,16 +77,19 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
     <div className="flex flex-col gap-12 py-4">
       {/* Hero */}
       <section className="flex flex-col items-center gap-6 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
+        <p className="font-mono text-sm font-bold tracking-wide text-primary">
+          healthrating.org
+        </p>
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-medium text-foreground">
           <Dna className="h-3.5 w-3.5 text-primary" />
-          <span>Grounded in 60+ peer-reviewed studies</span>
+          <span>The most accurate &amp; comprehensive health scoring on the web</span>
         </div>
         <h1 className="max-w-2xl text-balance text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl">
           Understand the years ahead of you
         </h1>
         <p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
-          A comprehensive health assessment that turns how you live — your habits,
-          environment, mind, and history — into a clear picture of your life
+          14 in-depth assessments, 100+ life factors, every one weighted by
+          peer-reviewed research — distilled into a clear picture of your life
           expectancy, biological age, and the levers you control.
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row">
@@ -103,6 +106,24 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
             {completedCount} of {totalCount} assessments completed
           </p>
         )}
+      </section>
+
+      {/* Why this is different */}
+      <section
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-4"
+        aria-label="What sets healthrating.org apart"
+      >
+        {[
+          { value: "14", label: "In-depth assessments" },
+          { value: "100+", label: "Life factors analyzed" },
+          { value: "60+", label: "Peer-reviewed studies" },
+          { value: "0", label: "Data sent to servers" },
+        ].map((stat) => (
+          <div key={stat.label} className="flex flex-col items-center gap-1 bg-card px-4 py-6 text-center">
+            <span className="font-mono text-3xl font-bold text-primary">{stat.value}</span>
+            <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
+          </div>
+        ))}
       </section>
 
       {/* What you get */}
