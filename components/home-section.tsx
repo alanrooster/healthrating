@@ -16,6 +16,30 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
+// Keep in sync with the FAQPage JSON-LD in app/layout.tsx
+const FAQ_ITEMS = [
+  {
+    question: "What does HealthRating.org calculate?",
+    answer:
+      "HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, and type 2 diabetes risk.",
+  },
+  {
+    question: "Is HealthRating.org free and private?",
+    answer:
+      "Yes. All assessments are free with no sign-up required, and your answers never leave your browser — nothing is sent to any server.",
+  },
+  {
+    question: "Is the health score scientifically grounded?",
+    answer:
+      "Every factor is weighted using published, peer-reviewed research — over 60 studies including Chetty et al. 2016 (income and longevity), Holt-Lunstad 2010 (social connection), and the FINDRISC diabetes screening questionnaire. It is an educational tool, not a medical diagnosis.",
+  },
+  {
+    question: "How is biological age different from life expectancy?",
+    answer:
+      "Life expectancy estimates how many years you may live based on your current habits and risk factors. Biological age expresses the same signal differently: whether your body is effectively younger or older than your calendar age.",
+  },
+]
+
 interface HomeSectionProps {
   completedCount: number
   totalCount: number
@@ -189,6 +213,26 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
           <BookOpenCheck className="mr-2 h-4 w-4" />
           Read the methodology
         </Button>
+      </section>
+
+      {/* FAQ — mirrors the FAQPage structured data in layout.tsx for SEO */}
+      <section className="flex flex-col gap-5" aria-labelledby="faq-heading">
+        <h2 id="faq-heading" className="text-center text-2xl font-semibold text-foreground">
+          Frequently asked questions
+        </h2>
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+          {FAQ_ITEMS.map((item) => (
+            <details
+              key={item.question}
+              className="group rounded-lg border border-border bg-card px-5 py-4"
+            >
+              <summary className="cursor-pointer list-none text-sm font-semibold text-foreground marker:hidden [&::-webkit-details-marker]:hidden">
+                {item.question}
+              </summary>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
       {/* Disclaimer */}
