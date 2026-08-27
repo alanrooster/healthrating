@@ -89,13 +89,41 @@ const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
     {
+      '@type': 'Organization',
+      '@id': 'https://healthrating.org/#organization',
+      name: 'HealthRating.org',
+      url: 'https://healthrating.org',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://healthrating.org/icon.png',
+        width: 512,
+        height: 512,
+      },
+      description:
+        'HealthRating.org publishes a free, private, research-backed health scoring application.',
+    },
+    {
       '@type': 'WebSite',
       '@id': 'https://healthrating.org/#website',
       url: 'https://healthrating.org',
       name: 'HealthRating.org',
+      publisher: { '@id': 'https://healthrating.org/#organization' },
       description:
         'The most comprehensive health scoring on the web: life expectancy, biological age, and disease risk from 14 research-backed assessments.',
       inLanguage: 'en',
+    },
+    {
+      '@type': 'WebPage',
+      '@id': 'https://healthrating.org/#webpage',
+      url: 'https://healthrating.org',
+      name: 'HealthRating.org — The Most Comprehensive Health Score on the Web',
+      isPartOf: { '@id': 'https://healthrating.org/#website' },
+      about: { '@id': 'https://healthrating.org/#app' },
+      inLanguage: 'en',
+      speakable: {
+        '@type': 'SpeakableSpecification',
+        cssSelector: ['h1', '#faq-heading'],
+      },
     },
     {
       '@type': 'WebApplication',
@@ -105,6 +133,7 @@ const structuredData = {
       applicationCategory: 'HealthApplication',
       operatingSystem: 'Web',
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@id': 'https://healthrating.org/#organization' },
       description:
         '14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research, computing your life expectancy, biological age, cardiovascular and diabetes risk, and carbon footprint.',
       featureList: [
