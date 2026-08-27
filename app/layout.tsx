@@ -108,6 +108,12 @@ const structuredData = {
       url: 'https://healthrating.org',
       name: 'HealthRating.org',
       publisher: { '@id': 'https://healthrating.org/#organization' },
+      author: {
+        '@type': 'Person',
+        name: 'Alan Gallicchio',
+        url: 'https://alangallicchio.com',
+      },
+      license: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
       description:
         'The most comprehensive health scoring on the web: life expectancy, biological age, and disease risk from 14 research-backed assessments.',
       inLanguage: 'en',
