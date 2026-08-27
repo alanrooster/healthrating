@@ -109,7 +109,7 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
           <span>The most accurate &amp; comprehensive health scoring on the web</span>
         </div>
         <h1 className="max-w-2xl text-balance text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl">
-          Understand the years ahead of you
+          Score your health today, understand how to improve it and become biologically younger...
         </h1>
         <p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
           14 in-depth assessments, 100+ life factors, every one weighted by
