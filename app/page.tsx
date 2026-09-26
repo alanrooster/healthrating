@@ -36,31 +36,19 @@ import { calculateLifeExpectancy, type LifeExpectancyInputs } from "@/lib/life-e
 const EMPTY_SCORE: ModuleScore = { score: 0, completed: false, label: "" }
 
 function PageHeader({ title }: { title: string }) {
-  const { toggleSidebar, isMobile } = useSidebar()
+  const { toggleSidebar } = useSidebar()
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
-      {isMobile ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleSidebar}
-          className="-ml-1 flex items-center gap-2"
-        >
-          <Menu className="h-4 w-4" />
-          <span>Menu</span>
-        </Button>
-      ) : (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="-ml-1 h-7 w-7"
-        >
-          <Menu className="h-4 w-4" />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-      )}
+      <Button
+        variant="default"
+        size="sm"
+        onClick={toggleSidebar}
+        className="-ml-1 flex items-center gap-2 shadow-sm"
+      >
+        <Menu className="h-4 w-4" />
+        <span>Menu</span>
+      </Button>
       <Separator orientation="vertical" className="mr-2 h-4" />
       <span className="text-sm font-medium text-foreground">{title}</span>
     </header>
