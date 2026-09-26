@@ -11,7 +11,11 @@
  * - Mason et al. (2018): 93% of bottled water contains microplastics
  * - PNAS (2024): ~240,000 nanoplastic particles per liter in bottled water
  * - Rochester & Bolden (2015): BPA and phthalate health effects
- * - EU Drinking Water Directive 2020/2184: Quality standards
+ * - EU Drinking Water Directive 2020/2184: Quality standards, incl. PFAS limits from
+ *   12 January 2026 (0.1 µg/L for the sum of 20 PFAS)
+ * - US EPA PFAS drinking water rule (2024): 4 ng/L each for PFOA and PFOS
+ * - IARC Monographs Vol. 135 (2023): PFOA carcinogenic to humans (Group 1)
+ * - Herkert et al. (2020, ES&T Letters): PFAS removal by point-of-use filters
  */
 
 export type WaterSource =
@@ -39,6 +43,8 @@ export type BuildingAge = "new" | "10-30" | "30-50" | "50-plus" | "unknown"
 
 export type WaterIssue = "none" | "taste" | "odor" | "color" | "hardness" | "multiple"
 
+export type PfasStatus = "not-detected" | "within-limits" | "above-limit" | "near-source" | "unknown"
+
 export interface WaterAnswers {
   // Location (reuse from air quality if available)
   country: string
@@ -64,6 +70,9 @@ export interface WaterAnswers {
   // Observed quality
   observedIssues: WaterIssue
 
+  // PFAS ("forever chemicals"); optional because answers saved before it existed lack it
+  pfasStatus?: PfasStatus
+
   // Hydration habits
   dailyWaterIntake: "less-than-1L" | "1-2L" | "2-3L" | "more-than-3L"
 }
@@ -83,6 +92,7 @@ export interface WaterResult {
     plasticScore: number
     infrastructureScore: number
     hydrationScore: number
+    pfasScore?: number // absent in results saved before PFAS was scored
   }
 }
 
@@ -266,18 +276,19 @@ export function calculateWaterQuality(answers: WaterAnswers): WaterResult {
     sourceScore: 0,
     filtrationScore: 0,
     plasticScore: 0,
+    pfasScore: 0,
     infrastructureScore: 0,
     hydrationScore: 0,
   }
 
-  // 1. Country baseline (25% weight)
+  // 1. Country baseline (20% weight)
   const countryBaseline = COUNTRY_WATER_SCORES[answers.country] ?? DEFAULT_COUNTRY_SCORE
   breakdown.countryScore = countryBaseline
 
   // 2. Primary source score (20% weight)
   breakdown.sourceScore = calcSourceScore(answers.primarySource, countryBaseline)
 
-  // 3. Filtration score (20% weight)
+  // 3. Filtration score (15% weight)
   breakdown.filtrationScore = calcFiltrationScore(
     answers.filtration,
     answers.filterMaintained,
@@ -292,7 +303,15 @@ export function calculateWaterQuality(answers: WaterAnswers): WaterResult {
     answers.bottleStorage
   )
 
-  // 5. Infrastructure score (10% weight)
+  // 5. PFAS exposure, reduced by filters that remove it (10% weight)
+  breakdown.pfasScore = calcPfasScore(
+    answers.pfasStatus ?? "unknown",
+    answers.primarySource,
+    answers.filtration,
+    answers.filterMaintained
+  )
+
+  // 6. Infrastructure score (10% weight)
   breakdown.infrastructureScore = calcInfrastructureScore(
     answers.buildingAge,
     answers.knownPipeIssues,
@@ -300,15 +319,16 @@ export function calculateWaterQuality(answers: WaterAnswers): WaterResult {
     answers.observedIssues
   )
 
-  // 6. Hydration habits (5% weight)
+  // 7. Hydration habits (5% weight)
   breakdown.hydrationScore = calcHydrationScore(answers.dailyWaterIntake)
 
   // Weighted final score
   const score = Math.round(
-    breakdown.countryScore * 0.25 +
+    breakdown.countryScore * 0.20 +
     breakdown.sourceScore * 0.20 +
-    breakdown.filtrationScore * 0.20 +
+    breakdown.filtrationScore * 0.15 +
     breakdown.plasticScore * 0.20 +
+    breakdown.pfasScore * 0.10 +
     breakdown.infrastructureScore * 0.10 +
     breakdown.hydrationScore * 0.05
   )
@@ -324,7 +344,7 @@ export function calculateWaterQuality(answers: WaterAnswers): WaterResult {
 
   const personalFactors = Math.round(
     (breakdown.sourceScore + breakdown.filtrationScore + breakdown.plasticScore +
-     breakdown.infrastructureScore + breakdown.hydrationScore) / 5
+     breakdown.pfasScore + breakdown.infrastructureScore + breakdown.hydrationScore) / 6
   )
 
   const recommendations = generateRecommendations(answers, breakdown, microplasticRisk)
@@ -462,6 +482,43 @@ function calcPlasticScore(
   return Math.max(0, Math.min(100, score))
 }
 
+// Share of PFAS removed by a maintained filter. Herkert et al. 2020: under-sink reverse
+// osmosis and two-stage filters removed 94%+, activated-carbon pitcher and faucet filters 73%
+// on average (highly variable), and whole-house systems were inconsistent, some raising
+// levels. Distillation wasn't tested, so it's treated like carbon.
+const PFAS_REMOVAL: Record<FiltrationType, number> = {
+  "none": 0,
+  "pitcher": 0.7,
+  "faucet": 0.7,
+  "under-sink": 0.9,
+  "reverse-osmosis": 0.95,
+  "whole-house": 0.3,
+  "distillation": 0.7,
+}
+
+function calcPfasScore(
+  status: PfasStatus,
+  source: WaterSource,
+  filtration: FiltrationType,
+  maintained: boolean
+): number {
+  if (source === "bottled-only") return 80 // neutral, as for filtration
+
+  // Wells, springs and rainwater fall outside utility PFAS monitoring
+  const unmonitored = source === "private-well" || source === "spring" || source === "rainwater"
+  const baseScores: Record<PfasStatus, number> = {
+    "not-detected": 100,
+    "within-limits": 80,
+    "above-limit": 15,
+    "near-source": 45,
+    "unknown": unmonitored ? 55 : 70,
+  }
+
+  // Saturated filter media can release captured PFAS back into the water
+  const removal = maintained ? PFAS_REMOVAL[filtration] : 0
+  return Math.round(100 - (100 - baseScores[status]) * (1 - removal))
+}
+
 function calcInfrastructureScore(
   buildingAge: BuildingAge,
   pipeIssues: boolean,
@@ -565,6 +622,16 @@ function generateRecommendations(
 ): string[] {
   const recs: string[] = []
 
+  // PFAS: a contaminated or likely-contaminated supply without an effective filter goes first
+  const drinksFromSupply = answers.primarySource !== "bottled-only"
+  const pfasStatus = answers.pfasStatus ?? "unknown"
+  const pfasFiltered =
+    (answers.filtration === "reverse-osmosis" || answers.filtration === "under-sink") &&
+    answers.filterMaintained
+  if (drinksFromSupply && (pfasStatus === "above-limit" || pfasStatus === "near-source") && !pfasFiltered) {
+    recs.push("To cut PFAS, use an under-sink reverse-osmosis or two-stage carbon filter certified for PFAS reduction (NSF/ANSI 53 or 58). These removed 94% or more in independent tests, pitcher filters about 73%. Replace cartridges on schedule, since saturated filters can release PFAS back.")
+  }
+
   // Filtration recommendations
   if (breakdown.filtrationScore < 70) {
     if (answers.filtration === "none") {
@@ -597,6 +664,15 @@ function generateRecommendations(
     if (answers.observedIssues !== "none") {
       recs.push("The water quality issues you've observed warrant investigation. Contact your water utility or have water tested.")
     }
+  }
+
+  if (drinksFromSupply && pfasStatus === "unknown") {
+    const onUtilitySupply = answers.primarySource === "municipal-tap" || answers.primarySource === "mixed"
+    recs.push(
+      onUtilitySupply
+        ? "Check your water supplier's latest quality report for PFAS. EU supplies must stay below 0.1 µg/L for 20 PFAS combined since January 2026; the US EPA limit is 4 ng/L each for PFOA and PFOS."
+        : "Private wells, springs and rainwater aren't covered by utility PFAS monitoring. Have your water tested by an accredited lab."
+    )
   }
 
   // Hydration recommendations

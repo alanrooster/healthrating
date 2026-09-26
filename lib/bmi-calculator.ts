@@ -243,29 +243,37 @@ function determineRiskLevel(
  * diabetes risk of a White adult at BMI 30 is reached at 23.9 (South Asian), 26.6 (Arab),
  * 26.9 (Chinese) and 28.1 (Black) (Caleyachetty et al. 2021, Lancet Diabetes Endocrinol).
  *
+ * Each group has one offset at the overweight cut-off and one at the obesity cut-off, and
+ * the offset moves linearly between them, so both cut-offs land exactly on WHO 25 and 30.
+ * Where two cut-offs are defensible the stricter one is used: obesity from 27.5 for every
+ * NICE group, and overweight from 22.5 for South Asian backgrounds, the group with the
+ * highest risk at a given BMI.
+ *
  * References:
  * - NICE NG246: Overweight and obesity management (2025)
  * - WHO Expert Consultation (2004): Appropriate BMI for Asian populations
  * - Caleyachetty et al. (2021): Ethnicity-specific BMI cut-offs for obesity
  * - Swinburn et al. (1999): Polynesians carry more lean mass at the same BMI
  */
-function getEthnicityBMIAdjustment(ethnicity: Ethnicity): number {
-  switch (ethnicity) {
-    case "south-asian":
-      return 2.5 // highest risk at a given BMI (NICE obesity cut-off 27.5)
-    case "east-asian":
-    case "southeast-asian":
-    case "middle-eastern":
-    case "african":
-      return 2.0 // NICE overweight cut-off 23; obesity at ~28
-    case "hispanic":
-      return 0.5 // slightly higher trunk fat distribution
-    case "pacific-islander":
-      return -1.5 // significantly higher muscle/bone mass
-    case "caucasian":
-    default:
-      return 0 // baseline reference
-  }
+const ETHNICITY_BMI_OFFSETS: Record<Ethnicity, { overweight: number; obesity: number }> = {
+  "south-asian": { overweight: 2.5, obesity: 2.5 },
+  "east-asian": { overweight: 2.0, obesity: 2.5 },
+  "southeast-asian": { overweight: 2.0, obesity: 2.5 },
+  "middle-eastern": { overweight: 2.0, obesity: 2.5 },
+  african: { overweight: 2.0, obesity: 2.5 },
+  hispanic: { overweight: 0.5, obesity: 0.5 }, // slightly higher trunk fat distribution
+  "pacific-islander": { overweight: -1.5, obesity: -1.5 }, // higher muscle/bone mass
+  caucasian: { overweight: 0, obesity: 0 }, // baseline reference
+}
+
+function getEthnicityBMIAdjustment(ethnicity: Ethnicity, bmi: number): number {
+  const { overweight, obesity } = ETHNICITY_BMI_OFFSETS[ethnicity] ?? ETHNICITY_BMI_OFFSETS.caucasian
+  const overweightCutoff = 25 - overweight
+  const obesityCutoff = 30 - obesity
+  if (bmi <= overweightCutoff) return overweight
+  if (bmi >= obesityCutoff) return obesity
+  const t = (bmi - overweightCutoff) / (obesityCutoff - overweightCutoff)
+  return overweight + (obesity - overweight) * t
 }
 
 /**
@@ -425,8 +433,7 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   const adjustedBMI = calcAgeAdjustedBMI(bmi, age, sex)
 
   // Ethnicity adjustment applied to the adjusted BMI
-  const ethnicityAdjustment = getEthnicityBMIAdjustment(ethnicity)
-  const ethnicityAdjustedBMI = adjustedBMI + ethnicityAdjustment
+  const ethnicityAdjustedBMI = adjustedBMI + getEthnicityBMIAdjustment(ethnicity, adjustedBMI)
 
   // Body measurements are optional. Waist + neck unlock the circumference body-fat
   // method (Navy for men, RFM for women) and waist-to-height ratio. Without them we
@@ -450,9 +457,9 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   // Composite score that incorporates body measurements. The ethnicity offset is added after
   // blending: the body-fat term is ethnicity-neutral, so blending it in would dilute the
   // offset and push the NICE NG246 cut-offs back up.
+  const blendedScore = calcCompositeScore(adjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio)
   const compositeScore = Math.round(
-    (calcCompositeScore(adjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio) +
-      ethnicityAdjustment) * 10
+    (blendedScore + getEthnicityBMIAdjustment(ethnicity, blendedScore)) * 10
   ) / 10
 
   const category = getBMICategory(compositeScore)

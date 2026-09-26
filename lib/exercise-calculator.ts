@@ -7,7 +7,15 @@
  * - Walking/transport: 3.3 METs
  *
  * WHO Recommendation: At least 150-300 min moderate or 75-150 min vigorous per week
- * (equivalent to 600-1200 MET-minutes/week minimum)
+ * (equivalent to 600-1200 MET-minutes/week minimum), plus muscle-strengthening
+ * activity on 2 or more days a week (WHO 2020).
+ *
+ * The activity sub-score blends aerobic volume (60%), muscle-strengthening days (25%)
+ * and, when tracked, average daily steps (15%):
+ * - Momma et al. 2022 (BJSM): muscle strengthening = 10-17% lower all-cause mortality,
+ *   largest at 30-60 min/week; 40% lower when combined with aerobic activity
+ * - Ding et al. 2025 (Lancet Public Health): 7,000 vs 2,000 steps/day = 47% lower
+ *   all-cause mortality and 38% lower dementia risk; steepest gains up to 5,000-7,000
  */
 
 export interface ExerciseInputs {
@@ -38,7 +46,13 @@ export interface ExerciseInputs {
   walkingPace: "very-fast" | "brisk" | "average" | "slow" | "very-slow" // self-reported usual pace
   gripStrength: "very-strong" | "strong" | "average" | "weak" | "very-weak" // jars/groceries proxy
   restingHeartRate: number // bpm at rest (typical: 60-100)
+
+  // Optional: answers saved before these questions existed don't have them
+  strengthDays?: number // days/week of muscle-strengthening activity
+  dailySteps?: DailySteps
 }
+
+export type DailySteps = "unknown" | "under-3k" | "3k-5k" | "5k-7k" | "7k-10k" | "10k-plus"
 
 export interface ExerciseQuestion {
   id: keyof ExerciseInputs
@@ -188,8 +202,16 @@ export interface ExerciseResult {
   }
   sedentaryPenalty: number
   sedentaryRisk: string
-  meetsWHOGuideline: boolean
+  meetsWHOGuideline: boolean // aerobic guideline
   functionalFlags: string[]
+  // Optional: results saved before strength and steps were scored don't have them
+  aerobicScore?: number
+  strengthScore?: number | null
+  stepsScore?: number | null
+  strengthDays?: number | null
+  dailySteps?: DailySteps
+  meetsStrengthGuideline?: boolean | null
+  activityFlags?: string[]
 }
 
 const STAIRS_MAP: Record<string, number> = {
@@ -212,6 +234,20 @@ const GRIP_MAP: Record<string, number> = {
   average: 60,
   weak: 30,
   "very-weak": 10,
+}
+
+const STEPS_SCORE: Record<Exclude<DailySteps, "unknown">, number> = {
+  "under-3k": 10,
+  "3k-5k": 35,
+  "5k-7k": 65,
+  "7k-10k": 90,
+  "10k-plus": 100,
+}
+
+function scoreStrengthDays(days: number): number {
+  if (days >= 2) return 100
+  if (days >= 1) return 50
+  return 0
 }
 
 function scoreRestingHeartRate(rhr: number): number {
@@ -293,9 +329,38 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
     sedentaryRisk = "Extreme sedentary behavior - major health risk regardless of exercise"
   }
 
-  const score = Math.max(0, Math.min(100, baseScore - sedentaryPenalty))
-  const activityScore = score
+  const strengthDays =
+    typeof inputs.strengthDays === "number"
+      ? Math.max(0, Math.min(7, Math.round(inputs.strengthDays)))
+      : null
+  const strengthScore = strengthDays === null ? null : scoreStrengthDays(strengthDays)
+  const dailySteps = inputs.dailySteps ?? "unknown"
+  const stepsScore = dailySteps === "unknown" ? null : STEPS_SCORE[dailySteps]
+
+  // Unanswered parts drop out and the remaining weights are rescaled
+  const activityParts = [
+    { value: baseScore, weight: 0.6 },
+    { value: strengthScore, weight: 0.25 },
+    { value: stepsScore, weight: 0.15 },
+  ].filter((part): part is { value: number; weight: number } => part.value !== null)
+  const activityWeight = activityParts.reduce((sum, part) => sum + part.weight, 0)
+  const activityVolume =
+    activityParts.reduce((sum, part) => sum + part.value * part.weight, 0) / activityWeight
+  const activityScore = Math.max(0, Math.min(100, Math.round(activityVolume - sedentaryPenalty)))
   const meetsWHOGuideline = totalMETMinutes >= 600
+  const meetsStrengthGuideline = strengthDays === null ? null : strengthDays >= 2
+
+  const activityFlags: string[] = []
+  if (meetsStrengthGuideline === false) {
+    activityFlags.push(
+      "WHO recommends muscle-strengthening activity on 2 or more days a week. 30-60 minutes a week is linked to 10-20% lower all-cause mortality, and about 40% lower when combined with aerobic activity (Momma 2022, BJSM)"
+    )
+  }
+  if (stepsScore !== null && stepsScore < STEPS_SCORE["7k-10k"]) {
+    activityFlags.push(
+      "Compared with 2,000 steps a day, about 7,000 is linked to 47% lower all-cause mortality and 38% lower dementia risk, with the steepest gains up to 5,000-7,000 steps (Ding 2025, Lancet Public Health)"
+    )
+  }
 
   // Functional fitness composite
   const stairs = STAIRS_MAP[inputs.stairsCapacity] ?? 60
@@ -364,5 +429,12 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
     sedentaryRisk,
     meetsWHOGuideline,
     functionalFlags,
+    aerobicScore: baseScore,
+    strengthScore,
+    stepsScore,
+    strengthDays,
+    dailySteps,
+    meetsStrengthGuideline,
+    activityFlags,
   }
 }
