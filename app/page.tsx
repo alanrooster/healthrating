@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
 import { calculateDiabetesRisk } from "@/lib/diabetes-risk-calculator"
+import { calculateNeuroRisk } from "@/lib/neuro-risk-calculator"
 import { HomeSection } from "@/components/home-section"
 import { SiteFooter } from "@/components/site-footer"
 import { AssessmentNextSteps } from "@/components/assessment-next-steps"
@@ -375,6 +376,30 @@ export default function Page() {
     return r ?? undefined
   }, [bodyDemographics, exerciseScore, dietScore, storedInputs.family])
 
+  // Dementia risk profile, also built only from answers already collected. A module's answers
+  // count once it's completed, so drafts and retakes don't leak into the profile.
+  const neuroRiskData = useMemo(
+    () =>
+      calculateNeuroRisk({
+        bmiCategory: bodyScore.completed ? bodyDemographics?.bmiCategory : undefined,
+        pm25: airScore.completed ? airData?.pm25Level : undefined,
+        socialConnection: lifestyleScore.completed ? lifestyleData?.socialConnection : undefined,
+        lifestyle: lifestyleScore.completed ? storedInputs.lifestyle : undefined,
+        mental: mentalHealthScore.completed ? storedInputs.mental : undefined,
+        exercise: exerciseScore.completed ? storedInputs.exercise : undefined,
+        diet: dietScore.completed ? storedInputs.diet : undefined,
+        senses: sensesOralScore.completed ? storedInputs.senses : undefined,
+        lifeContext: lifeContextScore.completed ? storedInputs.lifecontext : undefined,
+        work: workScore.completed ? storedInputs.work : undefined,
+        family: familyHistoryScore.completed ? storedInputs.family : undefined,
+      }) ?? undefined,
+    [
+      bodyScore, bodyDemographics, airScore, airData, lifestyleScore, lifestyleData,
+      mentalHealthScore, exerciseScore, dietScore, sensesOralScore, lifeContextScore,
+      workScore, familyHistoryScore, storedInputs,
+    ],
+  )
+
   function handleBodyResult(
     score: number,
     demographics?: {
@@ -479,6 +504,7 @@ export default function Page() {
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
             diabetesRiskData={diabetesRiskData}
+            neuroRiskData={neuroRiskData}
           />
         )
       case "body":
@@ -519,6 +545,7 @@ export default function Page() {
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
             diabetesRiskData={diabetesRiskData}
+            neuroRiskData={neuroRiskData}
           />
         )
     }

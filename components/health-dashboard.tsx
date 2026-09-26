@@ -16,14 +16,12 @@ import {
   HeartPulse,
   Hourglass,
   House,
-  ListChecks,
   Moon,
   ShieldCheck,
   Smile,
   Sparkles,
   TrendingDown,
   TrendingUp,
-  Users,
   UtensilsCrossed,
 } from "lucide-react"
 import {
@@ -43,6 +41,10 @@ import {
   buildActionPlan,
   calculatePeerComparison,
 } from "@/lib/insights-calculator"
+import type { NeuroRiskResult } from "@/lib/neuro-risk-calculator"
+import { ActionPlanCard } from "@/components/action-plan-card"
+import { NeuroRiskCard } from "@/components/neuro-risk-card"
+import { PeerComparisonCard } from "@/components/peer-comparison-card"
 
 interface LifeExpectancyData {
   adjustedYears: number
@@ -69,6 +71,7 @@ interface HealthDashboardProps {
   lifeExpectancyData?: LifeExpectancyData
   biologicalAgeData?: BiologicalAgeData
   diabetesRiskData?: DiabetesRiskData
+  neuroRiskData?: NeuroRiskResult
 }
 
 interface DiabetesRiskData {
@@ -103,13 +106,27 @@ const MODULE_META: Record<
   homeEnvironment: { label: "Home Environment", icon: House, section: "home" },
 }
 
-export function HealthDashboard({ result, onNavigate, lifeExpectancyData, biologicalAgeData, diabetesRiskData }: HealthDashboardProps) {
+export function HealthDashboard({
+  result,
+  onNavigate,
+  lifeExpectancyData,
+  biologicalAgeData,
+  diabetesRiskData,
+  neuroRiskData,
+}: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
   result
 
   const cvRisk = calculateCardiovascularRisk(scores)
   const actionPlan = buildActionPlan(scores)
   const peerComparison = calculatePeerComparison(overallScore, completedCount)
+  const rankedModules = Object.entries(scores)
+    .filter(([key, mod]) => mod.completed && MODULE_META[key])
+    .map(([key, mod]) => ({ label: MODULE_META[key].label, score: mod.score }))
+    .sort((a, b) => b.score - a.score)
+  // Same cut-offs as calculatePeerComparison: 75+ is above average, under 55 below
+  const peerStrengths = rankedModules.filter((mod) => mod.score >= 75).slice(0, 2)
+  const peerWeaknesses = rankedModules.filter((mod) => mod.score < 55).slice(-2).reverse()
 
   const radarData = Object.entries(scores).map(([key, mod]) => ({
     subject: MODULE_META[key]?.label ?? key,
@@ -457,8 +474,16 @@ export function HealthDashboard({ result, onNavigate, lifeExpectancyData, biolog
         </CardContent>
       </Card>
 
-      {/* Insights Row: Cardiovascular Risk, Diabetes Risk, Action Plan, Peer Comparison */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <PeerComparisonCard
+        comparison={peerComparison}
+        completedCount={completedCount}
+        totalModules={totalModules}
+        strengths={peerStrengths}
+        weaknesses={peerWeaknesses}
+      />
+
+      {/* Risk cards: Cardiovascular, Type 2 Diabetes, Neurodegenerative */}
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Cardiovascular Risk */}
         <Card className={`border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
           <CardHeader className="pb-2">
@@ -566,97 +591,13 @@ export function HealthDashboard({ result, onNavigate, lifeExpectancyData, biolog
           </CardContent>
         </Card>
 
-        {/* Action Plan */}
-        <Card className="border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ListChecks className="h-5 w-5 text-primary" />
-              Your Action Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {actionPlan.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Complete more assessments to receive personalized actions.
-              </p>
-            ) : (
-              actionPlan.map((item, idx) => (
-                <button
-                  key={item.module}
-                  type="button"
-                  onClick={() =>
-                    onNavigate(
-                      item.module === "mentalHealth"
-                        ? "mental"
-                        : item.module === "airQuality"
-                        ? "air"
-                        : item.module === "waterQuality"
-                        ? "water"
-                        : item.module === "preventiveCare"
-                        ? "preventive"
-                        : item.module === "sensesOral"
-                        ? "senses"
-                        : item.module === "familyHistory"
-                        ? "family"
-                        : item.module
-                    )
-                  }
-                  className="flex items-start gap-2 rounded-md border border-border p-2 text-left transition-colors hover:bg-muted/50"
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {idx + 1}
-                  </span>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-semibold text-foreground">
-                      {item.label} ({item.currentScore}/100)
-                    </span>
-                    <p className="text-[11px] text-muted-foreground leading-snug">
-                      {item.recommendation}
-                    </p>
-                  </div>
-                </button>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Peer Comparison */}
-        <Card className="border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="h-5 w-5 text-primary" />
-              Peer Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <div className="flex items-baseline gap-2">
-              <span
-                className="text-2xl font-bold"
-                style={{ color: getScoreColor(peerComparison.percentile) }}
-              >
-                {peerComparison.band}
-              </span>
-            </div>
-            {peerComparison.percentile > 0 && (
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${peerComparison.percentile}%`,
-                    backgroundColor: getScoreColor(peerComparison.percentile),
-                  }}
-                />
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {peerComparison.message}
-            </p>
-            <p className="mt-1 text-[10px] text-muted-foreground italic">
-              Approximate population-level comparison based on completed modules.
-            </p>
-          </CardContent>
-        </Card>
+        <NeuroRiskCard data={neuroRiskData} />
       </div>
+
+      <ActionPlanCard
+        items={actionPlan}
+        onSelect={(module) => onNavigate(MODULE_META[module]?.section ?? module)}
+      />
 
       {/* Module Score Cards */}
       <div className="grid gap-4 sm:grid-cols-2">
