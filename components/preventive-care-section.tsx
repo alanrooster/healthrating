@@ -206,7 +206,7 @@ function PreventiveCareResults({ result, onRetake }: { result: PreventiveCareRes
             </div>
           )}
 
-          <Button variant="outline" onClick={onRetake} className="self-start">
+          <Button variant="destructive" onClick={onRetake} className="w-full self-start sm:w-fit">
             Retake Assessment
           </Button>
         </CardContent>

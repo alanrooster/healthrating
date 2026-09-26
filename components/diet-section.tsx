@@ -504,7 +504,7 @@ function DietResults({
         </CardContent>
       </Card>
 
-      <Button variant="outline" onClick={onReset} className="self-start">
+      <Button variant="destructive" onClick={onReset} className="w-full self-start sm:w-fit">
         Retake Assessment
       </Button>
 

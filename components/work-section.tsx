@@ -1122,7 +1122,7 @@ function handleCalculate() {
             </Card>
           )}
 
-          <Button onClick={handleReset} variant="outline">
+          <Button onClick={handleReset} variant="destructive" className="w-full sm:w-fit">
             Retake Assessment
           </Button>
         </div>

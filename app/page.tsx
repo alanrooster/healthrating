@@ -11,6 +11,7 @@ import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
 import { calculateDiabetesRisk } from "@/lib/diabetes-risk-calculator"
 import { HomeSection } from "@/components/home-section"
 import { SiteFooter } from "@/components/site-footer"
+import { AssessmentNextSteps } from "@/components/assessment-next-steps"
 import { BodyCompositionSection } from "@/components/body-composition-section"
 import { AirQualitySection } from "@/components/air-quality-section"
 import { WaterSection } from "@/components/water-section"
@@ -514,6 +515,11 @@ export default function Page() {
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-4xl">
             {renderSection()}
+            <AssessmentNextSteps
+              activeSection={activeSection}
+              scores={scores}
+              onNavigate={setActiveSection}
+            />
             <SiteFooter />
           </div>
         </main>
