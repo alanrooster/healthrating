@@ -763,7 +763,10 @@ export function MethodologySection() {
             alcohol earns the full alcohol point (WCRF and the Code both advise
             not drinking), and the partial point stops at 14 g a day for women
             (standardised score) and 14 UK units a week for men (UK CMO; the
-            score allows 28 g a day). Answer frequencies stand in for grams: 80
+            score allows 28 g a day). Activity uses the Exercise module&apos;s
+            MET-minutes, where walking counts at 3.3 MET: 600 a week (150
+            minutes of moderate activity) earns the full point and 300 half.
+            Answer frequencies stand in for grams: 80
             g per fruit or vegetable serving (WHO), about 140 g per portion of
             red meat, 50 g of processed meat, 250 ml per sugary drink and 12 g
             of alcohol per drink. Daily wholegrains plus pulses or nuts 3-4

@@ -94,7 +94,7 @@ export function CancerRiskCard({ data }: { data?: CancerRiskResult }) {
               >
                 {data.preventionScore && (
                   <li>
-                    WCRF/AICR score{" "}
+                    WCRF/AICR prevention score{" "}
                     <span className="font-semibold text-foreground">
                       {formatPoints(data.preventionScore.points)}/{data.preventionScore.maxPoints}
                     </span>
