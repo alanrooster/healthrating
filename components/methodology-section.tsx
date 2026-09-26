@@ -31,12 +31,14 @@ export function MethodologySection() {
             NICE NG246 (2025) lowers the BMI cut-offs to 23 (overweight) and
             27.5 (obesity) for people of South Asian, Chinese, other Asian,
             Middle Eastern, Black African or African-Caribbean background, who
-            carry higher cardiometabolic risk at the same BMI. The app shifts
-            its composite score up by 2.5 BMI units for South Asian backgrounds,
+            carry higher cardiometabolic risk at the same BMI. The app always
+            uses the strictest cut-off: obesity starts at 27.5 for all of these
+            groups, and overweight at 23, or 22.5 for South Asian backgrounds,
             the group with the highest risk at a given BMI (Caleyachetty et al.
-            2021), so obesity starts at 27.5, and by 2.0 for the other groups
-            (overweight from 23, obesity from 28). Pacific Islander backgrounds
-            are shifted down by 1.5 for their higher lean mass at the same BMI.
+            2021). Underweight starts below 18.5 for everyone. Pacific Islander
+            backgrounds carry more lean mass at the same BMI (Swinburn et al.
+            1999), but no current guideline raises their cut-offs, so the
+            standard WHO cut-offs apply.
           </p>
           <p>
             A waist-to-height ratio of 0.5 or more flags increased risk, and 0.6
@@ -86,14 +88,14 @@ export function MethodologySection() {
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
             Combines country-level water infrastructure data with personal
-            consumption habits and microplastic exposure assessment.
+            consumption habits and exposure to microplastics and PFAS.
           </p>
           <p>
             <strong>Scoring components:</strong>
           </p>
           <ul className="list-disc pl-5 flex flex-col gap-1">
             <li>
-              <strong>Country Baseline (25%):</strong> Based on WHO/UNICEF Joint
+              <strong>Country Baseline (20%):</strong> Based on WHO/UNICEF Joint
               Monitoring Programme (JMP) 2023 data on safely managed drinking
               water access, combined with Environmental Performance Index 2024
               water quality indicators.
@@ -103,7 +105,7 @@ export function MethodologySection() {
               spring, rainwater, or bottled water. Adjusted by country baseline.
             </li>
             <li>
-              <strong>Home Filtration (20%):</strong> Type of filtration
+              <strong>Home Filtration (15%):</strong> Type of filtration
               (none, pitcher, faucet, under-sink, reverse osmosis, whole-house,
               distillation) and maintenance status.
             </li>
@@ -113,6 +115,17 @@ export function MethodologySection() {
               quantity per week, and storage conditions. WHO (2022) and PNAS (2024)
               show plastic bottles contain 10-100x more microplastics than tap water.
               Heat exposure increases BPA/phthalate leaching by up to 55x.
+            </li>
+            <li>
+              <strong>PFAS (10%):</strong> Your supplier&apos;s latest PFAS
+              result, or living near a likely source such as an airport,
+              military base or fluorochemical plant. Since 12 January 2026, EU
+              tap water must stay below 0.1 µg/L for the sum of 20 PFAS; the US
+              EPA limit is 4 ng/L each for PFOA and PFOS. IARC classifies PFOA
+              as carcinogenic to humans (Group 1). Maintained filters reduce
+              the penalty in line with independent tests: reverse osmosis and
+              two-stage under-sink filters removed 94% or more, pitcher and
+              faucet filters about 73% (Herkert et al. 2020).
             </li>
             <li>
               <strong>Infrastructure (10%):</strong> Building age (lead pipe risk),
@@ -127,7 +140,9 @@ export function MethodologySection() {
             Sources: WHO/UNICEF JMP (2023), Environmental Performance Index (2024),
             WHO Microplastics in Drinking Water (2022), Mason et al. (2018),
             PNAS Nanoplastics Study (2024), Rochester & Bolden BPA Research (2015),
-            EU Drinking Water Directive 2020/2184.
+            EU Drinking Water Directive 2020/2184 (PFAS limits from 2026), US EPA
+            PFAS rule (2024), IARC Monographs Vol. 135 (2023), Herkert et al.
+            ES&amp;T Letters (2020).
           </p>
         </CardContent>
       </Card>
@@ -197,11 +212,33 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Combined activity volume (70%) and functional fitness (30%) score.
-            Activity is measured by the WHO Global Physical Activity Questionnaire
-            (GPAQ) covering work, transport, and recreation in MET-minutes/week,
-            with a sedentary behavior penalty.
+            Combined activity (70%) and functional fitness (30%) score, with a
+            sedentary behavior penalty on the activity part.
           </p>
+          <p>
+            <strong>Activity sub-score</strong> combines three parts:
+          </p>
+          <ul className="list-disc pl-5 flex flex-col gap-1">
+            <li>
+              <strong>Aerobic volume (60%):</strong> MET-minutes/week from work,
+              transport and recreation, measured with the WHO Global Physical
+              Activity Questionnaire (GPAQ).
+            </li>
+            <li>
+              <strong>Muscle strengthening (25%):</strong> Days per week, with
+              full credit from 2 days, the WHO minimum. Momma et al. (BJSM 2022)
+              linked muscle-strengthening activity to 10-17% lower all-cause
+              mortality, largest at 30-60 minutes a week, and about 40% lower
+              when combined with aerobic activity.
+            </li>
+            <li>
+              <strong>Daily steps (15%, optional):</strong> Ding et al. (Lancet
+              Public Health 2025): compared with 2,000 steps a day, about 7,000
+              is linked to 47% lower all-cause mortality and 38% lower dementia
+              risk, with the steepest gains up to 5,000-7,000. Without step
+              data, the other two parts are reweighted.
+            </li>
+          </ul>
           <p>
             <strong>Functional Fitness sub-score</strong> uses self-reported
             proxies for clinically validated mortality predictors:
@@ -232,13 +269,15 @@ export function MethodologySection() {
           <p>
             WHO recommends at least 150-300 minutes of moderate-intensity or
             75-150 minutes of vigorous-intensity physical activity per week
-            (equivalent to 600-1200 MET-minutes/week).
+            (equivalent to 600-1200 MET-minutes/week), plus muscle-strengthening
+            activity on 2 or more days a week.
           </p>
           <p className="text-xs">
             Sources: WHO Guidelines on Physical Activity and Sedentary Behaviour
-            (2020), GPAQ Analysis Guide, Mandsager et al. JAMA Network Open
-            (2018), Studenski et al. JAMA (2011), Leong et al. Lancet (2015,
-            PURE Study).
+            (2020), GPAQ Analysis Guide, Momma et al. British Journal of Sports
+            Medicine (2022), Ding et al. Lancet Public Health (2025), Mandsager
+            et al. JAMA Network Open (2018), Studenski et al. JAMA (2011), Leong
+            et al. Lancet (2015, PURE Study).
           </p>
         </CardContent>
       </Card>

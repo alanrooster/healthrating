@@ -172,6 +172,18 @@ export const EXERCISE_QUESTIONS: ExerciseQuestion[] = [
     group: "Recreational Activity",
   },
 
+  // Muscle strengthening (WHO 2020: 2 or more days a week)
+  {
+    id: "strengthDays",
+    question: "How many days per week do you do muscle-strengthening activity?",
+    description: "Weights, resistance bands, bodyweight exercises like push-ups and squats, or heavy gardening that works the major muscle groups",
+    type: "days",
+    min: 0,
+    max: 7,
+    step: 1,
+    group: "Muscle Strengthening",
+  },
+
   // Sedentary
   {
     id: "sedentaryHours",

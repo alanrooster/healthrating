@@ -16,6 +16,7 @@ import {
 import {
   EXERCISE_QUESTIONS,
   calculateExerciseScore,
+  type DailySteps,
   type ExerciseInputs,
   type ExerciseResult,
 } from "@/lib/exercise-calculator"
@@ -46,10 +47,21 @@ const DEFAULT_INPUTS: ExerciseInputs = {
   walkingPace: "average",
   gripStrength: "average",
   restingHeartRate: 70,
+  strengthDays: 0,
+  dailySteps: "unknown",
 }
 
+const STEPS_OPTIONS: { value: DailySteps; label: string }[] = [
+  { value: "unknown", label: "I don't track my steps" },
+  { value: "under-3k", label: "Under 3,000" },
+  { value: "3k-5k", label: "3,000-5,000" },
+  { value: "5k-7k", label: "5,000-7,000" },
+  { value: "7k-10k", label: "7,000-10,000" },
+  { value: "10k-plus", label: "10,000 or more" },
+]
+
 export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: ExerciseSectionProps) {
-  const [inputs, setInputs] = useState<ExerciseInputs>(storedInputs ?? DEFAULT_INPUTS)
+  const [inputs, setInputs] = useState<ExerciseInputs>({ ...DEFAULT_INPUTS, ...storedInputs })
   const [result, setResult] = useState<ExerciseResult | null>(storedResult ?? null)
 
   useEffect(() => {
@@ -94,8 +106,8 @@ export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetak
           Exercise Assessment
         </h1>
         <p className="text-sm text-muted-foreground">
-          Based on WHO Global Physical Activity Questionnaire (GPAQ). Report your
-          typical weekly activity.
+          Based on the WHO Global Physical Activity Questionnaire (GPAQ) and WHO
+          muscle-strengthening guidance. Report your typical weekly activity.
         </p>
       </div>
 
@@ -136,6 +148,34 @@ export function ExerciseSection({ onResult, storedResult, onStoreResult, onRetak
               </CardContent>
             </Card>
           ))}
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold text-foreground">Daily Steps</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5">
+              <Label htmlFor="daily-steps" className="text-sm text-foreground">
+                Average steps per day
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                From your phone or wearable. If you don&apos;t track steps, the score uses your
+                other answers.
+              </p>
+              <Select
+                value={inputs.dailySteps ?? "unknown"}
+                onValueChange={(v) => setInputs((p) => ({ ...p, dailySteps: v as DailySteps }))}
+              >
+                <SelectTrigger id="daily-steps" className="max-w-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STEPS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader className="pb-3">
@@ -273,7 +313,15 @@ function ExerciseResults({
     sedentaryRisk,
     meetsWHOGuideline,
     functionalFlags,
+    strengthDays,
+    dailySteps,
+    meetsStrengthGuideline,
+    activityFlags = [],
   } = result
+  const stepsLabel =
+    dailySteps && dailySteps !== "unknown"
+      ? STEPS_OPTIONS.find((option) => option.value === dailySteps)?.label
+      : undefined
 
   const breakdownItems = [
     { label: "Work (vigorous)", met: breakdown.workVigorous },
@@ -326,18 +374,32 @@ function ExerciseResults({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg border border-border p-3">
-            {meetsWHOGuideline ? (
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-[hsl(var(--success))]" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 shrink-0 text-[hsl(var(--accent))]" />
-            )}
-            <span className="text-sm text-foreground">
-              {meetsWHOGuideline
+          {stepsLabel && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Average daily steps</span>
+              <span className="text-lg font-bold text-foreground">{stepsLabel}</span>
+            </div>
+          )}
+
+          <GuidelineRow
+            met={meetsWHOGuideline}
+            text={
+              meetsWHOGuideline
                 ? "You meet the WHO physical activity guideline (600+ MET-min/week)"
-                : "You do not meet the WHO minimum of 600 MET-minutes/week (150 min moderate activity)"}
-            </span>
-          </div>
+                : "You do not meet the WHO minimum of 600 MET-minutes/week (150 min moderate activity)"
+            }
+          />
+
+          {typeof meetsStrengthGuideline === "boolean" && (
+            <GuidelineRow
+              met={meetsStrengthGuideline}
+              text={
+                meetsStrengthGuideline
+                  ? `Muscle strengthening on ${strengthDays} days a week meets the WHO guideline (2+ days)`
+                  : `Muscle strengthening on ${strengthDays} ${strengthDays === 1 ? "day" : "days"} a week is below the WHO guideline of 2+ days`
+              }
+            />
+          )}
 
           {/* MET Breakdown */}
           {breakdownItems.length > 0 && (
@@ -397,20 +459,8 @@ function ExerciseResults({
             </div>
           </div>
 
-          {functionalFlags.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-foreground">Functional Markers to Address</span>
-              {functionalFlags.map((f, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded-lg border border-[hsl(var(--accent))]/30 bg-[hsl(var(--accent))]/5 p-3"
-                >
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--accent))]" />
-                  <span className="text-xs text-muted-foreground leading-relaxed">{f}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <FlagList title="Activity Markers to Address" flags={activityFlags} />
+          <FlagList title="Functional Markers to Address" flags={functionalFlags} />
 
           {/* Sedentary Warning */}
           {sedentaryPenalty > 0 && (
@@ -438,8 +488,42 @@ function ExerciseResults({
       <p className="text-xs text-muted-foreground leading-relaxed">
         Scoring based on the WHO Global Physical Activity Questionnaire (GPAQ)
         analysis guide. MET values: vigorous = 8.0, moderate = 4.0, walking = 3.3.
-        WHO recommends 150-300 minutes of moderate activity per week.
+        WHO recommends 150-300 minutes of moderate activity per week plus
+        muscle-strengthening activity on 2 or more days. The activity sub-score
+        weights aerobic volume 60%, strength days 25% and daily steps 15%; without
+        step data, the other two are reweighted.
       </p>
+    </div>
+  )
+}
+
+function GuidelineRow({ met, text }: { met: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border p-3">
+      {met ? (
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-[hsl(var(--success))]" />
+      ) : (
+        <AlertTriangle className="h-5 w-5 shrink-0 text-[hsl(var(--accent))]" />
+      )}
+      <span className="text-sm text-foreground">{text}</span>
+    </div>
+  )
+}
+
+function FlagList({ title, flags }: { title: string; flags: string[] }) {
+  if (flags.length === 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-medium text-foreground">{title}</span>
+      {flags.map((flag) => (
+        <div
+          key={flag}
+          className="flex items-start gap-2 rounded-lg border border-[hsl(var(--accent))]/30 bg-[hsl(var(--accent))]/5 p-3"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--accent))]" />
+          <span className="text-xs text-muted-foreground leading-relaxed">{flag}</span>
+        </div>
+      ))}
     </div>
   )
 }

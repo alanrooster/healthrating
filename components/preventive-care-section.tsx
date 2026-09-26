@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import {
   calculatePreventiveCare,
+  VACCINE_MIN_AGE,
   type PreventiveCareAnswers,
   type PreventiveCareResult,
   type CarePeriod,
@@ -22,6 +23,7 @@ import { getScoreColor } from "@/lib/health-score"
 
 interface PreventiveCareSectionProps {
   onResult: (score: number) => void
+  age?: number
   storedResult?: PreventiveCareResult | null
   onStoreResult?: (result: PreventiveCareResult) => void
   onRetake?: () => void
@@ -33,6 +35,9 @@ const DEFAULT_ANSWERS: PreventiveCareAnswers = {
   fluVaccine: "current",
   tdapVaccine: "current",
   covidUpToDate: "current",
+  shinglesVaccine: "not-applicable",
+  pneumococcalVaccine: "not-applicable",
+  rsvVaccine: "not-applicable",
   bloodPressureCheck: "current",
   cholesterolCheck: "current",
   diabetesScreening: "current",
@@ -55,6 +60,9 @@ const QUESTIONS: { id: keyof PreventiveCareAnswers; label: string; description?:
   { id: "fluVaccine", label: "Annual flu vaccine" },
   { id: "tdapVaccine", label: "Tdap booster", description: "Recommended every 10 years" },
   { id: "covidUpToDate", label: "COVID-19 vaccination" },
+  { id: "shinglesVaccine", label: "Shingles vaccine", description: "2 doses of the recombinant vaccine (Shingrix). US: all adults from 50. UK: from 65, depending on your birth date. Choose \"Not applicable\" if it isn't offered to you yet." },
+  { id: "pneumococcalVaccine", label: "Pneumococcal vaccine", description: "One-off dose. US: all adults from 50. UK: from 65, or earlier with some long-term conditions." },
+  { id: "rsvVaccine", label: "RSV vaccine", description: "Single dose. Recommended for everyone from 75. Under 75, only with conditions such as chronic heart or lung disease or a weakened immune system (US from 50, UK from 65)." },
   { id: "bloodPressureCheck", label: "Blood pressure check", description: "At least annually" },
   { id: "cholesterolCheck", label: "Cholesterol panel", description: "Every 4-6 years" },
   { id: "diabetesScreening", label: "Diabetes screening", description: "HbA1c or fasting glucose, every 3 years after 35" },
@@ -65,8 +73,8 @@ const QUESTIONS: { id: keyof PreventiveCareAnswers; label: string; description?:
   { id: "eyeExam", label: "Eye examination", description: "Every 1-2 years" },
 ]
 
-export function PreventiveCareSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: PreventiveCareSectionProps) {
-  const [answers, setAnswers] = useState<PreventiveCareAnswers>(storedInputs ?? DEFAULT_ANSWERS)
+export function PreventiveCareSection({ onResult, age, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: PreventiveCareSectionProps) {
+  const [answers, setAnswers] = useState<PreventiveCareAnswers>({ ...DEFAULT_ANSWERS, ...storedInputs })
   const [result, setResult] = useState<PreventiveCareResult | null>(storedResult ?? null)
 
   useEffect(() => {
@@ -79,7 +87,7 @@ export function PreventiveCareSection({ onResult, storedResult, onStoreResult, o
   }
 
   function handleCalculate() {
-    const r = calculatePreventiveCare(answers)
+    const r = calculatePreventiveCare(answers, age)
     setResult(r)
     onStoreResult?.(r)
     onResult(r.overallScore)
@@ -93,6 +101,11 @@ export function PreventiveCareSection({ onResult, storedResult, onStoreResult, o
   if (result) {
     return <PreventiveCareResults result={result} onRetake={handleRetake} />
   }
+
+  const visibleQuestions = QUESTIONS.filter((q) => {
+    const minAge = VACCINE_MIN_AGE[q.id]
+    return minAge === undefined || age === undefined || age >= minAge
+  })
 
   return (
     <div className="flex flex-col gap-6">
@@ -108,16 +121,22 @@ export function PreventiveCareSection({ onResult, storedResult, onStoreResult, o
                 Adherence to recommended preventive care can add several years of life expectancy.
                 Track vaccines, screenings, and routine visits.
               </p>
+              {age === undefined && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Shingles, pneumococcal and RSV vaccines are asked about from age 50. Add your
+                  age in the Body module to skip them if you&apos;re younger.
+                </p>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
-          {QUESTIONS.map((q) => (
+          {visibleQuestions.map((q) => (
             <div key={q.id} className="flex flex-col gap-2">
-              <Label className="text-foreground">{q.label}</Label>
+              <Label htmlFor={`preventive-${q.id}`} className="text-foreground">{q.label}</Label>
               {q.description && <p className="text-xs text-muted-foreground">{q.description}</p>}
-              <Select value={answers[q.id]} onValueChange={(v) => update(q.id, v)}>
-                <SelectTrigger>
+              <Select value={answers[q.id] ?? "not-applicable"} onValueChange={(v) => update(q.id, v)}>
+                <SelectTrigger id={`preventive-${q.id}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

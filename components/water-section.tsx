@@ -43,6 +43,7 @@ import {
   type StorageCondition,
   type BuildingAge,
   type WaterIssue,
+  type PfasStatus,
 } from "@/lib/water-calculator"
 import { getScoreColor } from "@/lib/health-score"
 
@@ -105,6 +106,14 @@ const WATER_ISSUE_OPTIONS: { value: WaterIssue; label: string }[] = [
   { value: "color", label: "Discoloration" },
   { value: "hardness", label: "Hard water (scale buildup)" },
   { value: "multiple", label: "Multiple issues" },
+]
+
+const PFAS_OPTIONS: { value: PfasStatus; label: string; desc: string }[] = [
+  { value: "not-detected", label: "Not detected", desc: "Latest report or lab test found none" },
+  { value: "within-limits", label: "Within the limit", desc: "Detected, but below the legal limit" },
+  { value: "above-limit", label: "Above the limit", desc: "Exceeds the limit, or a PFAS advisory is in place" },
+  { value: "near-source", label: "Not tested, near a likely source", desc: "Airport, military base, fluorochemical plant or firefighting training site nearby" },
+  { value: "unknown", label: "I don't know", desc: "Haven't checked a water quality report" },
 ]
 
 const INTAKE_OPTIONS: { value: WaterAnswers["dailyWaterIntake"]; label: string }[] = [
@@ -233,7 +242,7 @@ function handleCalculate() {
               Water Quality Results
             </h1>
             <p className="text-sm text-muted-foreground">
-              Based on your location, habits, and microplastic exposure
+              Based on your location, habits, and exposure to microplastics and PFAS
             </p>
           </div>
 
@@ -261,6 +270,9 @@ function handleCalculate() {
                 <ScoreItem label="Source" value={result.breakdown.sourceScore} />
                 <ScoreItem label="Filtration" value={result.breakdown.filtrationScore} />
                 <ScoreItem label="Plastic Exposure" value={result.breakdown.plasticScore} />
+                {result.breakdown.pfasScore !== undefined && (
+                  <ScoreItem label="PFAS" value={result.breakdown.pfasScore} />
+                )}
                 <ScoreItem label="Infrastructure" value={result.breakdown.infrastructureScore} />
                 <ScoreItem label="Hydration" value={result.breakdown.hydrationScore} />
               </div>
@@ -644,6 +656,43 @@ function handleCalculate() {
                     ))}
                   </RadioGroup>
                 </div>
+
+                {answers.primarySource !== "bottled-only" && (
+                  <div className="flex flex-col gap-3">
+                    <Label className="text-foreground">
+                      PFAS (&quot;forever chemicals&quot;) in your tap water
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Check your supplier&apos;s latest water quality report, or a lab test for a
+                      private well. Since 12 January 2026, EU tap water must stay below 0.1 µg/L
+                      for 20 PFAS combined; the US limit is 4 ng/L each for PFOA and PFOS.
+                    </p>
+                    <RadioGroup
+                      value={answers.pfasStatus ?? "unknown"}
+                      onValueChange={(v) => updateAnswer("pfasStatus", v as PfasStatus)}
+                      className="grid gap-2 sm:grid-cols-2"
+                    >
+                      {PFAS_OPTIONS.map((opt) => (
+                        <Label
+                          key={opt.value}
+                          className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                            opt.value === "unknown" ? "sm:col-span-2" : ""
+                          } ${
+                            (answers.pfasStatus ?? "unknown") === opt.value
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:bg-muted/50"
+                          }`}
+                        >
+                          <RadioGroupItem value={opt.value} className="mt-0.5" />
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                            <span className="text-xs text-muted-foreground">{opt.desc}</span>
+                          </div>
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
                   <div className="flex items-center gap-3">

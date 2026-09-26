@@ -182,13 +182,14 @@ function calcIdealWeightRange(
 }
 
 /**
- * BMI-based ideal weight range (BMI 18.5-24.9)
+ * BMI-based ideal weight range: from 18.5 to just below the overweight cut-off, which is
+ * lower for the NICE NG246 groups (see ETHNICITY_BMI_OFFSETS)
  */
-function calcBMIIdealRange(heightCm: number): { min: number; max: number } {
+function calcBMIIdealRange(heightCm: number, overweightCutoff: number): { min: number; max: number } {
   const heightM = heightCm / 100
   return {
-    min: Math.round(18.5 * heightM * heightM * 10) / 10,
-    max: Math.round(24.9 * heightM * heightM * 10) / 10,
+    min: Math.round(UNDERWEIGHT_CUTOFF * heightM * heightM * 10) / 10,
+    max: Math.round((overweightCutoff - 0.1) * heightM * heightM * 10) / 10,
   }
 }
 
@@ -245,9 +246,12 @@ function determineRiskLevel(
  *
  * Each group has one offset at the overweight cut-off and one at the obesity cut-off, and
  * the offset moves linearly between them, so both cut-offs land exactly on WHO 25 and 30.
- * Where two cut-offs are defensible the stricter one is used: obesity from 27.5 for every
- * NICE group, and overweight from 22.5 for South Asian backgrounds, the group with the
- * highest risk at a given BMI.
+ * Below the overweight cut-off the offset tapers to zero at 18.5, since underweight starts
+ * at the same BMI for everyone. Where guidelines differ, the strictest cut-off is used:
+ * obesity from 27.5 for every NICE group, overweight from 22.5 for South Asian backgrounds
+ * (the highest risk at a given BMI), and the standard WHO cut-offs for Pacific Islander
+ * backgrounds, who carry more lean mass at the same BMI but have no raised cut-off in any
+ * current guideline.
  *
  * References:
  * - NICE NG246: Overweight and obesity management (2025)
@@ -255,6 +259,8 @@ function determineRiskLevel(
  * - Caleyachetty et al. (2021): Ethnicity-specific BMI cut-offs for obesity
  * - Swinburn et al. (1999): Polynesians carry more lean mass at the same BMI
  */
+const UNDERWEIGHT_CUTOFF = 18.5
+
 const ETHNICITY_BMI_OFFSETS: Record<Ethnicity, { overweight: number; obesity: number }> = {
   "south-asian": { overweight: 2.5, obesity: 2.5 },
   "east-asian": { overweight: 2.0, obesity: 2.5 },
@@ -262,15 +268,22 @@ const ETHNICITY_BMI_OFFSETS: Record<Ethnicity, { overweight: number; obesity: nu
   "middle-eastern": { overweight: 2.0, obesity: 2.5 },
   african: { overweight: 2.0, obesity: 2.5 },
   hispanic: { overweight: 0.5, obesity: 0.5 }, // slightly higher trunk fat distribution
-  "pacific-islander": { overweight: -1.5, obesity: -1.5 }, // higher muscle/bone mass
+  "pacific-islander": { overweight: 0, obesity: 0 },
   caucasian: { overweight: 0, obesity: 0 }, // baseline reference
 }
 
+function getEthnicityOffsets(ethnicity: Ethnicity): { overweight: number; obesity: number } {
+  return ETHNICITY_BMI_OFFSETS[ethnicity] ?? ETHNICITY_BMI_OFFSETS.caucasian
+}
+
 function getEthnicityBMIAdjustment(ethnicity: Ethnicity, bmi: number): number {
-  const { overweight, obesity } = ETHNICITY_BMI_OFFSETS[ethnicity] ?? ETHNICITY_BMI_OFFSETS.caucasian
+  const { overweight, obesity } = getEthnicityOffsets(ethnicity)
   const overweightCutoff = 25 - overweight
   const obesityCutoff = 30 - obesity
-  if (bmi <= overweightCutoff) return overweight
+  if (bmi <= UNDERWEIGHT_CUTOFF) return 0
+  if (bmi < overweightCutoff) {
+    return (overweight * (bmi - UNDERWEIGHT_CUTOFF)) / (overweightCutoff - UNDERWEIGHT_CUTOFF)
+  }
   if (bmi >= obesityCutoff) return obesity
   const t = (bmi - overweightCutoff) / (obesityCutoff - overweightCutoff)
   return overweight + (obesity - overweight) * t
@@ -464,23 +477,13 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
 
   const category = getBMICategory(compositeScore)
 
-  // Ideal weight range
+  // Ideal weight range. The BMI method stops below the ethnicity-specific overweight cut-off.
   const formulaRange = calcIdealWeightRange(heightCm, sex)
-  const bmiRange = calcBMIIdealRange(heightCm)
+  const bmiRange = calcBMIIdealRange(heightCm, 25 - getEthnicityOffsets(ethnicity).overweight)
 
   // Average the two methods for a refined range
   let idealWeightMin = Math.round(((formulaRange.min + bmiRange.min) / 2) * 10) / 10
   let idealWeightMax = Math.round(((formulaRange.max + bmiRange.max) / 2) * 10) / 10
-
-  // Adjust ideal weight range based on ethnicity
-  // Groups with higher muscle/bone mass get a slightly higher range
-  if (ethnicityAdjustment < 0) {
-    idealWeightMin = Math.round((idealWeightMin * (1 + Math.abs(ethnicityAdjustment) * 0.01)) * 10) / 10
-    idealWeightMax = Math.round((idealWeightMax * (1 + Math.abs(ethnicityAdjustment) * 0.01)) * 10) / 10
-  } else if (ethnicityAdjustment > 0) {
-    idealWeightMin = Math.round((idealWeightMin * (1 - ethnicityAdjustment * 0.008)) * 10) / 10
-    idealWeightMax = Math.round((idealWeightMax * (1 - ethnicityAdjustment * 0.008)) * 10) / 10
-  }
 
   // Refine ideal weight using healthy body fat ranges
   const leanMass = weightKg * (1 - bodyFatPercentage / 100)

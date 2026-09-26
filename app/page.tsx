@@ -495,7 +495,7 @@ export default function Page() {
       case "family":
         return <FamilyHistorySection onResult={handleFamilyHistoryResult} storedResult={storedResults.family} onStoreResult={(r) => storeResult("family", r)} onRetake={() => clearResult("family")} storedInputs={storedInputs.family} onStoreInputs={(i) => storeInputs("family", i)} />
       case "preventive":
-        return <PreventiveCareSection onResult={handlePreventiveCareResult} storedResult={storedResults.preventive} onStoreResult={(r) => storeResult("preventive", r)} onRetake={() => clearResult("preventive")} storedInputs={storedInputs.preventive} onStoreInputs={(i) => storeInputs("preventive", i)} />
+        return <PreventiveCareSection onResult={handlePreventiveCareResult} age={bodyDemographics?.age} storedResult={storedResults.preventive} onStoreResult={(r) => storeResult("preventive", r)} onRetake={() => clearResult("preventive")} storedInputs={storedInputs.preventive} onStoreInputs={(i) => storeInputs("preventive", i)} />
       case "senses":
         return <SensesOralSection onResult={handleSensesOralResult} storedResult={storedResults.senses} onStoreResult={(r) => storeResult("senses", r)} onRetake={() => clearResult("senses")} storedInputs={storedInputs.senses} onStoreInputs={(i) => storeInputs("senses", i)} />
       case "lifecontext":
