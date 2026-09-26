@@ -20,7 +20,7 @@ const FAQ_ITEMS = [
   {
     question: "What does HealthRating.org calculate?",
     answer:
-      "HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, and type 2 diabetes risk.",
+      "HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, type 2 diabetes risk, and dementia risk.",
   },
   {
     question: "Is HealthRating.org free and private?",
@@ -62,7 +62,7 @@ const HIGHLIGHTS = [
     icon: Activity,
     title: "Disease Risk Screens",
     description:
-      "Evidence-based cardiovascular and type 2 diabetes screens, computed from data you already entered.",
+      "Evidence-based cardiovascular, type 2 diabetes, and dementia risk screens, computed from data you already entered.",
   },
 ]
 

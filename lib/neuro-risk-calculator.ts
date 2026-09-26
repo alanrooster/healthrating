@@ -120,7 +120,7 @@ const MAX_SLEEP_HOURS = 9
 const K10_DISTRESS_CUTOFF = 20 // Andrews & Slade 2001: 20+ is at least mild distress
 const MIN_FACTORS_ASSESSED = 4
 const TOTAL_FACTORS = 15
-const NOT_ASSESSED = ["Blood pressure", "LDL cholesterol", "Diabetes", "Head injury"]
+const NOT_ASSESSED = ["blood pressure", "LDL cholesterol", "diabetes", "head injury"]
 
 const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], number> = {
   never: 0,
@@ -151,27 +151,27 @@ function getBand(relativeRisk: number): Pick<NeuroRiskResult, "band" | "bandLabe
     return {
       band: "low",
       bandLabel: "Low",
-      summary: "Few or no risk factors flagged. Keep protecting your brain health.",
+      summary: "Close to the lowest-risk profile. Keep protecting your brain health.",
     }
   }
   if (relativeRisk < 2.5) {
     return {
       band: "moderate",
       bandLabel: "Moderate",
-      summary: "Some risk factors present. Addressing them can lower your risk.",
+      summary: "Addressing the flagged factors can lower your risk.",
     }
   }
   if (relativeRisk < 4) {
     return {
       band: "elevated",
       bandLabel: "Elevated",
-      summary: "Several risk factors add up. Start with the strongest drivers.",
+      summary: "Several factors add up. Start with the strongest drivers.",
     }
   }
   return {
     band: "high",
     bandLabel: "High",
-    summary: "Many or strong risk factors. Consider a brain-health check with a clinician.",
+    summary: "Strong or multiple risk factors. Consider a brain-health check with a clinician.",
   }
 }
 

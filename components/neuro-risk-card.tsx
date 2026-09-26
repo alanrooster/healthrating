@@ -18,7 +18,7 @@ const MAX_PRECISE_RELATIVE_RISK = 4
 function formatRelativeRisk(relativeRisk: number) {
   return relativeRisk >= MAX_PRECISE_RELATIVE_RISK
     ? `${MAX_PRECISE_RELATIVE_RISK}× or more`
-    : `≈${relativeRisk.toFixed(1)}×`
+    : `about ${relativeRisk.toFixed(1)}×`
 }
 
 export function NeuroRiskCard({ data }: { data?: NeuroRiskResult }) {
@@ -26,22 +26,24 @@ export function NeuroRiskCard({ data }: { data?: NeuroRiskResult }) {
   const hiddenDrivers = data ? data.flagged.length - MAX_DRIVERS_SHOWN : 0
 
   return (
-    <Card className={bandStyle?.border ?? "border-indigo-500/20"}>
+    <Card className={`flex flex-col ${bandStyle?.border ?? "border-indigo-500/20"}`}>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <BrainCircuit aria-hidden="true" className="h-5 w-5 text-indigo-500" />
           Neurodegenerative Risk
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2">
+      <CardContent className="flex flex-1 flex-col gap-2">
         {data && bandStyle ? (
           <>
             <span className="text-2xl font-bold" style={{ color: bandStyle.color }}>
               {data.bandLabel}
             </span>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {`Dementia risk profile: ${data.flagged.length} of ${data.factorsAssessed} factors flagged${
-                data.flagged.length > 0 ? ` (${formatRelativeRisk(data.relativeRisk)} vs. none of them)` : ""
+              {`${data.flagged.length} of ${data.factorsAssessed} dementia risk factors flagged${
+                data.flagged.length > 0
+                  ? `: ${formatRelativeRisk(data.relativeRisk)} the risk of someone with none`
+                  : ""
               }. ${data.summary}`}
             </p>
             {data.flagged.length > 0 && (
@@ -76,10 +78,10 @@ export function NeuroRiskCard({ data }: { data?: NeuroRiskResult }) {
                 ))}
               </ul>
             )}
-            <p className="mt-1 text-[10px] italic text-muted-foreground">
-              {`Lancet Commission 2024 and LIBRA2 evidence. Not assessed: ${data.notAssessed
-                .join(", ")
-                .toLowerCase()}. A relative profile, not a diagnosis: age and genetics drive absolute risk.`}
+            <p className="mt-auto pt-1 text-[10px] italic text-muted-foreground">
+              {`Lancet Commission 2024 and LIBRA2 evidence. Not assessed: ${data.notAssessed.join(
+                ", ",
+              )}. A relative profile, not a diagnosis: age and genes drive absolute risk.`}
             </p>
           </>
         ) : (

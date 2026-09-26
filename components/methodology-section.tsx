@@ -681,6 +681,48 @@ export function MethodologySection() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
+            Neurodegenerative (Dementia) Risk Profile
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Built from answers you already gave, with no extra questions. It
+            covers 10 of the 14 modifiable risk factors of the 2024 Lancet
+            Commission (Livingston et al.): less education, hearing loss,
+            vision loss, depression, physical inactivity, smoking, obesity,
+            excessive alcohol, social isolation and PM2.5 air pollution. Five
+            more come from LIBRA2 (Rosenau et al. 2024: cognitive activity and
+            sleep), the Lancet diet-quality meta-analysis, perceived stress
+            (Franks et al. 2021) and family history (Cannon-Albright et al.
+            2019). Blood pressure, LDL cholesterol, diabetes and head injury
+            are not collected, so the profile can only under-count.
+          </p>
+          <p>
+            Each flagged factor adds its published relative risk, for example
+            depression 2.25, less education 1.6, social isolation 1.6, vision
+            loss 1.47, untreated hearing loss 1.37, and 1.03 per µg/m³ of PM2.5
+            above the WHO guideline of 5 µg/m³ (capped at 25). Relative risks
+            multiply, equivalent to LIBRA&apos;s additive log-scale weights.
+            Bands: Low below 1.5×, Moderate 1.5-2.5×, Elevated 2.5-4×, High
+            from 4×. Multiplying assumes independent factors, so values of 4×
+            and above are shown as &quot;4× or more&quot;.
+          </p>
+          <p>
+            The strictest thresholds apply, with the reference cited: alcohol
+            above 14 UK units a week (UK CMO; the Lancet uses 21), sleep
+            outside 7-9 hours (AASM/SRS), and under 600 MET-minutes of activity
+            a week (WHO). Hearing loss treated with hearing aids is not counted.
+            Depression and stress screens share items, so only the stronger of
+            the two counts. This is a profile relative to someone with none of
+            the assessed factors, not an absolute prediction: age and APOE ε4
+            dominate absolute risk.
+          </p>
+        </CardContent>
+      </Card>
+
       <p className="text-xs text-muted-foreground leading-relaxed">
         This tool is for informational and educational purposes only. It does
         not constitute medical advice, diagnosis, or treatment. Always consult

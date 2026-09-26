@@ -315,8 +315,8 @@ export function HealthDashboard({
       {/* Life Expectancy Card */}
       <Card className="border-rose-500/20 bg-linear-to-br from-rose-500/5 to-transparent">
         <CardContent className="py-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 items-center gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-rose-500/10">
                 <Heart className="h-7 w-7 text-rose-500" />
               </div>
@@ -325,7 +325,7 @@ export function HealthDashboard({
                   Estimated Life Expectancy
                 </span>
                 {lifeExpectancyData ? (
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
                     <span className="text-3xl font-bold text-foreground">
                       {lifeExpectancyData.adjustedYears.toFixed(0)}
                     </span>
@@ -352,7 +352,7 @@ export function HealthDashboard({
               </div>
             </div>
             {lifeExpectancyData && (
-              <div className="flex flex-col items-end gap-1.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-col sm:items-end sm:gap-1.5">
                 <div className="flex items-center gap-1.5 text-sm">
                   <span className="text-muted-foreground">Top {lifeExpectancyData.percentile}%</span>
                 </div>
@@ -396,8 +396,8 @@ export function HealthDashboard({
       {/* Biological Age Card */}
       <Card className="border-violet-500/20 bg-linear-to-br from-violet-500/5 to-transparent">
         <CardContent className="py-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 items-center gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-violet-500/10">
                 <Hourglass className="h-7 w-7 text-violet-500" />
               </div>
@@ -406,7 +406,7 @@ export function HealthDashboard({
                   Estimated Biological Age
                 </span>
                 {biologicalAgeData ? (
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
                     <span className="text-3xl font-bold text-foreground">
                       {biologicalAgeData.biologicalAge.toFixed(1)}
                     </span>
@@ -437,7 +437,7 @@ export function HealthDashboard({
               </div>
             </div>
             {biologicalAgeData && (
-              <div className="flex flex-col items-end gap-1.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-col sm:items-end sm:gap-1.5">
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                     biologicalAgeData.band === "younger"
@@ -485,14 +485,14 @@ export function HealthDashboard({
       {/* Risk cards: Cardiovascular, Type 2 Diabetes, Neurodegenerative */}
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Cardiovascular Risk */}
-        <Card className={`border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
+        <Card className={`flex flex-col border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <HeartPulse className="h-5 w-5 text-rose-500" />
               Cardiovascular Risk
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="flex flex-1 flex-col gap-2">
             <span
               className="text-2xl font-bold"
               style={{
@@ -521,7 +521,7 @@ export function HealthDashboard({
                 ))}
               </div>
             )}
-            <p className="mt-1 text-[10px] text-muted-foreground italic">
+            <p className="mt-auto pt-1 text-[10px] text-muted-foreground italic">
               Educational estimate. Not a substitute for ASCVD/QRISK3.
             </p>
           </CardContent>
@@ -529,7 +529,7 @@ export function HealthDashboard({
 
         {/* Type 2 Diabetes Risk (FINDRISC-adapted) */}
         <Card
-          className={
+          className={`flex flex-col ${
             diabetesRiskData?.band === "high"
               ? "border-rose-500/20"
               : diabetesRiskData?.band === "moderate"
@@ -537,7 +537,7 @@ export function HealthDashboard({
                 : diabetesRiskData?.band === "slightly-elevated"
                   ? "border-amber-500/20"
                   : "border-emerald-500/20"
-          }
+          }`}
         >
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -545,7 +545,7 @@ export function HealthDashboard({
               Type 2 Diabetes Risk
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="flex flex-1 flex-col gap-2">
             {diabetesRiskData ? (
               <>
                 <span
@@ -580,7 +580,7 @@ export function HealthDashboard({
                     ))}
                   </div>
                 )}
-                <p className="mt-1 text-[10px] text-muted-foreground italic">{diabetesRiskData.note}</p>
+                <p className="mt-auto pt-1 text-[10px] text-muted-foreground italic">{diabetesRiskData.note}</p>
               </>
             ) : (
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -593,11 +593,6 @@ export function HealthDashboard({
 
         <NeuroRiskCard data={neuroRiskData} />
       </div>
-
-      <ActionPlanCard
-        items={actionPlan}
-        onSelect={(module) => onNavigate(MODULE_META[module]?.section ?? module)}
-      />
 
       {/* Module Score Cards */}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -658,6 +653,11 @@ export function HealthDashboard({
           )
         })}
       </div>
+
+      <ActionPlanCard
+        items={actionPlan}
+        onSelect={(module) => onNavigate(MODULE_META[module]?.section ?? module)}
+      />
     </div>
   )
 }

@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     'body composition calculator',
     'diabetes risk calculator',
     'cardiovascular risk',
+    'dementia risk',
     'health rating',
     'wellness score',
   ],
@@ -140,12 +141,13 @@ const structuredData = {
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       publisher: { '@id': 'https://healthrating.org/#organization' },
       description:
-        '14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research, computing your health score, life expectancy, biological age, and cardiovascular and diabetes risk.',
+        '14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research, computing your health score, life expectancy, biological age, and cardiovascular, diabetes, and dementia risk.',
       featureList: [
         'Life expectancy estimate',
         'Biological age estimate',
         'Cardiovascular risk screen',
         'Type 2 diabetes risk screen (FINDRISC-adapted)',
+        'Dementia risk profile (Lancet Commission 2024 risk factors)',
         'Body composition analysis',
       ],
     },
@@ -158,7 +160,7 @@ const structuredData = {
           name: 'What does HealthRating.org calculate?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, and type 2 diabetes risk.',
+            text: 'HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, type 2 diabetes risk, and dementia risk.',
           },
         },
         {

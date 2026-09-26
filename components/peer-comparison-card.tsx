@@ -41,15 +41,15 @@ export function PeerComparisonCard({
   return (
     <Card className="border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
       <CardContent className="py-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Users aria-hidden="true" className="h-7 w-7 text-primary" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-muted-foreground">Peer Comparison</span>
               {ready ? (
-                <div className="flex items-baseline gap-2">
+                <div className="flex flex-wrap items-baseline gap-x-2">
                   <span className="text-3xl font-bold text-foreground">{comparison.band}</span>
                   <span className="text-sm text-muted-foreground">vs. peers</span>
                 </div>
@@ -59,7 +59,7 @@ export function PeerComparisonCard({
             </div>
           </div>
           {ready && (
-            <div className="flex flex-col items-end gap-1.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-col sm:items-end sm:gap-1.5">
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                 {ordinal(comparison.percentile)} percentile
               </span>
