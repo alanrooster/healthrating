@@ -1,15 +1,18 @@
 /**
  * Life Expectancy Estimator
- * 
- * Calculates estimated life expectancy adjustments based on modifiable health factors.
- * Uses peer-reviewed research and meta-analyses for risk adjustments.
- * 
- * Sources:
- * - GBD 2019 (Global Burden of Disease)
- * - WHO Global Health Observatory
- * - Lancet meta-analyses on lifestyle factors
- * - Harvard T.H. Chan School of Public Health studies
+ *
+ * Baseline: expected total lifespan for someone of the user's age, sex and country,
+ * age + e(age), from UN World Population Prospects 2024 period life tables
+ * (lib/data/life-tables.ts). Survivors to older ages have a longer expected total
+ * lifespan, and how much longer depends on the country's mortality pattern
+ * (at 65: roughly +3 years over life expectancy at birth in Italy, +22 in Nigeria).
+ *
+ * Adjustments: life-expectancy differences for modifiable factors from the studies
+ * cited per factor below. Most were estimated around age 40, so for older users they
+ * are scaled by e(age) / e(40): fewer remaining years means fewer years at stake.
  */
+
+import { LIFE_TABLE_AGES, LIFE_TABLES, type LifeTable } from "@/lib/data/life-tables"
 
 export interface LifeExpectancyInputs {
   // From Body Composition
@@ -46,6 +49,8 @@ export interface LifeExpectancyResult {
   baselineYears: number
   adjustedYears: number
   totalAdjustment: number
+  /** Sum of factor effects at the reference age, before age scaling (drives biological age) */
+  referenceAdjustment: number
   adjustments: {
     factor: string
     years: number
@@ -57,72 +62,54 @@ export interface LifeExpectancyResult {
   confidence: "low" | "medium" | "high"
 }
 
-// Baseline life expectancy by sex (global average 2023, WHO)
-const BASELINE_LIFE_EXPECTANCY = {
-  male: 70.8,
-  female: 75.9,
-  default: 73.3,
+type SexKey = "male" | "female" | "default"
+
+const LIFE_TABLES_BY_KEY = new Map(
+  Object.entries(LIFE_TABLES).map(([name, table]) => [name.toLowerCase(), table]),
+)
+const COUNTRY_ALIASES: Record<string, string> = {
+  uk: "united kingdom",
+  usa: "united states",
+  us: "united states",
 }
 
-/**
- * Country-specific life expectancy at birth (WHO 2023 / World Bank).
- * Used to adjust the global baseline for users in countries with markedly
- * different life expectancy (e.g., Japan ~84, Nigeria ~54).
- */
-const COUNTRY_LIFE_EXPECTANCY: Record<string, number> = {
-  japan: 84.4, switzerland: 83.9, australia: 83.3, italy: 83.2,
-  spain: 83.2, sweden: 82.5, france: 82.5, "south korea": 82.7,
-  norway: 82.6, canada: 82.2, netherlands: 81.7, "united kingdom": 80.7,
-  uk: 80.7, germany: 80.7, "united states": 76.4, usa: 76.4,
-  china: 78.2, brazil: 75.8, mexico: 75.0, india: 70.0,
-  russia: 70.1, nigeria: 53.6, "south africa": 65.3,
-  indonesia: 71.3, egypt: 70.2, turkey: 76.0, poland: 78.0,
-  argentina: 76.6, "saudi arabia": 75.5, thailand: 76.6,
+function findLifeTable(country: string | undefined): LifeTable {
+  const key = country?.trim().toLowerCase() ?? ""
+  return LIFE_TABLES_BY_KEY.get(COUNTRY_ALIASES[key] ?? key) ?? LIFE_TABLES.World
 }
 
-function getCountryBaseline(country: string | undefined, sex: "male" | "female" | "default"): number {
-  if (!country) return BASELINE_LIFE_EXPECTANCY[sex]
-  const total = COUNTRY_LIFE_EXPECTANCY[country.toLowerCase()]
-  if (!total) return BASELINE_LIFE_EXPECTANCY[sex]
-  // Adjust for sex: women typically live ~5 years longer than men in most countries
-  if (sex === "male") return total - 2.5
-  if (sex === "female") return total + 2.5
-  return total
+/** Remaining life expectancy e(age), linearly interpolated between life-table ages. */
+function remainingLifeExpectancy(age: number, sex: SexKey, country: string | undefined): number {
+  const table = findLifeTable(country)
+  const series =
+    sex === "default" ? table.male.map((male, i) => (male + table.female[i]) / 2) : table[sex]
+  const upper = LIFE_TABLE_AGES.findIndex((tableAge) => tableAge > age)
+  if (upper === -1) return series[series.length - 1]
+  if (upper === 0) return series[0]
+  const lower = upper - 1
+  const fraction = (age - LIFE_TABLE_AGES[lower]) / (LIFE_TABLE_AGES[upper] - LIFE_TABLE_AGES[lower])
+  return series[lower] + (series[upper] - series[lower]) * fraction
 }
 
-/**
- * Approximate conditional life expectancy: total years a person of age `age`
- * is expected to reach. Uses simplified actuarial logic — for those who have
- * already reached older ages, expected total lifespan rises above the
- * birth-cohort average (e.g., a 70-year-old has ~85 years total expectancy,
- * not 70.8).
- *
- * Formula approximation derived from WHO/SSA period life tables:
- *   - Below age 30: total = baseline + small bonus
- *   - 30-65: total ≈ baseline + 0.25 * (age - 30) (gradual rise)
- *   - 65+:  total ≈ baseline + 0.25 * 35 + 0.5 * (age - 65) (steeper rise,
- *           since survivors at older ages are healthier on average)
- *   - Floors at age + 5 to keep estimates plausible
- */
-function getExpectedTotalLifespan(age: number, sex: "male" | "female" | "default", country?: string): number {
-  const baseline = getCountryBaseline(country, sex)
-  let total: number
-  if (age <= 30) {
-    total = baseline
-  } else if (age <= 65) {
-    total = baseline + 0.25 * (age - 30)
-  } else {
-    total = baseline + 0.25 * 35 + 0.5 * (age - 65)
-  }
-  return Math.max(age + 5, total)
+/** Expected total lifespan for someone who has already reached `age`. */
+function getExpectedTotalLifespan(age: number, sex: SexKey, country: string | undefined): number {
+  return age + remainingLifeExpectancy(age, sex, country)
 }
+
+// Age at which most of the life-year effects below were estimated
+const EFFECT_REFERENCE_AGE = 40
 
 export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpectancyResult {
   const sex = inputs.sex || "default"
   const age = inputs.age || 40 // Default assumption
   
   const baselineTotal = getExpectedTotalLifespan(age, sex, inputs.country)
-  
+  const ageScale = Math.min(
+    1,
+    remainingLifeExpectancy(age, sex, inputs.country) /
+      remainingLifeExpectancy(EFFECT_REFERENCE_AGE, sex, inputs.country),
+  )
+
   const adjustments: LifeExpectancyResult["adjustments"] = []
   let totalAdjustment = 0
 
@@ -217,7 +204,8 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   }
   
   // === DIET ===
-  // Mediterranean/healthy diet adds 2-4 years (Sofi et al., BMJ 2008)
+  // Mediterranean/healthy diet adds 2-4 years (Sofi et al., BMJ 2008). Conservative next to
+  // Fadnes et al. (PLOS Med 2022): a sustained shift to an optimal diet at 40 ≈ +8-10 years.
   // Processed meat (IARC Group 1) reduces life expectancy
   if (inputs.dietScore !== undefined) {
     dataPoints++
@@ -241,16 +229,17 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Diet Quality",
         years,
         direction: years > 0 ? "positive" : "negative",
-        source: "Sofi et al., BMJ 2008; IARC 2015",
+        source: "Sofi et al., BMJ 2008; Fadnes et al., PLOS Med 2022; IARC 2015",
       })
       totalAdjustment += years
     }
   }
   
   // === ALCOHOL ===
-  // Heavy drinking reduces life expectancy by 4-5 years (Wood et al., Lancet 2018)
-  // Note: Lancet 2018 (GBD Alcohol Collaborators) refuted the J-curve;
-  // no level of alcohol is protective. We treat "never" as neutral (0).
+  // Heavy drinking (>350 g/week) at 40 reduces life expectancy by 4-5 years (Wood et al., Lancet 2018)
+  // No level of alcohol is protective: low-volume drinkers show no mortality benefit over
+  // lifetime abstainers once study biases are corrected (Zhao et al., JAMA Netw Open 2023;
+  // WHO, Lancet Public Health 2023). We treat "never" as neutral (0).
   if (inputs.alcoholFrequency) {
     dataPoints++
     const alcoholImpact: Record<string, number> = {
@@ -267,21 +256,22 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Alcohol Consumption",
         years,
         direction: years > 0 ? "positive" : "negative",
-        source: "GBD Alcohol Collaborators, Lancet 2018",
+        source: "Wood et al., Lancet 2018; Zhao et al., JAMA Netw Open 2023",
       })
       totalAdjustment += years
     }
   }
   
   // === AIR QUALITY ===
-  // Each 10 μg/m³ PM2.5 reduces life expectancy by ~0.6-1 year
+  // Each sustained 10 μg/m³ of PM2.5 above the WHO guideline costs 0.98 years of life
+  // expectancy (AQLI 2025 Annual Update, EPIC University of Chicago)
   if (inputs.airQualityScore !== undefined || inputs.pm25Level !== undefined) {
     dataPoints++
     let years = 0
     if (inputs.pm25Level !== undefined) {
       // Direct PM2.5 calculation
       const excessPM25 = Math.max(0, inputs.pm25Level - 5) // WHO guideline is 5
-      years = -(excessPM25 / 10) * 0.8
+      years = -(excessPM25 / 10) * 0.98
       // Best achievable via measured PM2.5 is 0 (clean air = no penalty, no bonus)
     } else if (inputs.airQualityScore !== undefined) {
       // Use score as proxy
@@ -295,7 +285,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Air Quality",
         years: Math.round(years * 10) / 10,
         direction: years > 0 ? "positive" : "negative",
-        source: "AQLI, Energy Policy Institute 2023",
+        source: "AQLI 2025 Annual Update, University of Chicago",
       })
       totalAdjustment += years
     }
@@ -382,7 +372,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Mental Health",
         years,
         direction: years > 0 ? "positive" : "negative",
-        source: "Walker et al., BMJ 2015",
+        source: "Walker et al., JAMA Psychiatry 2015",
       })
       totalAdjustment += years
     }
@@ -439,7 +429,8 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   
   // === LIFE CONTEXT (relationships, education, income, religion, pets, volunteering) ===
   // High impact - marriage, education, income individually contribute multi-year effects
-  // Robles 2014, Lancet 2024 (education), Chetty 2016 JAMA (income), VanderWeele 2017 (religion)
+  // Robles 2014, Balaj 2024 Lancet Public Health (education), Chetty 2016 JAMA (income),
+  // Li 2016 JAMA Intern Med (religion)
   if (inputs.lifeContextScore !== undefined) {
     dataPoints++
     maxPossibleAdjustment += 4 // best case: strong relationships, education, income
@@ -460,14 +451,14 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
         factor: "Life Context & Relationships",
         years,
         direction: years > 0 ? "positive" : "negative",
-        source: "Robles 2014, Chetty 2016 JAMA, Lancet 2024 (education), Felitti 1998 (ACEs)",
+        source: "Robles 2014; Chetty 2016 JAMA; Balaj 2024 Lancet Public Health; Brown 2009 (ACEs)",
       })
       totalAdjustment += years
     }
   }
 
   // === PERSONALITY & OUTLOOK ===
-  // Lee 2019 PNAS: optimists live 11-15% longer (~7 years)
+  // Lee 2019 PNAS: top-quartile optimists live 11-15% longer
   // Friedman & Kern 2014: high conscientiousness = +4 years
   if (inputs.personalityScore !== undefined) {
     dataPoints++
@@ -523,30 +514,37 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     }
   }
 
-  // Calculate final values
-  const adjustedTotal = Math.max(age + 1, baselineTotal + totalAdjustment)
-  
+  // Calculate final values (factor effects are at the reference age; scale to the user's age)
+  const scaledAdjustment = totalAdjustment * ageScale
+  const adjustedTotal = Math.max(age + 1, baselineTotal + scaledAdjustment)
+
   // Calculate percentile (rough approximation)
-  // Assume normal distribution with SD of 10 years
-  const deviationFromMean = totalAdjustment
-  const percentile = Math.min(99, Math.max(1, 50 + (deviationFromMean / 10) * 34))
-  
+  // Assume normal distribution with SD of 10 years at the reference age; the spread of
+  // remaining lifespans narrows with age in the same proportion as the scaled effects.
+  const percentile = Math.min(99, Math.max(1, 50 + (totalAdjustment / 10) * 34))
+
   // Calculate potential gain: how many more years the user could realistically
   // add by improving to the best-case outcome on the modules they've completed.
   // Comparing against `maxPossibleAdjustment` (not a fixed constant) keeps this
   // accurate regardless of how many modules have been filled in.
-  const potentialGain = Math.max(0, maxPossibleAdjustment - totalAdjustment)
+  const potentialGain = Math.max(0, (maxPossibleAdjustment - totalAdjustment) * ageScale)
   
   // Confidence based on data points
   let confidence: "low" | "medium" | "high" = "low"
   if (dataPoints >= 6) confidence = "high"
   else if (dataPoints >= 3) confidence = "medium"
   
+  const scaledFactors = adjustments
+    .map((adjustment) => ({ ...adjustment, years: Math.round(adjustment.years * ageScale * 10) / 10 }))
+    .filter((adjustment) => adjustment.years !== 0)
+    .sort((a, b) => Math.abs(b.years) - Math.abs(a.years))
+
   return {
     baselineYears: Math.round(baselineTotal * 10) / 10,
     adjustedYears: Math.round(adjustedTotal * 10) / 10,
-    totalAdjustment: Math.round(totalAdjustment * 10) / 10,
-    adjustments: adjustments.sort((a, b) => Math.abs(b.years) - Math.abs(a.years)),
+    totalAdjustment: Math.round(scaledAdjustment * 10) / 10,
+    referenceAdjustment: Math.round(totalAdjustment * 10) / 10,
+    adjustments: scaledFactors,
     percentile: Math.round(percentile),
     potentialGain: Math.round(potentialGain * 10) / 10,
     confidence,

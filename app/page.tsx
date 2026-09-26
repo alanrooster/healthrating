@@ -322,6 +322,7 @@ export default function Page() {
     return {
       adjustedYears: result.adjustedYears,
       totalAdjustment: result.totalAdjustment,
+      referenceAdjustment: result.referenceAdjustment,
       percentile: result.percentile,
       potentialGain: result.potentialGain,
       confidence: result.confidence,
@@ -339,7 +340,7 @@ export default function Page() {
     const completedCount = Object.values(scores).filter(s => s.completed).length
     return calculateBiologicalAge({
       chronologicalAge: bodyDemographics.age,
-      totalAdjustment: lifeExpectancyData.totalAdjustment,
+      totalAdjustment: lifeExpectancyData.referenceAdjustment,
       dataPoints: completedCount,
     })
   }, [bodyDemographics, lifeExpectancyData, scores])

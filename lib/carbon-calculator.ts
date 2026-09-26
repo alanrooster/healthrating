@@ -5,12 +5,16 @@
  * and consumption patterns. Uses IPCC, EPA, and Our World in Data emission factors.
  *
  * Sources:
- * - IPCC AR6 (2023) emission factors
- * - EPA Greenhouse Gas Equivalencies Calculator
- * - Our World in Data carbon database
- * - UK DEFRA conversion factors (2024)
- * - IEA World Energy Outlook (2024)
+ * - UK DESNZ/DEFRA GHG conversion factors (cars; flights include the x1.7 non-CO2
+ *   uplift from Lee et al. 2021)
+ * - Ember electricity carbon intensity via Our World in Data (lib/data/grid-intensity.ts)
+ * - European Commission OBFCM real-world CO2 reports (plug-in hybrids, 2024-2025)
+ * - Global Carbon Budget 2025 via Our World in Data (per-capita comparisons)
+ * - UNEP Emissions Gap Report 2020 / Hot or Cool Institute 2021 (1.5°C lifestyle target)
+ * - Poore & Nemecek 2018, Science (food)
  */
+
+import { GRID_INTENSITY } from "@/lib/data/grid-intensity"
 
 // ============================================================================
 // TYPES
@@ -102,10 +106,10 @@ export interface CarbonResult {
   }
   perCapita: number
   comparison: {
-    globalAverage: number // 4.7 tonnes
-    euAverage: number // 6.8 tonnes
-    usAverage: number // 14.7 tonnes
-    parisTarget: number // 2 tonnes by 2050
+    globalAverage: number // tonnes, consumption-based
+    euAverage: number
+    usAverage: number
+    parisTarget: number // ~2 t per person by 2030 keeps lifestyles on a 1.5°C pathway
   }
   rating: "excellent" | "good" | "average" | "high" | "very-high"
   score: number // 0-100 for integration with health dashboard
@@ -115,9 +119,11 @@ export interface CarbonResult {
 
 // ============================================================================
 // EMISSION FACTORS (kg CO2e per unit)
-// Sources: DEFRA 2024, EPA, IPCC AR6
+// Sources: DESNZ/DEFRA, European Commission OBFCM, Ember
 // ============================================================================
 
+// Tailpipe CO2e per km (DEFRA average-car factors). Grid electricity for plug-ins and EVs
+// is added in carKgPerKm from the country's grid intensity.
 const CAR_EMISSIONS_PER_KM: Record<CarType, number> = {
   "petrol-small": 0.14,
   "petrol-medium": 0.18,
@@ -126,9 +132,24 @@ const CAR_EMISSIONS_PER_KM: Record<CarType, number> = {
   "diesel-medium": 0.17,
   "diesel-large": 0.23,
   hybrid: 0.11,
-  "plug-in-hybrid": 0.07,
-  electric: 0.05, // varies by grid, this is EU average
+  // EU on-board meters: 139 g/km real-world vs 40 g/km type-approval for 2021 PHEVs, with
+  // the gap widening since (European Commission OBFCM reports 2024-2025)
+  "plug-in-hybrid": 0.14,
+  electric: 0,
   none: 0,
+}
+
+// Grid electricity per km, including charging losses
+const EV_KWH_PER_KM = 0.19
+// Share of plug-in hybrid km actually driven on electricity
+const PHEV_ELECTRIC_SHARE = 0.3
+
+function carKgPerKm(carType: CarType, gridKgPerKwh: number): number {
+  if (carType === "electric") return EV_KWH_PER_KM * gridKgPerKwh
+  if (carType === "plug-in-hybrid") {
+    return CAR_EMISSIONS_PER_KM[carType] + PHEV_ELECTRIC_SHARE * EV_KWH_PER_KM * gridKgPerKwh
+  }
+  return CAR_EMISSIONS_PER_KM[carType]
 }
 
 const PUBLIC_TRANSIT_PER_HOUR = 0.8 // kg CO2 per hour average (bus/train mix)
@@ -211,56 +232,25 @@ const RECYCLING_OFFSET: Record<RecyclingHabit, number> = {
 
 const COMPOSTING_OFFSET = -150
 
-// Grid carbon intensity by region (gCO2/kWh) - simplified
-const GRID_INTENSITY: Record<string, number> = {
-  SE: 20, // Sweden (hydro/nuclear)
-  FR: 60, // France (nuclear)
-  NO: 25, // Norway (hydro)
-  DE: 350, // Germany
-  PL: 650, // Poland (coal)
-  UK: 200,
-  US: 400,
-  CN: 550,
-  IN: 700,
-  AU: 600,
-  JP: 450,
-  BR: 80, // Brazil (hydro)
-  CA: 120, // Canada (hydro)
-  IT: 300,
-  ES: 200,
-  NL: 380,
-  default: 400,
+// The housing, heating and cooling baselines above assume a 400 gCO2e/kWh grid
+const REFERENCE_GRID_INTENSITY = 400
+
+// Two-letter codes used by the earlier country picker
+const LEGACY_GRID_CODES: Record<string, string> = {
+  SE: "Sweden", FR: "France", NO: "Norway", DE: "Germany", PL: "Poland",
+  UK: "United Kingdom", US: "United States", CN: "China", IN: "India", AU: "Australia",
+  JP: "Japan", BR: "Brazil", CA: "Canada", IT: "Italy", ES: "Spain", NL: "Netherlands",
 }
 
-// Helper to map country names to grid codes
-function mapCountryToGridCode(country: string): string {
-  if (!country || country === "default") return "default"
-  const countryMap: Record<string, string> = {
-    sweden: "SE",
-    france: "FR",
-    norway: "NO",
-    germany: "DE",
-    poland: "PL",
-    "united kingdom": "UK",
-    uk: "UK",
-    "united states": "US",
-    usa: "US",
-    china: "CN",
-    india: "IN",
-    australia: "AU",
-    japan: "JP",
-    brazil: "BR",
-    canada: "CA",
-    italy: "IT",
-    spain: "ES",
-    netherlands: "NL",
-  }
-  const lowerCountry = country.toLowerCase()
-  if (countryMap[lowerCountry]) return countryMap[lowerCountry]
-  // If country is a 2-letter code already known in GRID_INTENSITY, use it
-  const upper = country.toUpperCase()
-  if (upper.length === 2 && upper in GRID_INTENSITY) return upper
-  return "default"
+const GRID_BY_KEY = new Map(
+  Object.entries(GRID_INTENSITY).map(([name, [gramsPerKwh]]) => [name.toLowerCase(), gramsPerKwh]),
+)
+
+/** Electricity carbon intensity (gCO2e/kWh) for a country; world average when unknown. */
+export function getGridIntensity(country: string | undefined): number {
+  const trimmed = country?.trim() ?? ""
+  const name = LEGACY_GRID_CODES[trimmed.toUpperCase()] ?? trimmed
+  return GRID_BY_KEY.get(name.toLowerCase()) ?? GRID_INTENSITY.World[0]
 }
 
 // ============================================================================
@@ -318,6 +308,14 @@ export function calculateCarbonFootprint(
     composting,
   } = inputs
 
+  // Country grid intensity drives electric cars, electric heating, cooling and appliances.
+  // Use country from airData if available, otherwise the country picked in this module
+  const gridIntensity = getGridIntensity(airData?.country || countryCode)
+  const gridKgPerKwh = gridIntensity / 1000
+  const electricityFactor =
+    (gridIntensity / REFERENCE_GRID_INTENSITY) * ELECTRICITY_MULTIPLIER[electricitySource]
+  const carFactor = carKgPerKm(carType, gridKgPerKwh)
+
   // --- TRANSPORT ---
   let transportEmissions = 0
 
@@ -325,7 +323,7 @@ export function calculateCarbonFootprint(
   if (commuteMethod === "car" || commuteMethod === "mixed") {
     const commuteDays = 230 // working days per year
     const commuteKm = commuteDistanceKm * commuteDays
-    transportEmissions += commuteKm * CAR_EMISSIONS_PER_KM[carType]
+    transportEmissions += commuteKm * carFactor
   }
 
   if (commuteMethod === "motorcycle") {
@@ -341,7 +339,7 @@ export function calculateCarbonFootprint(
         ? commuteDistanceKm * 230
         : 0
     const nonCommuteKm = Math.max(0, annualCarKm - commuteKmIfApplicable)
-    transportEmissions += nonCommuteKm * CAR_EMISSIONS_PER_KM[carType]
+    transportEmissions += nonCommuteKm * carFactor
   }
 
   // Public transit
@@ -355,23 +353,17 @@ export function calculateCarbonFootprint(
     FLIGHT_FREQUENCY_MULTIPLIER[longHaulFlights] * FLIGHT_EMISSIONS.longHaul
 
   // --- HOME ENERGY ---
-  let homeEmissions = HOUSING_BASE_EMISSIONS[housingType]
+  // Appliances & lighting run on grid electricity
+  let homeEmissions = HOUSING_BASE_EMISSIONS[housingType] * electricityFactor
 
-  // Adjust for grid carbon intensity
-  // Use country from airData if available (more reliable source), otherwise use countryCode from inputs
-  const effectiveCountry = airData?.country || countryCode
-  const countryCodeForGrid = mapCountryToGridCode(effectiveCountry)
-  const gridIntensity = GRID_INTENSITY[countryCodeForGrid] ?? GRID_INTENSITY.default
-  const gridMultiplier = gridIntensity / 400 // normalize to default
+  // Heating: only electric systems depend on the grid; gas, oil, coal and wood burn on site
+  const electricHeating =
+    heatingSource === "electric-standard" || heatingSource === "electric-heat-pump"
+  homeEmissions += HEATING_EMISSIONS[heatingSource] * (electricHeating ? electricityFactor : 1)
 
-  homeEmissions *= gridMultiplier * ELECTRICITY_MULTIPLIER[electricitySource]
-
-  // Add heating
-  homeEmissions += HEATING_EMISSIONS[heatingSource] * gridMultiplier
-
-  // Add cooling
+  // Cooling is electric
   if (hasCooling && coolingMonths > 0) {
-    homeEmissions += COOLING_PER_MONTH * coolingMonths * ELECTRICITY_MULTIPLIER[electricitySource]
+    homeEmissions += COOLING_PER_MONTH * coolingMonths * electricityFactor
   }
 
   // Divide by household members for per-capita
@@ -472,11 +464,14 @@ export function calculateCarbonFootprint(
 
   const perCapita = totalKgCO2 / 1000 // tonnes
 
-  // Comparisons (tonnes CO2)
+  // Consumption-based CO2 per person (Global Carbon Budget 2025 via Our World in Data):
+  // World 4.7 t (2024), EU-27 7.3 t (2023), United States 15.8 t (2023).
+  // Target: ~2 t CO2e per person by 2030 keeps lifestyles on a 1.5°C pathway (UNEP
+  // Emissions Gap Report 2020: 2-2.5 t; Hot or Cool Institute 2021: 2.5 t in 2030, 0.7 t in 2050).
   const comparison = {
     globalAverage: 4.7,
-    euAverage: 6.8,
-    usAverage: 14.7,
+    euAverage: 7.3,
+    usAverage: 15.8,
     parisTarget: 2.0,
   }
 
@@ -564,7 +559,7 @@ if (dietData && dietData.redMeatFrequency >= 3) {
   }
   if (perCapita <= comparison.parisTarget) {
     recommendations.push(
-      "Your footprint aligns with the Paris Agreement 2050 target. Keep it up!"
+      "Your footprint is within ~2 t per person, in line with a 1.5°C pathway for 2030. Keep it up!"
     )
   }
 
@@ -586,7 +581,7 @@ if (dietData && dietData.redMeatFrequency >= 3) {
 
 export function getCarbonRatingLabel(rating: CarbonResult["rating"]): string {
   const labels: Record<CarbonResult["rating"], string> = {
-    excellent: "Excellent - Paris-aligned",
+    excellent: "Excellent - 1.5°C-aligned",
     good: "Good - Below global average",
     average: "Average",
     high: "High - Above EU average",

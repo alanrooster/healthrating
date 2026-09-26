@@ -8,17 +8,22 @@
  * - Belsky et al. 2015 (PNAS) - Dunedin Study: pace of aging varies between
  *   0.4 and 2.4 "biological years" per chronological year across individuals,
  *   driven largely by modifiable factors.
- * - Rutledge et al. 2022 (Nature Aging) - lifestyle factors shift biomarker-
- *   based age acceleration by roughly half their life-expectancy effect.
+ * - Rutledge, Oh & Wyss-Coray 2022 (Nature Reviews Genetics) - review of
+ *   omics-based aging clocks and their link to mortality risk.
  *
  * Method: we map the life-expectancy adjustment (sum of evidence-based
- * longevity effects from completed modules) onto an age shift:
+ * longevity effects from completed modules, at the age-40 reference before
+ * age scaling) onto an age shift:
  *
  *   bioAge = chronologicalAge - (totalAdjustment x DAMPING)
  *
- * DAMPING = 0.5: life-expectancy effects accrue over a lifetime, so at any
- * point only part of the differential has biologically "materialized"
- * (consistent with the ~half-effect seen in biomarker studies).
+ * The unscaled sum is used because a mortality hazard ratio corresponds to a
+ * roughly constant age shift at any age (Gompertz), even though the life-years
+ * at stake shrink with age.
+ *
+ * DAMPING = 0.5 is a modelling assumption, not a measured constant: life-
+ * expectancy effects accrue over a lifetime, so at any point only part of the
+ * differential has biologically "materialized".
  *
  * The shift is clamped to +/- min(0.35 x (age - 18), 15) years so young
  * adults cannot receive absurd estimates, and bioAge never goes below 18.
@@ -29,7 +34,7 @@
 
 export interface BiologicalAgeInputs {
   chronologicalAge: number
-  /** Total life-expectancy adjustment in years (from life-expectancy-calculator) */
+  /** Life-expectancy adjustment in years at the reference age (`referenceAdjustment`) */
   totalAdjustment: number
   /** Number of completed data modules (drives confidence) */
   dataPoints: number

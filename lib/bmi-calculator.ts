@@ -73,9 +73,12 @@ function calcAgeAdjustedBMI(
 /**
  * Body Fat % estimation using two complementary methods:
  *
- * 1. U.S. Navy circumference method (uses waist, neck, height)
- *    - Male:   495 / (1.0324 - 0.19077*log10(waist-neck) + 0.15456*log10(height)) - 450
- *    - Female: uses a waist-only simplified regression when hip is unavailable
+ * 1. Circumference method
+ *    - Male: U.S. Navy formula (Hodgdon & Beckett 1984) from waist, neck, height:
+ *      495 / (1.0324 - 0.19077*log10(waist-neck) + 0.15456*log10(height)) - 450
+ *    - Female: the Navy formula needs hip circumference, which isn't collected, so we
+ *      use Relative Fat Mass (Woolcott & Bergman 2018, Sci Rep; DXA-validated in NHANES):
+ *      RFM = 76 - 20*(height/waist)
  *
  * 2. Deurenberg formula (uses BMI, age, sex)
  *    BF% = 1.2*BMI + 0.23*age - 10.8*sexFactor - 5.4
@@ -97,33 +100,24 @@ function calcBodyFatCombined(
   // Deurenberg formula
   const deurenberg = 1.2 * bmi + 0.23 * age - 10.8 * sexFactor - 5.4
 
-  // Navy method (male formula works directly; for female we use a waist-only regression)
-  let navy: number | null = null
+  let circumference: number | null = null
   if (sex === "male") {
     if (waistCm > neckCm) {
-      navy =
+      circumference =
         495 /
           (1.0324 -
             0.19077 * Math.log10(waistCm - neckCm) +
             0.15456 * Math.log10(heightCm)) -
         450
     }
-  } else {
-    // Female simplified: regression based on waist, neck, height without hip
-    if (waistCm > neckCm) {
-      navy =
-        495 /
-          (1.29579 -
-            0.35004 * Math.log10(waistCm * 1.18 - neckCm) +
-            0.221 * Math.log10(heightCm)) -
-        450
-    }
+  } else if (waistCm > 0) {
+    circumference = 76 - 20 * (heightCm / waistCm)
   }
 
-  if (navy !== null) {
-    navy = Math.max(sex === "male" ? 2 : 8, Math.min(navy, 60))
+  if (circumference !== null) {
+    circumference = Math.max(sex === "male" ? 2 : 8, Math.min(circumference, 60))
     // Average both methods
-    const combined = (deurenberg + navy) / 2
+    const combined = (deurenberg + circumference) / 2
     return Math.max(2, Math.min(combined, 60))
   }
 
@@ -205,17 +199,14 @@ function determineRiskLevel(
   bmi: number,
   bodyFat: number | null,
   whtr: number | null,
-  sex: Sex,
-  ethnicity: Ethnicity
+  sex: Sex
 ): "low" | "moderate" | "high" | "very-high" {
   let riskScore = 0
 
-  // Ethnicity-adjusted BMI thresholds
-  // South Asian, East Asian, Southeast Asian populations have elevated risk at lower BMIs
-  const overweightThreshold = getOverweightBMIThreshold(ethnicity)
-
+  // `bmi` is the composite score, which already carries the ethnicity adjustment, so the
+  // standard WHO cut-offs apply here (lowering them again would double-count ethnicity)
   if (bmi < 18.5) riskScore += 1
-  else if (bmi >= overweightThreshold && bmi < 30) riskScore += 1
+  else if (bmi >= 25 && bmi < 30) riskScore += 1
   else if (bmi >= 30 && bmi < 35) riskScore += 2
   else if (bmi >= 35) riskScore += 3
 
@@ -236,12 +227,6 @@ function determineRiskLevel(
     if (whtr > 0.6) riskScore += 1
   }
 
-  // Ethnicity risk modifier: South/East/SE Asian populations have
-  // higher metabolic risk at the same BMI (WHO expert consultation)
-  if (["south-asian", "east-asian", "southeast-asian"].includes(ethnicity)) {
-    if (bmi >= 23) riskScore += 1
-  }
-
   if (riskScore <= 1) return "low"
   if (riskScore <= 3) return "moderate"
   if (riskScore <= 5) return "high"
@@ -249,50 +234,33 @@ function determineRiskLevel(
 }
 
 /**
- * Ethnicity-adjusted overweight BMI threshold.
- * WHO recommends lower cut-offs for Asian populations due to
- * higher body fat % and metabolic risk at lower BMIs.
- * Pacific Islanders have higher muscle/bone mass so threshold is raised.
- */
-function getOverweightBMIThreshold(ethnicity: Ethnicity): number {
-  switch (ethnicity) {
-    case "south-asian":
-    case "east-asian":
-    case "southeast-asian":
-      return 23 // WHO Asian cut-off
-    case "pacific-islander":
-      return 26 // higher muscle/bone mass
-    default:
-      return 25 // standard WHO threshold
-  }
-}
-
-/**
- * Ethnicity-based BMI adjustment.
- * Research shows that at the same BMI, different ethnic groups
- * carry different amounts of body fat and face different health risks.
+ * Ethnicity-based BMI adjustment, added to BMI before the standard WHO cut-offs apply.
+ * At the same BMI, cardiometabolic risk differs by ancestry. NICE NG246 (2025) and the
+ * WHO Expert Consultation (2004) use lower cut-offs (overweight from 23, obesity from
+ * 27.5) for South Asian, Chinese and other Asian, Middle Eastern, Black African and
+ * African-Caribbean backgrounds. In UK Biobank-scale data (n = 1.5M), the type 2
+ * diabetes risk of a White adult at BMI 30 is reached at 23.9 (South Asian), 26.6 (Arab),
+ * 26.9 (Chinese) and 28.1 (Black) (Caleyachetty et al. 2021, Lancet Diabetes Endocrinol).
  *
  * References:
+ * - NICE NG246: Overweight and obesity management (2025)
  * - WHO Expert Consultation (2004): Appropriate BMI for Asian populations
- * - Deurenberg et al. (2002): BMI-body fat relationship differs across ethnic groups
- * - Wagner & Heyward (2000): Body composition differences across ethnicities
+ * - Caleyachetty et al. (2021): Ethnicity-specific BMI cut-offs for obesity
+ * - Swinburn et al. (1999): Polynesians carry more lean mass at the same BMI
  */
 function getEthnicityBMIAdjustment(ethnicity: Ethnicity): number {
   switch (ethnicity) {
     case "south-asian":
-      return 2.5 // significantly higher body fat at same BMI
+      return 2.5 // highest risk at a given BMI (NICE obesity cut-off 27.5)
     case "east-asian":
-      return 1.5 // higher body fat at same BMI
     case "southeast-asian":
-      return 1.8
+    case "middle-eastern":
     case "african":
-      return -1.0 // higher muscle mass, lower body fat at same BMI
-    case "pacific-islander":
-      return -1.5 // significantly higher muscle/bone mass
+      return 2.0 // NICE overweight cut-off 23; obesity at ~28
     case "hispanic":
       return 0.5 // slightly higher trunk fat distribution
-    case "middle-eastern":
-      return 0.8 // slightly higher body fat at same BMI
+    case "pacific-islander":
+      return -1.5 // significantly higher muscle/bone mass
     case "caucasian":
     default:
       return 0 // baseline reference
@@ -359,6 +327,21 @@ function getRecommendations(
     recs.push(
       "Your waist-to-height ratio indicates increased abdominal fat. Reducing waist circumference is particularly beneficial for heart health."
     )
+  }
+
+  // Lancet Diabetes & Endocrinology Commission on clinical obesity (Rubino et al. 2025):
+  // below BMI 40, excess adiposity should be confirmed with a waist-based or body-fat measure
+  const compositeBMI = result.compositeScore
+  if (compositeBMI !== undefined && compositeBMI >= 30 && compositeBMI < 40) {
+    if (waistToHeightRatio === null || waistToHeightRatio === undefined) {
+      recs.push(
+        "Your BMI is in the obesity range, but BMI alone can't confirm excess body fat (Lancet Commission on clinical obesity, 2025). Add your waist measurement to check your waist-to-height ratio."
+      )
+    } else if (waistToHeightRatio < 0.5) {
+      recs.push(
+        "Your BMI is in the obesity range but your waist-to-height ratio is under 0.5, so BMI may be overstating body fat (for example with a muscular build)."
+      )
+    }
   }
 
   if (bmi && bmi >= 18.5 && bmi < 25 && (!overweightBy || overweightBy <= 0)) {
@@ -503,8 +486,7 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
     compositeScore,
     bodyFatPercentage,
     waistToHeightRatio,
-    sex,
-    ethnicity
+    sex
   )
 
   const partialResult: Partial<BMIResult> = {
