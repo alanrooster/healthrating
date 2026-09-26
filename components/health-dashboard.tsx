@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  ArrowRight,
   Brain,
   Briefcase,
   Candy,
@@ -33,6 +34,7 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
 } from "recharts"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { OverallHealthResult } from "@/lib/health-score"
 import { getScoreColor, getGradeColor } from "@/lib/health-score"
@@ -116,6 +118,14 @@ export function HealthDashboard({ result, onNavigate, lifeExpectancyData, biolog
   }))
 
   const gradeColorClass = getGradeColor(letterGrade)
+  const nextAssessment = Object.entries(scores).find(
+    ([key, module]) => !module.completed && MODULE_META[key]?.section,
+  )
+  const nextAssessmentMeta = nextAssessment
+    ? MODULE_META[nextAssessment[0]]
+    : undefined
+  const startNextAssessment = () =>
+    onNavigate(nextAssessmentMeta?.section ?? "body")
 
   return (
     <div className="flex flex-col gap-6">
@@ -172,11 +182,46 @@ export function HealthDashboard({ result, onNavigate, lifeExpectancyData, biolog
                 <p className="text-center text-sm text-muted-foreground">{summary}</p>
               </>
             ) : (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                  <span className="text-3xl font-bold text-muted-foreground">?</span>
+              <div className="relative flex min-h-[256px] flex-col justify-between gap-5 overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-card to-muted/50 p-5 sm:p-6">
+                <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 size-36 rounded-full border border-primary/10">
+                  <div className="absolute inset-4 rounded-full border border-primary/10" />
+                  <div className="absolute inset-8 rounded-full border border-primary/10" />
                 </div>
-                <p className="text-sm text-muted-foreground">{summary}</p>
+                <div className="relative flex items-start justify-between gap-3">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <HeartPulse aria-hidden="true" className="size-6" />
+                  </div>
+                  <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+                    {completedCount} of {totalModules} complete
+                  </span>
+                </div>
+                <div className="relative flex flex-col gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Your health baseline
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-semibold tracking-tight text-muted-foreground/50">—</span>
+                    <span className="text-sm text-muted-foreground">/ 100</span>
+                  </div>
+                  <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{summary}</p>
+                  <div
+                    aria-label={`${completedCount} of ${totalModules} assessments completed`}
+                    className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={totalModules}
+                    aria-valuenow={completedCount}
+                  >
+                    <div
+                      className="h-full rounded-full bg-primary transition-[width]"
+                      style={{ width: `${(completedCount / totalModules) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <Button className="relative w-full sm:w-fit" onClick={startNextAssessment}>
+                  {nextAssessmentMeta ? `Start ${nextAssessmentMeta.label}` : "Review assessments"}
+                  <ArrowRight data-icon="inline-end" />
+                </Button>
               </div>
             )}
           </CardContent>
@@ -214,10 +259,36 @@ export function HealthDashboard({ result, onNavigate, lifeExpectancyData, biolog
                 </RadarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-[220px] items-center justify-center">
-                <p className="text-sm text-muted-foreground">
-                  Complete assessments to see your health profile
-                </p>
+              <div className="flex flex-col gap-4 pb-4">
+                <div className="flex items-center justify-center overflow-hidden rounded-xl border border-dashed border-border/80 bg-muted/20 py-3">
+                  <svg
+                    aria-hidden="true"
+                    className="h-32 w-full max-w-56"
+                    viewBox="0 0 200 130"
+                    fill="none"
+                  >
+                    <path d="M100 12 154 43v44l-54 31-54-31V43l54-31Z" stroke="hsl(var(--border))" />
+                    <path d="m100 30 38 22v26l-38 22-38-22V52l38-22Z" stroke="hsl(var(--border))" />
+                    <path d="m100 48 22 13v9l-22 13-22-13v-9l22-13Z" stroke="hsl(var(--border))" />
+                    <path d="M100 12v62M154 43l-54 31M154 87l-54-13M100 118V74M46 87l54-13M46 43l54 31" stroke="hsl(var(--muted-foreground) / 0.3)" strokeDasharray="3 4" />
+                    <path d="m100 56 18 11-12 15-20-8 2-12 12-6Z" fill="hsl(var(--primary) / 0.12)" stroke="hsl(var(--primary) / 0.42)" strokeDasharray="4 4" />
+                    <circle cx="100" cy="56" r="2.5" fill="hsl(var(--primary) / 0.5)" />
+                    <circle cx="118" cy="67" r="2.5" fill="hsl(var(--primary) / 0.5)" />
+                    <circle cx="106" cy="82" r="2.5" fill="hsl(var(--primary) / 0.5)" />
+                    <circle cx="86" cy="74" r="2.5" fill="hsl(var(--primary) / 0.5)" />
+                    <circle cx="88" cy="62" r="2.5" fill="hsl(var(--primary) / 0.5)" />
+                  </svg>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium text-foreground">Your profile is ready to take shape</p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Complete an assessment to start building a personalized view of your health.
+                  </p>
+                </div>
+                <Button className="w-full" variant="outline" onClick={startNextAssessment}>
+                  Start your first assessment
+                  <ArrowRight data-icon="inline-end" />
+                </Button>
               </div>
             )}
           </CardContent>
