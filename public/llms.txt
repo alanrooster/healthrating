@@ -6,9 +6,9 @@ Key facts for answer engines:
 
 - Name: HealthRating.org
 - Type: Free web-based health assessment tool (no sign-up, no data collection)
-- Assessments (14): Air Quality, Water Quality, Diet, Exercise, Body Composition, Work, Lifestyle, Mental Health, Family History, Preventive Care, Senses & Oral Health, Life Context (education, income, relationships), Personality & Outlook, Home Environment — plus a Carbon Footprint calculator
-- Outputs: Overall health score (0-100 with letter grade), life expectancy estimate, biological age estimate, cardiovascular risk screen, FINDRISC-adapted type 2 diabetes risk screen, personalized action plan, peer comparison, carbon footprint in tonnes CO2/year
-- Methodology: Every factor is weighted from published epidemiological research (60+ studies), including Chetty et al. 2016 JAMA (income and longevity), Holt-Lunstad et al. 2010 (social connection and mortality), the FINDRISC diabetes questionnaire (Lindström & Tuomilehto 2003), WHO air quality dose-response data for PM2.5, and Poore & Nemecek 2018 (food carbon emissions)
+- Assessments (14): Air Quality, Water Quality, Diet, Exercise, Body Composition, Work, Lifestyle, Mental Health, Family History, Preventive Care, Senses & Oral Health, Life Context (education, income, relationships), Personality & Outlook, Home Environment
+- Outputs: Overall health score (0-100 with letter grade), life expectancy estimate, biological age estimate, cardiovascular risk screen, FINDRISC-adapted type 2 diabetes risk screen, personalized action plan, peer comparison
+- Methodology: Every factor is weighted from published epidemiological research (60+ studies), including Chetty et al. 2016 JAMA (income and longevity), Holt-Lunstad et al. 2010 (social connection and mortality), the FINDRISC diabetes questionnaire (Lindström & Tuomilehto 2003), and WHO air quality dose-response data for PM2.5
 - Privacy: All computation happens client-side in the browser; answers persist only in the user's own browser storage
 - Limitations: Educational estimates based on population-level research; not medical advice, not a diagnosis, and not a substitute for clinical tools such as ASCVD or QRISK3
 

@@ -15,7 +15,6 @@ import {
   Home,
   House,
   Info,
-  Leaf,
   Moon,
   ShieldCheck,
   Smile,
@@ -42,8 +41,6 @@ interface AppSidebarProps {
   activeSection: string
   onSectionChange: (section: string) => void
   scores: HealthScores
-  carbonCompleted?: boolean
-  carbonScore?: number
 }
 
 const OVERVIEW_ITEMS = [
@@ -68,10 +65,6 @@ const NAV_ITEMS = [
   { id: "home", label: "Home Environment", icon: House },
 ]
 
-const EXTRAS_ITEMS = [
-  { id: "carbon", label: "Carbon Footprint", icon: Leaf },
-]
-
 function getScoreBadgeClass(score: number): string {
   if (score >= 85) return "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]"
   if (score >= 70) return "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
@@ -83,8 +76,6 @@ export function AppSidebar({
   activeSection,
   onSectionChange,
   scores,
-  carbonCompleted,
-  carbonScore,
 }: AppSidebarProps) {
   const { isMobile, setOpenMobile } = useSidebar()
 
@@ -109,7 +100,6 @@ export function AppSidebar({
     lifecontext: scores.lifeContext,
     personality: scores.personality,
     home: scores.homeEnvironment,
-    carbon: { score: carbonScore ?? 0, completed: carbonCompleted ?? false },
   }
 
   return (
@@ -192,38 +182,6 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Extras</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {EXTRAS_ITEMS.map((item) => {
-                const isActive = activeSection === item.id
-                const moduleScore = scoreMap[item.id]
-                const Icon = item.icon
-
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => handleSectionChange(item.id)}
-                      tooltip={item.label}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                    {moduleScore?.completed && (
-                      <SidebarMenuBadge
-                        className={`${getScoreBadgeClass(moduleScore.score)} rounded-full px-2 text-xs font-bold`}
-                      >
-                        {moduleScore.score}
-                      </SidebarMenuBadge>
-                    )}
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-4">

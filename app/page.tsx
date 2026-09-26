@@ -25,7 +25,6 @@ import { SensesOralSection } from "@/components/senses-oral-section"
 import { LifeContextSection } from "@/components/life-context-section"
 import { PersonalitySection } from "@/components/personality-section"
 import { HomeEnvironmentSection } from "@/components/home-environment-section"
-import { CarbonSection } from "@/components/carbon-section"
 import { MethodologySection } from "@/components/methodology-section"
 import {
   calculateOverallHealth,
@@ -129,21 +128,9 @@ export default function Page() {
     label: "Home Environment",
   })
 
-  // Carbon footprint (separate from health scores)
-  const [carbonCompleted, setCarbonCompleted] = useState(false)
-  const [carbonScore, setCarbonScore] = useState(0)
-  const [totalCO2, setTotalCO2] = useState(0)
-
-  // Cross-module data for carbon calculation
+  // Cross-module data for the life expectancy, biological age and risk screens
   const [dietData, setDietData] = useState<{
-    redMeatFrequency: number
     processedMeatFrequency: number
-    fishFrequency: number
-    alcoholFrequency: number
-  } | null>(null)
-  const [waterData, setWaterData] = useState<{
-    plasticBottlesPerWeek: number
-    primarySourceBottled: boolean
   } | null>(null)
   const [lifestyleData, setLifestyleData] = useState<{
     smokingStatus: string
@@ -200,15 +187,15 @@ export default function Page() {
         if (s.lifeContextScore) setLifeContextScore(s.lifeContextScore)
         if (s.personalityScore) setPersonalityScore(s.personalityScore)
         if (s.homeEnvironmentScore) setHomeEnvironmentScore(s.homeEnvironmentScore)
-        if (typeof s.carbonCompleted === "boolean") setCarbonCompleted(s.carbonCompleted)
-        if (typeof s.carbonScore === "number") setCarbonScore(s.carbonScore)
-        if (typeof s.totalCO2 === "number") setTotalCO2(s.totalCO2)
         if (s.dietData) setDietData(s.dietData)
-        if (s.waterData) setWaterData(s.waterData)
         if (s.lifestyleData) setLifestyleData(s.lifestyleData)
         if (s.airData) setAirData(s.airData)
         if (s.bodyDemographics) setBodyDemographics(s.bodyDemographics)
-        if (s.storedResults) setStoredResults(s.storedResults)
+        if (s.storedResults) {
+          // Left behind by the Carbon Footprint module, which has been removed
+          delete s.storedResults.carbon
+          setStoredResults(s.storedResults)
+        }
         if (s.storedInputs) setStoredInputs(s.storedInputs)
       }
     } catch {
@@ -231,8 +218,7 @@ export default function Page() {
           bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore,
           lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore,
           sensesOralScore, lifeContextScore, personalityScore, homeEnvironmentScore,
-          carbonCompleted, carbonScore, totalCO2,
-          dietData, waterData, lifestyleData, airData, bodyDemographics,
+          dietData, lifestyleData, airData, bodyDemographics,
           storedResults, storedInputs,
         }),
       )
@@ -244,8 +230,7 @@ export default function Page() {
     bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore,
     lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore,
     sensesOralScore, lifeContextScore, personalityScore, homeEnvironmentScore,
-    carbonCompleted, carbonScore, totalCO2,
-    dietData, waterData, lifestyleData, airData, bodyDemographics,
+    dietData, lifestyleData, airData, bodyDemographics,
     storedResults, storedInputs,
   ])
 
@@ -383,14 +368,11 @@ export default function Page() {
     }
   }
 
-  function handleWaterResult(score: number, plasticData?: { plasticBottlesPerWeek: number; primarySourceBottled: boolean }) {
+  function handleWaterResult(score: number) {
     setWaterScore({ score, completed: true, label: "Water Quality" })
-    if (plasticData) {
-      setWaterData(plasticData)
-    }
   }
 
-  function handleDietResult(score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number; alcoholFrequency: number }) {
+  function handleDietResult(score: number, meatData?: { processedMeatFrequency: number }) {
     setDietScore({ score, completed: true, label: "Diet" })
     if (meatData) {
       setDietData(meatData)
@@ -449,12 +431,6 @@ export default function Page() {
     setHomeEnvironmentScore({ score, completed: true, label: "Home Environment" })
   }
 
-  function handleCarbonResult(score: number, kgCO2: number) {
-    setCarbonScore(score)
-    setCarbonCompleted(true)
-    setTotalCO2(kgCO2)
-  }
-
   function renderSection() {
     switch (activeSection) {
       case "welcome":
@@ -470,7 +446,6 @@ export default function Page() {
           <HealthDashboard
             result={overallResult}
             onNavigate={setActiveSection}
-            carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
             diabetesRiskData={diabetesRiskData}
@@ -504,20 +479,6 @@ export default function Page() {
         return <PersonalitySection onResult={handlePersonalityResult} storedResult={storedResults.personality} onStoreResult={(r) => storeResult("personality", r)} onRetake={() => clearResult("personality")} storedInputs={storedInputs.personality} onStoreInputs={(i) => storeInputs("personality", i)} />
       case "home":
         return <HomeEnvironmentSection onResult={handleHomeEnvironmentResult} storedResult={storedResults.home} onStoreResult={(r) => storeResult("home", r)} onRetake={() => clearResult("home")} storedInputs={storedInputs.home} onStoreInputs={(i) => storeInputs("home", i)} />
-      case "carbon":
-        return (
-          <CarbonSection
-            onResult={handleCarbonResult}
-            dietData={dietData}
-            waterData={waterData}
-            lifestyleData={lifestyleData}
-            airData={airData}
-            bodyData={bodyDemographics?.bmi ? { bmi: bodyDemographics.bmi } : null}
-            storedResult={storedResults.carbon}
-            onStoreResult={(r) => storeResult("carbon", r)}
-            onRetake={() => clearResult("carbon")}
-          />
-        )
       case "methodology":
         return <MethodologySection />
       default:
@@ -525,7 +486,6 @@ export default function Page() {
           <HealthDashboard
             result={overallResult}
             onNavigate={setActiveSection}
-            carbonData={carbonCompleted ? { score: carbonScore, totalKgCO2: totalCO2 } : undefined}
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
             diabetesRiskData={diabetesRiskData}
@@ -551,7 +511,6 @@ export default function Page() {
     lifecontext: "Life Context",
     personality: "Personality & Outlook",
     home: "Home Environment",
-    carbon: "Carbon Footprint",
     methodology: "Methodology",
   }
 
@@ -561,8 +520,6 @@ export default function Page() {
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         scores={scores}
-        carbonCompleted={carbonCompleted}
-        carbonScore={carbonScore}
       />
       <SidebarInset>
         <PageHeader title={sectionTitles[activeSection] ?? "Dashboard"} />

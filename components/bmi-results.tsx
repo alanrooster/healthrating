@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import type { BMIResult } from "@/lib/bmi-calculator"
+import { getBMICategory, type BMIResult } from "@/lib/bmi-calculator"
 
 interface BMIResultsProps {
   result: BMIResult
@@ -147,6 +147,7 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
   const isOverweight = overweightBy > 0
   const isUnderweight = underweightBy > 0
   const isHealthy = !isOverweight && !isUnderweight
+  const whoCategory = getBMICategory(bmi)
 
   // Show composite score as primary when body measurements are provided
   const primaryScore = hasBodyMeasurements ? compositeScore : bmi
@@ -177,6 +178,16 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
             {hasBodyMeasurements && (
               <p className="text-xs opacity-80">
                 Composite score combining BMI, body fat, and waist measurements
+              </p>
+            )}
+
+            {whoCategory !== category && (
+              <p className="max-w-md text-xs opacity-80">
+                WHO classification for your standard BMI of {bmi}: {whoCategory}.
+                The category above also accounts for{" "}
+                {hasBodyMeasurements
+                  ? "age, sex, ethnicity and body measurements."
+                  : "age, sex and ethnicity."}
               </p>
             )}
 
@@ -237,7 +248,7 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
               label="Standard BMI"
               value={bmi}
               unit="kg/m2"
-              sublabel="Weight & height only"
+              sublabel={`WHO: ${whoCategory}`}
             />
             <MetricCard
               label="Adjusted BMI"

@@ -4,7 +4,8 @@
  * Scoring uses MET-minutes/week:
  * - Vigorous activity: 8.0 METs
  * - Moderate activity: 4.0 METs
- * - Walking/transport: 3.3 METs
+ * - Walking/cycling for transport: 3.3 METs, the IPAQ walking value. Stricter than the 4.0 in
+ *   the WHO GPAQ analysis guide; the GPAQ total is returned alongside for reference only.
  *
  * WHO Recommendation: At least 150-300 min moderate or 75-150 min vigorous per week
  * (equivalent to 600-1200 MET-minutes/week minimum), plus muscle-strengthening
@@ -199,6 +200,9 @@ export const EXERCISE_QUESTIONS: ExerciseQuestion[] = [
 
 export interface ExerciseResult {
   totalMETMinutes: number
+  // Same total with active travel at the WHO GPAQ guide's 4.0 MET, not scored.
+  // Optional: results saved before it was added don't have it
+  whoGpaqMETMinutes?: number
   score: number // 0-100 composite (activity + functional)
   activityScore: number // 0-100 from MET-minutes
   functionalScore: number // 0-100 from functional fitness markers
@@ -277,6 +281,7 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
   const VIGOROUS_MET = 8.0
   const MODERATE_MET = 4.0
   const TRANSPORT_MET = 3.3
+  const WHO_GPAQ_TRANSPORT_MET = 4.0
 
   // MET-minutes per week for each domain
   const workVigorous = inputs.workVigDays * inputs.workVigMin * VIGOROUS_MET
@@ -287,6 +292,13 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
 
   const totalMETMinutes = Math.round(
     workVigorous + workModerate + transport + recVigorous + recModerate
+  )
+  const whoGpaqMETMinutes = Math.round(
+    workVigorous +
+      workModerate +
+      inputs.transportDays * inputs.transportMin * WHO_GPAQ_TRANSPORT_MET +
+      recVigorous +
+      recModerate
   )
 
   // Total active minutes per week
@@ -424,6 +436,7 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
 
   return {
     totalMETMinutes,
+    whoGpaqMETMinutes,
     score: composite,
     activityScore,
     functionalScore,

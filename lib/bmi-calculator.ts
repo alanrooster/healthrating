@@ -290,9 +290,9 @@ function getEthnicityBMIAdjustment(ethnicity: Ethnicity, bmi: number): number {
 }
 
 /**
- * Get BMI category
+ * WHO international BMI classification
  */
-function getBMICategory(bmi: number): string {
+export function getBMICategory(bmi: number): string {
   if (bmi < 16) return "Severely Underweight"
   if (bmi < 18.5) return "Underweight"
   if (bmi < 25) return "Normal Weight"

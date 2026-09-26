@@ -28,7 +28,6 @@ export const metadata: Metadata = {
     'diabetes risk calculator',
     'cardiovascular risk',
     'health rating',
-    'carbon footprint calculator',
     'wellness score',
   ],
   authors: [{ name: 'HealthRating.org' }],
@@ -141,14 +140,13 @@ const structuredData = {
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       publisher: { '@id': 'https://healthrating.org/#organization' },
       description:
-        '14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research, computing your life expectancy, biological age, cardiovascular and diabetes risk, and carbon footprint.',
+        '14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research, computing your health score, life expectancy, biological age, and cardiovascular and diabetes risk.',
       featureList: [
         'Life expectancy estimate',
         'Biological age estimate',
         'Cardiovascular risk screen',
         'Type 2 diabetes risk screen (FINDRISC-adapted)',
         'Body composition analysis',
-        'Carbon footprint calculator',
       ],
     },
     {

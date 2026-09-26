@@ -9,7 +9,6 @@ import {
   Dna,
   HeartPulse,
   Hourglass,
-  Leaf,
   LockKeyhole,
   Sparkles,
 } from "lucide-react"
@@ -64,12 +63,6 @@ const HIGHLIGHTS = [
     title: "Disease Risk Screens",
     description:
       "Evidence-based cardiovascular and type 2 diabetes screens, computed from data you already entered.",
-  },
-  {
-    icon: Leaf,
-    title: "Carbon Footprint",
-    description:
-      "Your lifestyle answers double as a personal CO2 estimate, connecting your health to the planet's.",
   },
 ]
 
@@ -155,7 +148,7 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
         <h2 id="highlights-heading" className="text-center text-2xl font-semibold text-foreground">
           What you&apos;ll discover
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {HIGHLIGHTS.map((item) => {
             const Icon = item.icon
             return (

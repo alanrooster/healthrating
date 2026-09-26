@@ -36,7 +36,7 @@ import {
 import { getScoreColor } from "@/lib/health-score"
 
 interface DietSectionProps {
-  onResult: (score: number, meatData?: { redMeatFrequency: number; processedMeatFrequency: number; fishFrequency: number; alcoholFrequency: number }) => void
+  onResult: (score: number, meatData?: { processedMeatFrequency: number }) => void
   storedResult?: DietResult | null
   onStoreResult?: (result: DietResult) => void
   onRetake?: () => void
@@ -143,14 +143,8 @@ export function DietSection({ onResult, storedResult, onStoreResult, onRetake, s
     const dietResult = calculateDietScore(answers)
     setResult(dietResult)
     onStoreResult?.(dietResult)
-    // Pass meat and alcohol consumption data to carbon calculator
-    const meatData = {
-      redMeatFrequency: answers.red_meat ?? 0,
-      processedMeatFrequency: answers.processed_meat ?? 0,
-      fishFrequency: answers.fish_protein ?? 0,
-      alcoholFrequency: answers.alcohol ?? 0,
-    }
-    onResult(dietResult.totalScore, meatData)
+    // Processed meat also feeds the life expectancy estimate
+    onResult(dietResult.totalScore, { processedMeatFrequency: answers.processed_meat ?? 0 })
   }
 
   function handleReset() {

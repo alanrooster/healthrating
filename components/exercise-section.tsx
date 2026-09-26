@@ -303,6 +303,7 @@ function ExerciseResults({
 }) {
   const {
     totalMETMinutes,
+    whoGpaqMETMinutes,
     score,
     activityScore,
     functionalScore,
@@ -322,6 +323,9 @@ function ExerciseResults({
     dailySteps && dailySteps !== "unknown"
       ? STEPS_OPTIONS.find((option) => option.value === dailySteps)?.label
       : undefined
+
+  const gpaqMETMinutes = whoGpaqMETMinutes ?? totalMETMinutes
+  const showGpaq = gpaqMETMinutes !== totalMETMinutes
 
   const breakdownItems = [
     { label: "Work (vigorous)", met: breakdown.workVigorous },
@@ -365,6 +369,23 @@ function ExerciseResults({
             </span>
           </div>
 
+          {showGpaq && (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  WHO GPAQ method
+                </span>
+                <span className="text-lg font-bold text-foreground">
+                  {gpaqMETMinutes.toLocaleString()}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Your score counts walking or cycling for transport at 3.3 MET,
+                stricter than the 4.0 MET in the WHO GPAQ analysis guide.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               Active minutes/week
@@ -386,7 +407,9 @@ function ExerciseResults({
             text={
               meetsWHOGuideline
                 ? "You meet the WHO physical activity guideline (600+ MET-min/week)"
-                : "You do not meet the WHO minimum of 600 MET-minutes/week (150 min moderate activity)"
+                : gpaqMETMinutes >= 600
+                  ? "Below 600 MET-min/week with the stricter transport value used here, though you meet the WHO minimum by the WHO GPAQ method"
+                  : "You do not meet the WHO minimum of 600 MET-minutes/week (150 min moderate activity)"
             }
           />
 
@@ -487,7 +510,7 @@ function ExerciseResults({
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Scoring based on the WHO Global Physical Activity Questionnaire (GPAQ)
-        analysis guide. MET values: vigorous = 8.0, moderate = 4.0, walking = 3.3.
+        analysis guide. MET values: vigorous = 8.0, moderate = 4.0, active travel = 3.3 (IPAQ walking value, stricter than the 4.0 in the GPAQ guide, which is shown for reference).
         WHO recommends 150-300 minutes of moderate activity per week plus
         muscle-strengthening activity on 2 or more days. The activity sub-score
         weights aerobic volume 60%, strength days 25% and daily steps 15%; without

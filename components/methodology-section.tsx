@@ -38,7 +38,8 @@ export function MethodologySection() {
             2021). Underweight starts below 18.5 for everyone. Pacific Islander
             backgrounds carry more lean mass at the same BMI (Swinburn et al.
             1999), but no current guideline raises their cut-offs, so the
-            standard WHO cut-offs apply.
+            standard WHO cut-offs apply. The results always show the WHO
+            international classification of your standard BMI for reference.
           </p>
           <p>
             A waist-to-height ratio of 0.5 or more flags increased risk, and 0.6
@@ -222,7 +223,10 @@ export function MethodologySection() {
             <li>
               <strong>Aerobic volume (60%):</strong> MET-minutes/week from work,
               transport and recreation, measured with the WHO Global Physical
-              Activity Questionnaire (GPAQ).
+              Activity Questionnaire (GPAQ). Walking or cycling for transport
+              counts at 3.3 MET (the IPAQ walking value), stricter than the 4.0
+              MET in the GPAQ analysis guide. The results screen shows the WHO
+              GPAQ total alongside.
             </li>
             <li>
               <strong>Muscle strengthening (25%):</strong> Days per week, with
@@ -650,65 +654,6 @@ export function MethodologySection() {
             Kroenke et al. (2003, 2007), Levis et al. JAMA (2020), Plummer et
             al. General Hospital Psychiatry (2016), WHO-5 Well-Being Index
             (WHO, 1998).
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg text-foreground">
-            Carbon Footprint (Environmental Impact)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
-          <p>
-            Calculates annual CO2 equivalent emissions based on transportation,
-            home energy, and consumption patterns. Separate from the health score
-            as it measures environmental rather than personal health impact.
-          </p>
-          <p>
-            <strong>Components assessed:</strong>
-          </p>
-          <ul className="list-disc pl-5 flex flex-col gap-1">
-            <li>
-              <strong>Transportation:</strong> Daily commute method, car type
-              and annual mileage, public transit usage. Emission factors from
-              UK DESNZ/DEFRA and EPA. Electric cars use your country&apos;s grid
-              intensity; plug-in hybrids use real-world fuel data, which the
-              European Commission (2024) found to be ~3.5x official values.
-            </li>
-            <li>
-              <strong>Flights:</strong> Short-haul and long-haul flights per
-              year, using DESNZ 2025 average-passenger factors (0.128 and 0.153
-              kg CO2e per passenger-km, for typical 1,000 km and 8,000 km legs).
-              These include the 1.7x uplift for non-CO2 warming effects such as
-              contrails and NOx (Lee et al. 2021) and an 8% allowance for
-              indirect routing.
-            </li>
-            <li>
-              <strong>Home Energy:</strong> Housing type/size, heating source,
-              electricity source, cooling usage. Electricity and electric
-              heating are scaled to your country&apos;s grid carbon intensity
-              (latest Ember lifecycle data, via Our World in Data; the world
-              average where a country has no data).
-            </li>
-            <li>
-              <strong>Consumption:</strong> Clothing purchases, electronics,
-              recycling habits, composting.
-            </li>
-          </ul>
-          <p>
-            Results are compared with a 1.5°C-aligned lifestyle budget of about
-            2 tonnes per person by 2030 (UNEP Emissions Gap Report 2020: 2-2.5
-            t), the world average (4.7 t in 2024), and consumption-based EU
-            (7.3 t) and US (15.8 t) averages for 2023.
-          </p>
-          <p className="text-xs">
-            Sources: IPCC AR6 (2023), UK DESNZ GHG Conversion Factors 2025,
-            Lee et al. Atmospheric Environment (2021), Ember via Our World in
-            Data, Global Carbon Budget 2025, European Commission PHEV
-            real-world emissions report (2024), UNEP Emissions Gap Report
-            (2020), EPA GHG Equivalencies.
           </p>
         </CardContent>
       </Card>
