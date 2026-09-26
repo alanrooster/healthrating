@@ -14,12 +14,14 @@
  * 2. PHQ-2 (Patient Health Questionnaire - 2 item)
  *    - Kroenke et al. (2003): ultra-brief depression screener.
  *    - Score >= 3 suggests further evaluation for depression.
- *    - Sensitivity 83%, Specificity 92% for major depression.
+ *    - Cut-off >= 3: sensitivity 72%, specificity 85% for major depression
+ *      (Levis et al. 2020, JAMA IPD meta-analysis; the original study reported 83%/92%).
  *
  * 3. GAD-2 (Generalized Anxiety Disorder - 2 item)
  *    - Kroenke et al. (2007): ultra-brief anxiety screener.
  *    - Score >= 3 suggests further evaluation for anxiety.
- *    - Sensitivity 86%, Specificity 83% for GAD.
+ *    - Cut-off >= 3: sensitivity 76%, specificity 81% for GAD
+ *      (Plummer et al. 2016 meta-analysis; the original study reported 86%/83%).
  *
  * Additional validated items cover:
  * - Perceived Stress Scale (PSS-4): Cohen et al. (1983)
@@ -71,8 +73,8 @@ export interface MentalHealthAnswers {
   cognitive_reading: "daily" | "weekly" | "monthly" | "rarely" | "never"  // reading books, articles
   cognitive_challenges: "daily" | "weekly" | "monthly" | "rarely" | "never" // puzzles, problem-solving
 
-  // Purpose & Meaning (Boyle et al. 2009; Blue Zones research)
-  // Strong sense of purpose adds ~7 years (Hill & Turiano, 2014)
+  // Purpose & Meaning (Boyle et al. 2009; Hill & Turiano 2014)
+  // Lowest vs highest purpose: ~2.4x all-cause mortality in US adults over 50 (Alimujiang et al. 2019)
   purpose_meaning: "strongly-agree" | "agree" | "neutral" | "disagree" | "strongly-disagree" // "I feel my life has meaning"
   purpose_goals: "strongly-agree" | "agree" | "neutral" | "disagree" | "strongly-disagree" // "I have clear goals"
   purpose_value: "strongly-agree" | "agree" | "neutral" | "disagree" | "strongly-disagree" // "I feel valued by others"
@@ -226,8 +228,9 @@ function scoreCognitive(answers: MentalHealthAnswers): number {
 
 /**
  * Score purpose & meaning (0-100)
- * Hill & Turiano (2014): higher purpose-in-life associated with longer
- * lifespan (~7 years) and lower all-cause mortality.
+ * Hill & Turiano (2014): higher purpose in life predicted lower all-cause
+ * mortality across adulthood; Alimujiang et al. (2019, JAMA Netw Open): lowest
+ * vs highest purpose ~2.4x mortality risk in adults over 50.
  */
 const AGREEMENT_MAP: Record<string, number> = {
   "strongly-agree": 100,

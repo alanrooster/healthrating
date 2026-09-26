@@ -22,17 +22,34 @@ export function MethodologySection() {
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
             Combines standard BMI with age, sex, and ethnicity adjustments.
-            Body fat is estimated using both the U.S. Navy circumference method
-            and the Deurenberg formula, then averaged for accuracy.
+            Body fat is estimated with the Deurenberg formula and, when waist
+            and neck are provided, averaged with a circumference method: the
+            U.S. Navy equation for men and Relative Fat Mass for women (the
+            Navy female equation needs hip circumference).
           </p>
           <p>
-            Ethnicity-specific BMI thresholds follow WHO Expert Consultation
-            (2004) recommendations. South/East/Southeast Asian populations use
-            a 23 BMI overweight cut-off rather than the standard 25.
+            NICE NG246 (2025) lowers the BMI cut-offs to 23 (overweight) and
+            27.5 (obesity) for people of South Asian, Chinese, other Asian,
+            Middle Eastern, Black African or African-Caribbean background, who
+            carry higher cardiometabolic risk at the same BMI. The app shifts
+            its composite score up by 2.5 BMI units for South Asian backgrounds,
+            the group with the highest risk at a given BMI (Caleyachetty et al.
+            2021), so obesity starts at 27.5, and by 2.0 for the other groups
+            (overweight from 23, obesity from 28). Pacific Islander backgrounds
+            are shifted down by 1.5 for their higher lean mass at the same BMI.
+          </p>
+          <p>
+            A waist-to-height ratio of 0.5 or more flags increased risk, and 0.6
+            or more high risk, at any BMI (NICE). Following the 2025 Lancet
+            Commission on clinical obesity, an obesity-range BMI is flagged for
+            confirmation with waist measures rather than treated as a diagnosis.
           </p>
           <p className="text-xs">
-            Sources: WHO Expert Consultation (2004), Deurenberg et al. (2002),
-            U.S. Navy Body Composition Assessment.
+            Sources: NICE NG246 (2025), Caleyachetty et al. Lancet Diabetes
+            &amp; Endocrinology (2021), Rubino et al. Lancet Commission (2025),
+            WHO Expert Consultation (2004), Swinburn et al. (1999), Deurenberg
+            et al. (1991, 2002), Woolcott &amp; Bergman Scientific Reports
+            (2018), U.S. Navy Body Composition Assessment.
           </p>
         </CardContent>
       </Card>
@@ -311,7 +328,8 @@ export function MethodologySection() {
             <li>
               <strong>Sleep:</strong> Pittsburgh Sleep Quality Index (PSQI)
               principles - duration, quality, latency, consistency, daytime
-              dysfunction. WHO recommendation 7-9h.
+              dysfunction. Target 7-9h for adults (National Sleep Foundation;
+              AASM/SRS: at least 7h).
             </li>
             <li>
               <strong>Social Connection:</strong> Holt-Lunstad meta-analyses
@@ -385,10 +403,12 @@ export function MethodologySection() {
               children.
             </li>
             <li>
-              <strong>Education:</strong> Lancet 2024 global meta-analysis -
-              each additional year of schooling associated with ~1.7 years
-              longer life. College degree adds ~7-9 years vs no high school
-              (US data). Strongest non-medical predictor after smoking.
+              <strong>Education:</strong> Balaj et al. 2024 (Lancet Public
+              Health) global meta-analysis - each additional year of schooling
+              lowers adult all-cause mortality risk by ~1.9%; tertiary
+              education ~34% lower risk vs none. In the US, the adult
+              life-expectancy gap between people with and without a four-year
+              degree reached 8.5 years in 2021 (Case &amp; Deaton 2023).
             </li>
             <li>
               <strong>Income & Financial Literacy:</strong> Chetty et al.
@@ -398,15 +418,18 @@ export function MethodologySection() {
               stress correlates with hypertension and depression.
             </li>
             <li>
-              <strong>Religious/Spiritual Practice:</strong> VanderWeele et al.
-              2017 (JAMA Psychiatry, n=74,534) - weekly religious attendance
-              associated with 33% lower all-cause mortality. Effect persists
-              after controlling for social connection.
+              <strong>Religious/Spiritual Practice:</strong> Li, Stampfer,
+              Williams &amp; VanderWeele 2016 (JAMA Internal Medicine, Nurses
+              Health Study, n=74,534) - attending services more than once a
+              week associated with 33% lower all-cause mortality, partly
+              explained by social support, fewer depressive symptoms and less
+              smoking.
             </li>
             <li>
-              <strong>Pet Ownership:</strong> AHA Scientific Statement (2013)
-              - dog owners have ~24% lower all-cause mortality, especially
-              for cardiovascular outcomes.
+              <strong>Pet Ownership:</strong> Kramer et al. 2019 meta-analysis
+              - dog owners have ~24% lower all-cause mortality, with a larger
+              benefit after a heart attack; the AHA (2013) considers pet
+              ownership probably protective against cardiovascular disease.
             </li>
             <li>
               <strong>Volunteering:</strong> Kim et al. 2020 (Harvard, AJPM)
@@ -414,17 +437,20 @@ export function MethodologySection() {
             </li>
             <li>
               <strong>Childhood Adversity (ACEs):</strong> Felitti et al. 1998
-              + 25+ years of follow-up - 4+ ACEs associated with up to 20-year
-              shorter lifespan. Strong predictor independent of adult behaviors.
+              defined the ACE score and linked 4+ ACEs to a 4- to 12-fold
+              higher risk of depression, substance misuse and suicide attempts;
+              in follow-up, people with 6 or more ACEs died nearly 20 years
+              earlier on average (Brown et al. 2009).
             </li>
           </ul>
           <p className="text-xs">
             Sources: Robles et al. Psychological Bulletin (2014), Modlin et al.
-            (2024), Education and Life Expectancy Lancet meta-analysis (2024),
-            Chetty et al. JAMA (2016), Ryan et al. (2014), Sweet et al. (2013),
-            VanderWeele et al. JAMA Psychiatry (2017), AHA Scientific Statement
-            on Pets (2013), Kim et al. American Journal of Preventive Medicine
-            (2020), Felitti et al. ACE Study (1998 + follow-ups).
+            (2024), Balaj et al. Lancet Public Health (2024), Case &amp; Deaton
+            PNAS (2023), Chetty et al. JAMA (2016), Ryan et al. (2014), Sweet
+            et al. (2013), Li et al. JAMA Internal Medicine (2016), Kramer et
+            al. Circulation: CQO (2019), AHA Scientific Statement on Pets
+            (2013), Kim et al. American Journal of Preventive Medicine (2020),
+            Felitti et al. (1998), Brown et al. (2009).
           </p>
         </CardContent>
       </Card>
@@ -573,14 +599,18 @@ export function MethodologySection() {
             Used in WHO World Mental Health Surveys.
           </p>
           <p>
-            PHQ-2 (Kroenke et al. 2003) screens for depression with 83%
-            sensitivity and 92% specificity at cut-off of 3. GAD-2 (Kroenke
-            et al. 2007) screens for generalized anxiety with 86% sensitivity
-            and 83% specificity. Both are validated ultra-brief instruments.
+            PHQ-2 (Kroenke et al. 2003) and GAD-2 (Kroenke et al. 2007) are
+            validated ultra-brief screeners. At a cut-off of 3, meta-analyses
+            report 72% sensitivity and 85% specificity for major depression
+            (Levis et al. 2020) and 76% sensitivity and 81% specificity for
+            generalized anxiety (Plummer et al. 2016), so a positive screen
+            calls for a full clinical assessment.
           </p>
           <p className="text-xs">
             Sources: Kessler et al. (2002, 2003), Andrews & Slade (2001),
-            Kroenke et al. (2003, 2007), WHO-5 Well-Being Index (WHO, 1998).
+            Kroenke et al. (2003, 2007), Levis et al. JAMA (2020), Plummer et
+            al. General Hospital Psychiatry (2016), WHO-5 Well-Being Index
+            (WHO, 1998).
           </p>
         </CardContent>
       </Card>
@@ -604,17 +634,24 @@ export function MethodologySection() {
             <li>
               <strong>Transportation:</strong> Daily commute method, car type
               and annual mileage, public transit usage. Emission factors from
-              UK DEFRA 2024 and EPA.
+              UK DESNZ/DEFRA and EPA. Electric cars use your country&apos;s grid
+              intensity; plug-in hybrids use real-world fuel data, which the
+              European Commission (2024) found to be ~3.5x official values.
             </li>
             <li>
               <strong>Flights:</strong> Short-haul and long-haul flights per
-              year. Includes radiative forcing multiplier (2.7x) for high-altitude
-              emissions per IPCC methodology.
+              year, using DESNZ 2025 average-passenger factors (0.128 and 0.153
+              kg CO2e per passenger-km, for typical 1,000 km and 8,000 km legs).
+              These include the 1.7x uplift for non-CO2 warming effects such as
+              contrails and NOx (Lee et al. 2021) and an 8% allowance for
+              indirect routing.
             </li>
             <li>
               <strong>Home Energy:</strong> Housing type/size, heating source,
-              electricity source, cooling usage, adjusted for country-specific
-              grid carbon intensity (IEA 2024).
+              electricity source, cooling usage. Electricity and electric
+              heating are scaled to your country&apos;s grid carbon intensity
+              (latest Ember lifecycle data, via Our World in Data; the world
+              average where a country has no data).
             </li>
             <li>
               <strong>Consumption:</strong> Clothing purchases, electronics,
@@ -622,13 +659,17 @@ export function MethodologySection() {
             </li>
           </ul>
           <p>
-            Results compared to Paris Agreement 2050 target (2.0 tonnes/person),
-            global average (4.7t), EU average (6.8t), and US average (14.7t).
+            Results are compared with a 1.5°C-aligned lifestyle budget of about
+            2 tonnes per person by 2030 (UNEP Emissions Gap Report 2020: 2-2.5
+            t), the world average (4.7 t in 2024), and consumption-based EU
+            (7.3 t) and US (15.8 t) averages for 2023.
           </p>
           <p className="text-xs">
-            Sources: IPCC AR6 (2023), UK DEFRA Conversion Factors (2024),
-            EPA GHG Equivalencies, IEA World Energy Outlook (2024), Our World
-            in Data Carbon Database.
+            Sources: IPCC AR6 (2023), UK DESNZ GHG Conversion Factors 2025,
+            Lee et al. Atmospheric Environment (2021), Ember via Our World in
+            Data, Global Carbon Budget 2025, European Commission PHEV
+            real-world emissions report (2024), UNEP Emissions Gap Report
+            (2020), EPA GHG Equivalencies.
           </p>
         </CardContent>
       </Card>

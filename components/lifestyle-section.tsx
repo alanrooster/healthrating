@@ -103,7 +103,7 @@ const QUESTION_GROUPS: QuestionGroup[] = [
       {
         id: "sleepHoursPerNight",
         label: "Hours of sleep per night",
-        description: "WHO recommends 7-9 hours for adults",
+        description: "Adults need 7-9 hours (7-8 from age 65) - National Sleep Foundation",
         type: "number",
         min: 0,
         max: 14,

@@ -205,7 +205,8 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   
   // === DIET ===
   // Mediterranean/healthy diet adds 2-4 years (Sofi et al., BMJ 2008). Conservative next to
-  // Fadnes et al. (PLOS Med 2022): a sustained shift to an optimal diet at 40 ≈ +8-10 years.
+  // Fadnes et al. (PLOS Med 2022): a sustained switch from a typical Western to an optimal diet
+  // adds ~10.7 (women) / 13.0 (men) years from age 20 and ~8.0 / 8.8 years from age 60.
   // Processed meat (IARC Group 1) reduces life expectancy
   if (inputs.dietScore !== undefined) {
     dataPoints++
@@ -355,7 +356,8 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   }
   
   // === MENTAL HEALTH ===
-  // Depression/chronic stress reduces life expectancy by 2-7 years
+  // Mental disorders carry a median 10 years of potential life lost (Walker et al. 2015). The
+  // input is a screening score, not a diagnosis, so the adjustments stay conservative.
   if (inputs.mentalHealthScore !== undefined) {
     dataPoints++
     maxPossibleAdjustment += 1.5 // best case: good mental health

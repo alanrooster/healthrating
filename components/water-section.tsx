@@ -696,7 +696,7 @@ function handleCalculate() {
                   ))}
                 </RadioGroup>
                 <p className="text-xs text-muted-foreground">
-                  WHO recommends 2-3 liters of water per day for adults
+                  EFSA: adequate total water intake is 2.0 L/day for women and 2.5 L/day for men, about 80% of it from drinks
                 </p>
               </div>
             )}

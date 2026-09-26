@@ -9,11 +9,14 @@
  * 1. Sleep Quality:
  *    - Pittsburgh Sleep Quality Index (PSQI) simplified: validated instrument
  *      for measuring sleep quality; scores >5 indicate poor sleep quality.
- *    - WHO guidelines recommend 7-9 hours of sleep for adults.
+ *    - Adults need 7-9 hours (National Sleep Foundation, Hirshkowitz 2015; 7-8 h from
+ *      age 65); AASM/SRS consensus: at least 7 hours (Watson 2015).
  *
  * 2. Social Connection & Work-Life Balance:
  *    - Holt-Lunstad et al. (2010, 2015): social isolation increases mortality
  *      risk by ~29%, comparable to smoking 15 cigarettes/day.
+ *    - WHO Commission on Social Connection (2025): loneliness is linked to an
+ *      estimated 871,000 deaths a year.
  *    - WHO Guidelines on Mental Health at Work (2022): work-life balance is
  *      a key protective factor.
  *
@@ -91,7 +94,7 @@ const FREQ_MAP: Record<string, number> = {
 
 /**
  * Sleep score (0-100)
- * Based on PSQI scoring principles and WHO sleep recommendations (7-9h adults)
+ * Based on PSQI scoring principles and NSF/AASM sleep-duration recommendations (7-9h adults)
  */
 function scoreSleep(answers: LifestyleAnswers): { score: number; risks: string[] } {
   const risks: string[] = []
@@ -109,7 +112,7 @@ function scoreSleep(answers: LifestyleAnswers): { score: number; risks: string[]
     durationScore = 45 + (h - 5) * 25
   } else if (h < 5) {
     durationScore = Math.max(10, 45 - ((5 - h) / 3) * 35)
-    risks.push(`Sleeping only ${h} hours: significantly below WHO recommendation of 7-9 hours`)
+    risks.push(`Sleeping only ${h} hours: significantly below the recommended 7-9 hours for adults`)
   } else {
     durationScore = 70 // oversleeping
     risks.push("Excessive sleep (10+ hours) may indicate underlying health issues")
@@ -328,7 +331,7 @@ function scoreLeisure(answers: LifestyleAnswers): { score: number; risks: string
     risks.push("High recreational screen time (6+ hours) associated with sedentary behavior risks and poor sleep")
   }
 
-  // Outdoor time bonus (WHO recommends regular outdoor activity)
+  // Outdoor time bonus (White et al. 2019: >=120 min/week in nature linked to better health and wellbeing)
   let outdoorScore = 50 // baseline
   if (answers.outdoorTimeMinutes >= 60) {
     outdoorScore = 100

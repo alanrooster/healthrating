@@ -132,7 +132,7 @@ const GROUPS: Array<{
   },
   {
     title: "Education",
-    description: "Lancet 2024: each year of schooling adds ~0.6-1.7 years of life.",
+    description: "Balaj et al. 2024 (Lancet Public Health): each extra year of schooling lowers adult mortality risk by ~2%.",
     icon: GraduationCap,
     questions: [
       {
@@ -197,7 +197,7 @@ const GROUPS: Array<{
   },
   {
     title: "Spirituality & Community",
-    description: "VanderWeele 2017 (JAMA Psychiatry): weekly attendance = ~33% lower mortality.",
+    description: "Li et al. 2016 (JAMA Internal Medicine): attending services more than once a week = ~33% lower mortality.",
     icon: Sparkles,
     questions: [
       {

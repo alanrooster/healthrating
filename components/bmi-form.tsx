@@ -279,7 +279,7 @@ export function BMIForm({ onCalculate, initialInputs, onInputsChange }: BMIFormP
           <p className="mb-4 text-sm text-muted-foreground">
             These fields are optional — you can calculate your score without them.
             However, for a more precise result we recommend filling them in: waist
-            and neck unlock body-fat % estimation (U.S. Navy + Deurenberg methods)
+            and neck unlock body-fat % estimation (U.S. Navy or Relative Fat Mass, plus Deurenberg)
             and your waist-to-height ratio, while wrist helps determine your body
             frame size.
           </p>

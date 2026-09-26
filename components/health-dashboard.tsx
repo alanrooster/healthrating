@@ -630,7 +630,7 @@ export function HealthDashboard({ result, onNavigate, carbonData, lifeExpectancy
                   <span>{Math.ceil(carbonData.totalKgCO2 / 22)} trees to offset</span>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  Paris target: 2.0t
+                  1.5°C target: 2.0t
                 </span>
               </div>
             )}

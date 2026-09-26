@@ -260,7 +260,7 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
                 unit="%"
                 sublabel={
                   hasBodyMeasurements
-                    ? "U.S. Navy + Deurenberg"
+                    ? "Circumference + Deurenberg"
                     : "Deurenberg estimate"
                 }
               />
@@ -270,9 +270,11 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
                 label="Waist-to-Height"
                 value={waistToHeightRatio}
                 sublabel={
-                  waistToHeightRatio > 0.5
-                    ? "Increased health risk"
-                    : "Healthy range"
+                  waistToHeightRatio >= 0.6
+                    ? "High health risk"
+                    : waistToHeightRatio >= 0.5
+                      ? "Increased health risk"
+                      : "Healthy range"
                 }
               />
             )}
@@ -319,9 +321,9 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
         This calculator provides estimates based on statistical formulas. Results
         are not a substitute for professional medical advice. The adjusted BMI
-        accounts for age, sex, and ethnicity-specific body composition differences
-        (WHO guidelines). Body fat estimation combines the U.S. Navy circumference
-        method with the Deurenberg formula for improved accuracy.
+        accounts for age, sex, and ethnicity-specific cardiometabolic risk (NICE
+        NG246). Body fat estimation averages a circumference method (U.S. Navy for
+        men, Relative Fat Mass for women) with the Deurenberg formula.
       </p>
     </div>
   )

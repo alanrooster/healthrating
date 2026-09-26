@@ -5,8 +5,8 @@
  * and consumption patterns. Uses IPCC, EPA, and Our World in Data emission factors.
  *
  * Sources:
- * - UK DESNZ/DEFRA GHG conversion factors (cars; flights include the x1.7 non-CO2
- *   uplift from Lee et al. 2021)
+ * - UK DESNZ GHG conversion factors (cars; flights use the 2025 average-passenger factors,
+ *   which include the x1.7 non-CO2 uplift from Lee et al. 2021 and an 8% routing uplift)
  * - Ember electricity carbon intensity via Our World in Data (lib/data/grid-intensity.ts)
  * - European Commission OBFCM real-world CO2 reports (plug-in hybrids, 2024-2025)
  * - Global Carbon Budget 2025 via Our World in Data (per-capita comparisons)
@@ -155,10 +155,15 @@ function carKgPerKm(carType: CarType, gridKgPerKwh: number): number {
 const PUBLIC_TRANSIT_PER_HOUR = 0.8 // kg CO2 per hour average (bus/train mix)
 const MOTORCYCLE_PER_KM = 0.1
 
-// Flight emissions (kg CO2e per one-way flight, including radiative forcing multiplier)
+// DESNZ 2025 "average passenger, with RF" factors (kg CO2e per passenger-km). They already
+// include the x1.7 non-CO2 uplift and DESNZ's 8% indirect-routing distance uplift.
+const FLIGHT_KG_PER_PASSENGER_KM = { shortHaul: 0.12786, longHaul: 0.15282 }
+const TYPICAL_LEG_KM = { shortHaul: 1000, longHaul: 8000 }
+
+// kg CO2e per one-way leg
 const FLIGHT_EMISSIONS = {
-  shortHaul: 250, // ~1000km average per leg
-  longHaul: 1800, // ~8000km average per leg
+  shortHaul: TYPICAL_LEG_KM.shortHaul * FLIGHT_KG_PER_PASSENGER_KM.shortHaul,
+  longHaul: TYPICAL_LEG_KM.longHaul * FLIGHT_KG_PER_PASSENGER_KM.longHaul,
 }
 
 // Multiplier represents the average number of one-way flights per year for that bracket
@@ -503,13 +508,18 @@ export function calculateCarbonFootprint(
   const recommendations: string[] = []
 
   if (breakdown.flights > 2000) {
+    const flyingIsLargest =
+      breakdown.flights >= Math.max(breakdown.transport, breakdown.homeEnergy, breakdown.consumption)
     recommendations.push(
-      "Aviation is your largest emission source. Consider trains for shorter trips or offsetting flights."
+      `${flyingIsLargest ? "Flying is your largest emission source." : "Your flights add more than 2 tonnes a year."} Take trains for shorter trips and fly less often; offsets are not a reliable substitute.`
     )
   }
   if (breakdown.transport > 3000 && (carType.includes("petrol") || carType.includes("diesel"))) {
+    const evSavingPct = Math.round((1 - carKgPerKm("electric", gridKgPerKwh) / carFactor) * 100)
     recommendations.push(
-      "Switching to an electric or hybrid vehicle could reduce your transport emissions by 60-80%."
+      evSavingPct >= 20
+        ? `An electric car would cut your driving emissions by about ${evSavingPct}% on your country's grid, before the one-off emissions of building its battery.`
+        : "Your country's grid is fossil-heavy, so an electric car saves little today; driving less or switching to public transport cuts more."
     )
   }
   if (heatingSource === "oil" || heatingSource === "coal") {

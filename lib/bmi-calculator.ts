@@ -17,7 +17,7 @@ export interface BodyMeasurements {
   weightKg: number
   heightCm: number
   // Optional circumference measurements. When provided they unlock body-fat %
-  // (U.S. Navy method) and waist-to-height ratio for a more precise score.
+  // (Navy method for men, Relative Fat Mass for women) and waist-to-height ratio for a more precise score.
   waistCm?: number
   neckCm?: number
   wristCm?: number
@@ -221,10 +221,10 @@ function determineRiskLevel(
     }
   }
 
-  // Waist-to-height ratio scoring (most predictive)
+  // Waist-to-height ratio (most predictive). NICE NG246 bands: 0.5-0.59 increased, 0.6+ high risk
   if (whtr !== null) {
-    if (whtr > 0.5) riskScore += 1
-    if (whtr > 0.6) riskScore += 1
+    if (whtr >= 0.5) riskScore += 1
+    if (whtr >= 0.6) riskScore += 1
   }
 
   if (riskScore <= 1) return "low"
@@ -234,7 +234,8 @@ function determineRiskLevel(
 }
 
 /**
- * Ethnicity-based BMI adjustment, added to BMI before the standard WHO cut-offs apply.
+ * Ethnicity-based BMI adjustment, added to the composite score before the standard WHO
+ * cut-offs apply.
  * At the same BMI, cardiometabolic risk differs by ancestry. NICE NG246 (2025) and the
  * WHO Expert Consultation (2004) use lower cut-offs (overweight from 23, obesity from
  * 27.5) for South Asian, Chinese and other Asian, Middle Eastern, Black African and
@@ -322,7 +323,7 @@ function getRecommendations(
   if (
     waistToHeightRatio !== null &&
     waistToHeightRatio !== undefined &&
-    waistToHeightRatio > 0.5
+    waistToHeightRatio >= 0.5
   ) {
     recs.push(
       "Your waist-to-height ratio indicates increased abdominal fat. Reducing waist circumference is particularly beneficial for heart health."
@@ -404,6 +405,15 @@ function calcCompositeScore(
   return blendedScore
 }
 
+type BodyFatRange = [low: number, high: number]
+
+// Healthy body fat (fraction) matching BMI 18.5-25 at ages 20-39, 40-59 and 60+
+// (Gallagher et al. 2000, Am J Clin Nutr)
+const HEALTHY_BODY_FAT: Record<Sex, [BodyFatRange, BodyFatRange, BodyFatRange]> = {
+  male: [[0.08, 0.2], [0.11, 0.22], [0.13, 0.25]],
+  female: [[0.21, 0.33], [0.23, 0.34], [0.24, 0.36]],
+}
+
 /**
  * Main calculation function
  */
@@ -418,13 +428,14 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
   const ethnicityAdjustment = getEthnicityBMIAdjustment(ethnicity)
   const ethnicityAdjustedBMI = adjustedBMI + ethnicityAdjustment
 
-  // Body measurements are optional. Waist + neck unlock the Navy body-fat method
-  // and waist-to-height ratio. Without them we fall back to a BMI-only estimate.
+  // Body measurements are optional. Waist + neck unlock the circumference body-fat
+  // method (Navy for men, RFM for women) and waist-to-height ratio. Without them we
+  // fall back to a BMI-only estimate.
   const hasBodyMeasurements =
     typeof waistCm === "number" && typeof neckCm === "number"
 
-  // Body fat (combined Navy + Deurenberg method).
-  // With measurements: Navy + Deurenberg averaged. Without: Deurenberg (BMI/age/sex) only.
+  // Body fat: circumference method averaged with Deurenberg; without measurements,
+  // Deurenberg (BMI/age/sex) only.
   const bodyFatRaw = hasBodyMeasurements
     ? calcBodyFatCombined(sex, age, heightCm, weightKg, waistCm!, neckCm!)
     : calcBodyFatDeurenberg(sex, age, heightCm, weightKg)
@@ -436,9 +447,12 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
       ? Math.round(calcWHtR(waistCm, heightCm) * 100) / 100
       : null
 
-  // Composite score that incorporates body measurements + ethnicity
+  // Composite score that incorporates body measurements. The ethnicity offset is added after
+  // blending: the body-fat term is ethnicity-neutral, so blending it in would dilute the
+  // offset and push the NICE NG246 cut-offs back up.
   const compositeScore = Math.round(
-    calcCompositeScore(ethnicityAdjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio) * 10
+    (calcCompositeScore(adjustedBMI, age, sex, bodyFatPercentage, waistToHeightRatio) +
+      ethnicityAdjustment) * 10
   ) / 10
 
   const category = getBMICategory(compositeScore)
@@ -463,11 +477,10 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
 
   // Refine ideal weight using healthy body fat ranges
   const leanMass = weightKg * (1 - bodyFatPercentage / 100)
-  // Healthy body fat: men 10-20%, women 18-28%
-  const healthyBFLow = sex === "male" ? 0.10 : 0.18
-  const healthyBFHigh = sex === "male" ? 0.20 : 0.28
-  const bfIdealMin = Math.round((leanMass / (1 - healthyBFHigh)) * 10) / 10
-  const bfIdealMax = Math.round((leanMass / (1 - healthyBFLow)) * 10) / 10
+  const [healthyBFLow, healthyBFHigh] = HEALTHY_BODY_FAT[sex][age < 40 ? 0 : age < 60 ? 1 : 2]
+  // The lowest healthy weight keeps current lean mass at the low end of healthy body fat
+  const bfIdealMin = Math.round((leanMass / (1 - healthyBFLow)) * 10) / 10
+  const bfIdealMax = Math.round((leanMass / (1 - healthyBFHigh)) * 10) / 10
   // Blend body-fat-based ideal weight with formula-based (40/60 split)
   idealWeightMin = Math.round((idealWeightMin * 0.6 + bfIdealMin * 0.4) * 10) / 10
   idealWeightMax = Math.round((idealWeightMax * 0.6 + bfIdealMax * 0.4) * 10) / 10

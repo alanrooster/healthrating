@@ -217,7 +217,7 @@ function scoreWorkSchedule(answers: WorkAnswers): { score: number; risks: string
     hoursScore = 90 - ((weeklyHours - 40) / 8) * 15
   } else if (weeklyHours <= 55) {
     hoursScore = 75 - ((weeklyHours - 48) / 7) * 25
-    risks.push(`Working ${weeklyHours} hours/week exceeds WHO-recommended limits`)
+    risks.push(`Working ${weeklyHours} hours/week exceeds the 48-hour weekly cap in the EU Working Time Directive and ILO conventions`)
   } else {
     hoursScore = Math.max(15, 50 - ((weeklyHours - 55) / 15) * 35)
     risks.push(`Working ${weeklyHours}h/week: WHO/ILO data shows 55+ hours increases stroke risk by 35% and ischaemic heart disease by 17%`)

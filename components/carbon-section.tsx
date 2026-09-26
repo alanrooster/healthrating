@@ -276,7 +276,7 @@ export function CarbonSection({ onResult, dietData, waterData, lifestyleData, ai
               <h4 className="text-sm font-semibold text-foreground">How you compare</h4>
               <div className="flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Paris 2050 Target</span>
+                  <span className="text-muted-foreground">1.5°C target (2030)</span>
                   <div className="flex items-center gap-2">
                     <Progress
                       value={Math.min(100, (result.perCapita / result.comparison.parisTarget) * 100)}
@@ -545,7 +545,7 @@ export function CarbonSection({ onResult, dietData, waterData, lifestyleData, ai
                   ))}
                 </RadioGroup>
                 <p className="text-xs text-muted-foreground">
-                  One long-haul return flight = ~3.6 tonnes CO2e (almost a year's Paris target)
+                  One long-haul return flight (~8,000 km each way) = ~2.4 tonnes CO2e, about a full year of a 1.5°C-aligned personal budget
                 </p>
               </div>
             </>

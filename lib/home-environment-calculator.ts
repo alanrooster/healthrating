@@ -12,7 +12,9 @@
  *      can release >2 billion nanoplastics + ~4 million microplastics per cm²
  *      (Hussain et al. 2023, Environ. Sci. Technol.).
  *    - Plastic food storage leaches BPA/phthalates; switching to glass/steel lowers
- *      urinary BPA (Carwile et al. 2011; Muncke 2011).
+ *      urinary BPA (Carwile et al. 2011; Muncke 2011). EFSA (2023) cut the BPA tolerable
+ *      daily intake 20,000-fold and the EU banned BPA in food-contact materials
+ *      (Regulation (EU) 2024/3190).
  *
  * 2) Food safety (mold/mycotoxins) & household cleaning
  *    - Aflatoxin B1 from moldy grains/nuts is an IARC Group 1 human carcinogen (liver cancer);

@@ -5,7 +5,9 @@
  * (vaccinations, screenings, dental visits) appropriate for adults.
  *
  * Sources:
- * - USPSTF recommendations
+ * - USPSTF recommendations (incl. 2024 breast cancer screening from age 40)
+ * - ADA Standards of Care (diabetes screening for all adults from age 35)
+ * - EU Council Recommendation on cancer screening (2022)
  * - CDC adult immunization schedule
  * - ADA / WHO oral health guidelines
  *
@@ -54,8 +56,8 @@ const ITEMS: { key: keyof PreventiveCareAnswers; label: string; weight: number; 
   { key: "covidUpToDate", label: "COVID-19 vaccination current", weight: 0.5, recommendation: "Stay current on COVID-19 vaccinations per latest guidance." },
   { key: "bloodPressureCheck", label: "Blood pressure check", weight: 1.2, recommendation: "Have your blood pressure checked annually - hypertension is often silent." },
   { key: "cholesterolCheck", label: "Cholesterol panel", weight: 1.0, recommendation: "Get a lipid panel every 4-6 years (more often if elevated or with risk factors)." },
-  { key: "diabetesScreening", label: "Diabetes screening", weight: 0.9, recommendation: "Adults 35-70 with overweight should be screened for diabetes (HbA1c or fasting glucose)." },
-  { key: "cancerScreenings", label: "Age-appropriate cancer screenings", weight: 1.5, recommendation: "Confirm you're current on age-appropriate cancer screenings (e.g., colonoscopy, mammogram, Pap, prostate as applicable)." },
+  { key: "diabetesScreening", label: "Diabetes screening", weight: 0.9, recommendation: "Get screened for diabetes (HbA1c or fasting glucose) from age 35, or earlier with overweight plus another risk factor, and repeat at least every 3 years." },
+  { key: "cancerScreenings", label: "Age-appropriate cancer screenings", weight: 1.5, recommendation: "Confirm you're current on age-appropriate cancer screenings: breast every 2 years from 40-50 depending on your country (USPSTF: from 40), colorectal from 45-50, cervical HPV testing, and low-dose lung CT if you have a heavy smoking history." },
   { key: "skinExam", label: "Skin examination", weight: 0.5, recommendation: "Schedule a skin check, especially with sun exposure history or family history of melanoma." },
   { key: "primaryCareVisit", label: "Annual primary care visit", weight: 1.0, recommendation: "An annual checkup catches early warning signs and keeps preventive care on track." },
   { key: "dentalVisit", label: "Dental cleaning (every 6 months)", weight: 0.8, recommendation: "Maintain twice-yearly dental cleanings; periodontal disease is linked to cardiovascular risk." },

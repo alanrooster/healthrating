@@ -4,13 +4,16 @@
  * Evidence base:
  * - Marital status: Robles et al. 2014 meta-analysis (married ~ +2-3y lifespan; quality matters more than status)
  * - Parenthood: Modlin et al. 2024 (parents ~5-10% lower all-cause mortality; U-shaped, optimum 2-3 children)
- * - Education: Lancet 2024 systematic review (each year of schooling ~+0.6-1.7y life)
+ * - Education: Balaj et al. 2024, Lancet Public Health (each extra year of schooling ~1.9%
+ *   lower adult mortality risk; tertiary vs no schooling ~34% lower)
  * - Income / SES: Chetty et al. 2016 JAMA (top 1% vs bottom 1% income = ~14.6y gap men, ~10.1y women)
  * - Financial stress: Ryan et al. 2014 (financial stress = +13% all-cause mortality)
- * - Religious attendance: VanderWeele 2017 JAMA Psychiatry (weekly attendance = ~33% lower mortality)
- * - Pet ownership: AHA 2013 statement; Mubanga et al. 2017 Sci Rep (dog owners ~24% lower mortality)
+ * - Religious attendance: Li et al. 2016, JAMA Intern Med (more than weekly = ~33% lower mortality,
+ *   weekly = ~26% lower)
+ * - Pet ownership: AHA 2013 statement; Mubanga et al. 2017 Sci Rep; Kramer et al. 2019 meta-analysis
+ *   (dog owners ~24% lower all-cause mortality)
  * - Volunteering: Kim et al. 2020 (Harvard, 100+ hrs/yr = ~44% lower mortality)
- * - ACEs: Felitti 1998 + Brown et al. 2009 (4+ ACEs ~ 20-year reduction in life expectancy)
+ * - ACEs: Felitti 1998 + Brown et al. 2009 (6+ ACEs: death ~20 years earlier on average)
  *
  * NOTE: This is an educational composite. Many of these factors are non-modifiable
  * or culturally sensitive. Scoring rewards present-day protective factors and flags
@@ -153,7 +156,7 @@ function scoreEducation(a: LifeContextAnswers): { score: number; protective: str
   }
   const score = map[a.educationLevel] ?? 65
   if (a.educationLevel === "bachelor" || a.educationLevel === "master" || a.educationLevel === "doctorate") {
-    protective.push("Higher education (~+1.7y per year of schooling, Lancet 2024)")
+    protective.push("Tertiary education (~34% lower adult mortality risk vs no schooling, Balaj et al. 2024)")
   } else if (a.educationLevel === "none" || a.educationLevel === "primary") {
     risks.push("Limited formal education is one of the strongest non-medical mortality predictors")
   }
@@ -218,7 +221,7 @@ function scoreSpirituality(a: LifeContextAnswers): { score: number; protective: 
   }
   const score = Math.round(attMap[a.religiousAttendance] * 0.6 + practiceMap[a.spiritualPractice] * 0.4)
   if (a.religiousAttendance === "weekly") {
-    protective.push("Weekly religious attendance (~33% lower mortality, VanderWeele 2017)")
+    protective.push("Weekly religious attendance (~26-33% lower mortality, Li et al. 2016)")
   }
   return { score, protective, risks }
 }

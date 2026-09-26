@@ -505,7 +505,7 @@ function calcInfrastructureScore(
 }
 
 function calcHydrationScore(intake: WaterAnswers["dailyWaterIntake"]): number {
-  // WHO recommends 2-3L for adults
+  // EFSA (2010): adequate total water intake is 2.0 L/day (women) and 2.5 L/day (men), ~80% from drinks
   const scores: Record<WaterAnswers["dailyWaterIntake"], number> = {
     "less-than-1L": 40,
     "1-2L": 70,

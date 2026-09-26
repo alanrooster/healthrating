@@ -323,7 +323,7 @@ const FEEDBACK: Record<string, { good: string; moderate: string; poor: string }>
   vegetables: {
     good: "Excellent vegetable consumption!",
     moderate: "Try to increase to at least 3 servings of vegetables per day.",
-    poor: "Very low vegetable intake. WHO recommends at least 3 servings/day.",
+    poor: "Very low vegetable intake. WHO recommends at least 400 g of fruit and vegetables a day; 3 servings of vegetables plus 2 of fruit is linked to the lowest mortality.",
   },
   wholegrains: {
     good: "Great whole grain intake! This supports heart and digestive health.",
@@ -439,7 +439,7 @@ function getIARCRecommendation(id: string, frequency: number): string {
         : "Try to avoid preserved fish when possible."
     case "red_meat":
       return frequency >= 3
-        ? "WHO recommends limiting red meat to 350-500g per week maximum. Consider plant-based alternatives."
+        ? "WCRF/AICR recommends no more than about 3 portions (350-500 g cooked) of red meat per week. Consider plant-based alternatives."
         : "Moderate your intake and choose leaner cuts. Avoid charring when cooking."
     case "very_hot_beverages":
       return "Let beverages cool to a comfortable temperature (below 65°C) before drinking."
