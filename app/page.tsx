@@ -8,6 +8,7 @@ import { Menu } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
+import { calculateCancerRisk } from "@/lib/cancer-risk-calculator"
 import { calculateDiabetesRisk } from "@/lib/diabetes-risk-calculator"
 import { calculateNeuroRisk } from "@/lib/neuro-risk-calculator"
 import { HomeSection } from "@/components/home-section"
@@ -400,6 +401,27 @@ export default function Page() {
     ],
   )
 
+  // Cancer risk profile, same rule: only completed modules' answers count
+  const cancerRiskData = useMemo(
+    () =>
+      calculateCancerRisk({
+        sex: bodyScore.completed ? bodyDemographics?.sex : undefined,
+        bmiCategory: bodyScore.completed ? bodyDemographics?.bmiCategory : undefined,
+        waistCm: bodyScore.completed ? bodyDemographics?.waistCm : undefined,
+        pm25: airScore.completed ? airData?.pm25Level : undefined,
+        lifestyle: lifestyleScore.completed ? storedInputs.lifestyle : undefined,
+        exercise: exerciseScore.completed ? storedInputs.exercise : undefined,
+        diet: dietScore.completed ? storedInputs.diet : undefined,
+        home: homeEnvironmentScore.completed ? storedInputs.home : undefined,
+        family: familyHistoryScore.completed ? storedInputs.family : undefined,
+        preventive: preventiveCareScore.completed ? storedInputs.preventive : undefined,
+      }) ?? undefined,
+    [
+      bodyScore, bodyDemographics, airScore, airData, lifestyleScore, exerciseScore, dietScore,
+      homeEnvironmentScore, familyHistoryScore, preventiveCareScore, storedInputs,
+    ],
+  )
+
   function handleBodyResult(
     score: number,
     demographics?: {
@@ -505,6 +527,7 @@ export default function Page() {
             biologicalAgeData={biologicalAgeData}
             diabetesRiskData={diabetesRiskData}
             neuroRiskData={neuroRiskData}
+            cancerRiskData={cancerRiskData}
           />
         )
       case "body":
@@ -546,6 +569,7 @@ export default function Page() {
             biologicalAgeData={biologicalAgeData}
             diabetesRiskData={diabetesRiskData}
             neuroRiskData={neuroRiskData}
+            cancerRiskData={cancerRiskData}
           />
         )
     }

@@ -723,6 +723,64 @@ export function MethodologySection() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg text-foreground">
+            Cancer Risk Profile
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
+          <p>
+            Built from answers you already gave, with no extra questions. It
+            follows the European Code Against Cancer, 5th edition (IARC/WHO
+            2025): 10 of its 14 recommendations map onto your answers, namely
+            tobacco, second-hand smoke, body weight, physical activity, diet,
+            alcohol, sun protection, radon, air pollution and screening.
+            Infections and vaccines, workplace carcinogens, breastfeeding and
+            HRT are not collected, so the profile can only under-count.
+          </p>
+          <p>
+            Weight, activity, plant foods, ultra-processed food, red and
+            processed meat, sugary drinks and alcohol are scored with the
+            standardised 2018 WCRF/AICR score (0-7 points, Shams-White et al.
+            2019). Each point missed multiplies risk by 1/0.93, the hazard
+            ratio per point for all cancers combined in UK Biobank (Malcomson
+            et al. 2023, adjusted for smoking). Smoking (1.63 for men, 1.55 for
+            women), past smoking (1.23 and 1.14, taken at 10-20 years since
+            quitting) and a first-degree family history of cancer (1.15 and
+            1.08) use hazard ratios for any invasive cancer from the American
+            Cancer Society cohorts (Patel et al. 2022). Carcinogens that act on
+            one site are scaled to all cancers by that site&apos;s share of new
+            cases in Europe (GLOBOCAN 2024): second-hand smoke (lung cancer RR
+            1.24, Hackshaw et al. 1997), radon known or likely to be high (+16%
+            per 100 Bq/m³, Darby et al. 2005, at the EU reference level of 300
+            Bq/m³), PM2.5 above the WHO guideline of 5 µg/m³ (1.09 per 10
+            µg/m³, Hamra et al. 2014, capped at 25) and sunburn (melanoma RR
+            2.03, Gandini et al. 2005).
+          </p>
+          <p>
+            The strictest thresholds apply, with the reference cited: only no
+            alcohol earns the full alcohol point (WCRF and the Code both advise
+            not drinking), and the partial point stops at 14 g a day for women
+            (standardised score) and 14 UK units a week for men (UK CMO; the
+            score allows 28 g a day). Answer frequencies stand in for grams: 80
+            g per fruit or vegetable serving (WHO), about 140 g per portion of
+            red meat, 50 g of processed meat, 250 ml per sugary drink and 12 g
+            of alcohol per drink. Daily wholegrains plus pulses or nuts 3-4
+            times a week stand in for 30 g of fibre a day. Relative risks
+            multiply, and below 2× the result is shown as a percentage
+            increase. Bands: Low below 1.2×, Moderate 1.2-1.5×, Elevated
+            1.5-2×, High from 2×, with values of 3× and above shown as
+            &quot;3× or more&quot;. Screening mostly finds cancer earlier rather
+            than preventing it, so its status is shown alongside the profile
+            rather than scored. This is a profile relative to someone with none
+            of the assessed factors, not an absolute prediction: age and
+            inherited variants such as BRCA or Lynch syndrome dominate absolute
+            risk.
+          </p>
+        </CardContent>
+      </Card>
+
       <p className="text-xs text-muted-foreground leading-relaxed">
         This tool is for informational and educational purposes only. It does
         not constitute medical advice, diagnosis, or treatment. Always consult

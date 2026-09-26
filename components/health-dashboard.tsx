@@ -41,8 +41,10 @@ import {
   buildActionPlan,
   calculatePeerComparison,
 } from "@/lib/insights-calculator"
+import type { CancerRiskResult } from "@/lib/cancer-risk-calculator"
 import type { NeuroRiskResult } from "@/lib/neuro-risk-calculator"
 import { ActionPlanCard } from "@/components/action-plan-card"
+import { CancerRiskCard } from "@/components/cancer-risk-card"
 import { NeuroRiskCard } from "@/components/neuro-risk-card"
 import { PeerComparisonCard } from "@/components/peer-comparison-card"
 
@@ -72,6 +74,7 @@ interface HealthDashboardProps {
   biologicalAgeData?: BiologicalAgeData
   diabetesRiskData?: DiabetesRiskData
   neuroRiskData?: NeuroRiskResult
+  cancerRiskData?: CancerRiskResult
 }
 
 interface DiabetesRiskData {
@@ -113,6 +116,7 @@ export function HealthDashboard({
   biologicalAgeData,
   diabetesRiskData,
   neuroRiskData,
+  cancerRiskData,
 }: HealthDashboardProps) {
   const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
   result
@@ -482,8 +486,8 @@ export function HealthDashboard({
         weaknesses={peerWeaknesses}
       />
 
-      {/* Risk cards: Cardiovascular, Type 2 Diabetes, Neurodegenerative */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* Risk cards: Cardiovascular, Type 2 Diabetes, Neurodegenerative, Cancer */}
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Cardiovascular Risk */}
         <Card className={`flex flex-col border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
           <CardHeader className="pb-2">
@@ -592,6 +596,7 @@ export function HealthDashboard({
         </Card>
 
         <NeuroRiskCard data={neuroRiskData} />
+        <CancerRiskCard data={cancerRiskData} />
       </div>
 
       {/* Module Score Cards */}
