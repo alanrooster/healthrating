@@ -330,9 +330,6 @@ function SensesOralResults({ result, onRetake }: { result: SensesOralResult; onR
             </div>
           )}
 
-          <Button variant="destructive" onClick={onRetake} className="w-full self-start sm:w-fit">
-            Retake Assessment
-          </Button>
         </CardContent>
       </Card>
     </div>

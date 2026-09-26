@@ -312,9 +312,6 @@ function handleCalculate() {
             </CardContent>
           </Card>
 
-          <Button variant="destructive" onClick={handleRetake} className="w-full sm:w-fit">
-            Retake Assessment
-          </Button>
         </div>
       </TooltipProvider>
     )

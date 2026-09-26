@@ -504,9 +504,6 @@ function ExerciseResults({
         </CardContent>
       </Card>
 
-      <Button variant="destructive" onClick={onReset} className="w-full self-start sm:w-fit">
-        Retake Assessment
-      </Button>
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Scoring based on the WHO Global Physical Activity Questionnaire (GPAQ)

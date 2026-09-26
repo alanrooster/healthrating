@@ -494,9 +494,6 @@ function MentalHealthResults({
         </CardContent>
       </Card>
 
-      <Button variant="destructive" onClick={onReset} className="w-full self-start sm:w-fit">
-        Retake Assessment
-      </Button>
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Instruments used: Kessler K10 (Kessler et al. 2002), PHQ-2 (Kroenke et

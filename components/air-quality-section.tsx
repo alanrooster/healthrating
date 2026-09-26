@@ -315,11 +315,6 @@ function AirQualityResults({ result, onRetake }: { result: AirQualityResult; onR
         </CardContent>
       </Card>
 
-      {onRetake && (
-        <Button variant="destructive" onClick={onRetake} className="w-full self-start sm:w-fit">
-          Retake Assessment
-        </Button>
-      )}
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Data based on WHO Global Air Quality Database and IQAir World Air

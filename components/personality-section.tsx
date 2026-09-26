@@ -355,9 +355,6 @@ function PersonalityResults({ result, onRetake }: { result: PersonalityResult; o
             </div>
           )}
 
-          <Button variant="destructive" onClick={onRetake} className="w-full self-start sm:w-fit">
-            Retake Assessment
-          </Button>
         </CardContent>
       </Card>
     </div>

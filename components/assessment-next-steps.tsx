@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, LayoutDashboard } from "lucide-react"
+import { ArrowRight, LayoutDashboard, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -15,6 +15,7 @@ interface AssessmentNextStepsProps {
   activeSection: string
   scores: HealthScores
   onNavigate: (section: string) => void
+  onRetake: () => void
 }
 
 const MODULES: { section: string; label: string }[] = [
@@ -55,6 +56,7 @@ export function AssessmentNextSteps({
   activeSection,
   scores,
   onNavigate,
+  onRetake,
 }: AssessmentNextStepsProps) {
   const scoreKey = SCORE_KEYS[activeSection]
   if (!scoreKey || !scores[scoreKey].completed) return null
@@ -70,7 +72,7 @@ export function AssessmentNextSteps({
           Your assessment is saved. You can review your overall results or keep going.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3 sm:flex-row">
+      <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {nextModule && (
           <Button
             className="min-h-12 w-full sm:w-auto"
@@ -87,6 +89,15 @@ export function AssessmentNextSteps({
         >
           <LayoutDashboard data-icon="inline-start" />
           Check results in dashboard
+        </Button>
+        <Button
+          variant="outline"
+          className="min-h-12 w-full border-destructive/50 bg-background text-destructive hover:border-destructive hover:bg-destructive hover:text-destructive-foreground sm:w-auto"
+          onClick={onRetake}
+          data-retake-button
+        >
+          <RotateCcw data-icon="inline-start" />
+          Retake Assessment
         </Button>
       </CardContent>
     </Card>

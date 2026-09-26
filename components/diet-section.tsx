@@ -504,9 +504,6 @@ function DietResults({
         </CardContent>
       </Card>
 
-      <Button variant="destructive" onClick={onReset} className="w-full self-start sm:w-fit">
-        Retake Assessment
-      </Button>
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Scoring based on WHO Healthy Diet Monitoring Initiative (HDMI) and IARC Monographs

@@ -58,6 +58,7 @@ function PageHeader({ title }: { title: string }) {
 
 export default function Page() {
   const [activeSection, setActiveSection] = useState("welcome")
+  const [assessmentResetKey, setAssessmentResetKey] = useState(0)
 
   // Module scores
   const [bodyScore, setBodyScore] = useState<ModuleScore>({
@@ -222,6 +223,46 @@ export default function Page() {
     dietData, lifestyleData, airData, bodyDemographics,
     storedResults, storedInputs,
   ])
+
+  function handleRetakeAssessment() {
+    const scoreResetters: Record<string, () => void> = {
+      body: () => setBodyScore({ ...EMPTY_SCORE, label: "Body Composition" }),
+      air: () => setAirScore({ ...EMPTY_SCORE, label: "Air Quality" }),
+      water: () => setWaterScore({ ...EMPTY_SCORE, label: "Water Quality" }),
+      diet: () => setDietScore({ ...EMPTY_SCORE, label: "Diet" }),
+      exercise: () => setExerciseScore({ ...EMPTY_SCORE, label: "Exercise" }),
+      work: () => setWorkScore({ ...EMPTY_SCORE, label: "Work" }),
+      lifestyle: () => setLifestyleScore({ ...EMPTY_SCORE, label: "Lifestyle" }),
+      mental: () => setMentalHealthScore({ ...EMPTY_SCORE, label: "Mental Health" }),
+      family: () => setFamilyHistoryScore({ ...EMPTY_SCORE, label: "Family History" }),
+      preventive: () => setPreventiveCareScore({ ...EMPTY_SCORE, label: "Preventive Care" }),
+      senses: () => setSensesOralScore({ ...EMPTY_SCORE, label: "Senses & Oral Health" }),
+      lifecontext: () => setLifeContextScore({ ...EMPTY_SCORE, label: "Life Context" }),
+      personality: () => setPersonalityScore({ ...EMPTY_SCORE, label: "Personality & Outlook" }),
+      home: () => setHomeEnvironmentScore({ ...EMPTY_SCORE, label: "Home Environment" }),
+    }
+    const resultKeys: Record<string, string> = {
+      body: "body",
+      air: "air",
+      water: "water",
+      diet: "diet",
+      exercise: "exercise",
+      work: "work",
+      lifestyle: "lifestyle",
+      mental: "mental",
+      family: "family",
+      preventive: "preventive",
+      senses: "senses",
+      lifecontext: "lifecontext",
+      personality: "personality",
+      home: "home",
+    }
+
+    scoreResetters[activeSection]?.()
+    const resultKey = resultKeys[activeSection]
+    if (resultKey) clearResult(resultKey)
+    setAssessmentResetKey((key) => key + 1)
+  }
 
   function storeResult(key: string, result: unknown) {
     setStoredResults(prev => ({ ...prev, [key]: result }))
@@ -514,11 +555,14 @@ export default function Page() {
         <PageHeader title={sectionTitles[activeSection] ?? "Dashboard"} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-4xl">
-            {renderSection()}
+            <div key={`${activeSection}-${assessmentResetKey}`}>
+              {renderSection()}
+            </div>
             <AssessmentNextSteps
               activeSection={activeSection}
               scores={scores}
               onNavigate={setActiveSection}
+              onRetake={handleRetakeAssessment}
             />
             <SiteFooter />
           </div>

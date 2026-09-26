@@ -321,13 +321,6 @@ export function BMIResults({ result, onRetake }: BMIResultsProps) {
         </Card>
       )}
 
-      {/* Retake Button */}
-      {onRetake && (
-        <Button variant="destructive" onClick={onRetake} className="w-full self-start sm:w-fit">
-          Retake Assessment
-        </Button>
-      )}
-
       {/* Disclaimer */}
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
         This calculator provides estimates based on statistical formulas. Results

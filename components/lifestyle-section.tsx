@@ -748,9 +748,6 @@ function LifestyleResults({
         </CardContent>
       </Card>
 
-      <Button variant="destructive" onClick={onReset} className="w-full self-start sm:w-fit">
-        Retake Assessment
-      </Button>
 
       <p className="text-xs text-muted-foreground leading-relaxed">
         Based on WHO sleep recommendations, Pittsburgh Sleep Quality Index (PSQI),
