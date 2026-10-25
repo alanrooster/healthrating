@@ -58,6 +58,7 @@ const DEFAULT_ANSWERS: LifestyleAnswers = {
   sleepScheduleConsistency: "consistent",
   sleepLatencyMinutes: 15,
   daytimeDysfunction: "rarely",
+  bedroomLight: "dim",
   socialFrequency: "weekly",
   qualityRelationships: "good",
   lonelinessFrequency: "rarely",
@@ -72,6 +73,7 @@ const DEFAULT_ANSWERS: LifestyleAnswers = {
   commuteMinutesOneWay: 20,
   saunaSessionsPerWeek: 0,
   smokingStatus: "never",
+  cannabisUse: "never",
   alcoholFrequency: "monthly",
   alcoholUnitsPerSession: 2,
   caffeineConsumption: "moderate",
@@ -170,6 +172,18 @@ const QUESTION_GROUPS: QuestionGroup[] = [
           { value: "sometimes", label: "Sometimes" },
           { value: "often", label: "Often" },
           { value: "always", label: "Always" },
+        ],
+      },
+      {
+        id: "bedroomLight",
+        label: "Light in your bedroom while you sleep",
+        description: "Light at night disrupts the body clock and is linked to more heart disease (UK Biobank light-sensor studies, 2024-2025)",
+        type: "select",
+        options: [
+          { value: "dark", label: "Dark (blackout curtains, eye mask, no lights)" },
+          { value: "dim", label: "Dim (a standby light or a little street light)" },
+          { value: "some-light", label: "Some light (night light, hallway or bright street light)" },
+          { value: "bright", label: "Bright (TV, lamp or screen left on)" },
         ],
       },
     ],
@@ -373,6 +387,19 @@ const QUESTION_GROUPS: QuestionGroup[] = [
         ],
       },
       {
+        id: "cannabisUse",
+        label: "Cannabis use",
+        description: "Smoked, vaped or edible. Regular use is linked to more heart attacks and strokes (Heart, 2025). If you mix it with tobacco, count that as smoking too.",
+        type: "select",
+        options: [
+          { value: "never", label: "Never" },
+          { value: "past", label: "Not in the past 12 months" },
+          { value: "occasional", label: "Less than once a week" },
+          { value: "weekly", label: "1-4 days a week" },
+          { value: "daily", label: "Daily or almost daily" },
+        ],
+      },
+      {
         id: "alcoholFrequency",
         label: "Alcohol consumption frequency",
         description: "WHO: no level of alcohol consumption is safe for health",
@@ -437,7 +464,7 @@ function deriveSocialConnection(a: LifestyleAnswers): "strong" | "moderate" | "w
 }
 
 export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: LifestyleSectionProps) {
-  const [answers, setAnswers] = useState<LifestyleAnswers>(storedInputs ?? DEFAULT_ANSWERS)
+  const [answers, setAnswers] = useState<LifestyleAnswers>({ ...DEFAULT_ANSWERS, ...storedInputs })
   const [result, setResult] = useState<LifestyleResult | null>(storedResult ?? null)
   const [currentGroup, setCurrentGroup] = useState(0)
 

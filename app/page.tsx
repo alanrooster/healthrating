@@ -393,11 +393,13 @@ export default function Page() {
         lifeContext: lifeContextScore.completed ? storedInputs.lifecontext : undefined,
         work: workScore.completed ? storedInputs.work : undefined,
         family: familyHistoryScore.completed ? storedInputs.family : undefined,
+        preventive: preventiveCareScore.completed ? storedInputs.preventive : undefined,
+        age: bodyDemographics?.age,
       }) ?? undefined,
     [
       bodyScore, bodyDemographics, airScore, airData, lifestyleScore, lifestyleData,
       mentalHealthScore, exerciseScore, dietScore, sensesOralScore, lifeContextScore,
-      workScore, familyHistoryScore, storedInputs,
+      workScore, familyHistoryScore, preventiveCareScore, storedInputs,
     ],
   )
 
@@ -415,6 +417,7 @@ export default function Page() {
         home: homeEnvironmentScore.completed ? storedInputs.home : undefined,
         family: familyHistoryScore.completed ? storedInputs.family : undefined,
         preventive: preventiveCareScore.completed ? storedInputs.preventive : undefined,
+        age: bodyDemographics?.age,
       }) ?? undefined,
     [
       bodyScore, bodyDemographics, airScore, airData, lifestyleScore, exerciseScore, dietScore,

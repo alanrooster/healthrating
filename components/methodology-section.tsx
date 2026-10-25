@@ -185,7 +185,12 @@ export function MethodologySection() {
           <p>
             <strong>WHO Dietary Targets:</strong> 400g+ fruits/vegetables daily,
             less than 10% energy from free sugars, less than 5g salt/day,
-            limited saturated fats and ultra-processed foods.
+            limited saturated fats and ultra-processed foods. Since January
+            2025 WHO also recommends potassium-enriched, lower-sodium salt
+            substitutes in place of regular table salt (not in pregnancy,
+            kidney disease or with potassium-sparing medicines, which are left
+            out of the score). In the SSaSS trial of 20,995 people they cut
+            strokes by 14% and deaths by 12% (Neal et al. 2021).
           </p>
           <p>
             <strong>Gut Microbiome &amp; Hydration:</strong> Fermented foods
@@ -199,8 +204,9 @@ export function MethodologySection() {
             Sources: IARC Monographs Vol. 114 (Red Meat, Processed Meat, 2015),
             IARC Monographs Vol. 100E (Alcohol, 2012), IARC Monographs Vol. 116
             (Hot Beverages, 2018), WHO Healthy Diet Fact Sheet (2024), WHO HDMI
-            Guidance (2024), Wastyk et al. Cell (2021), Dmitrieva et al.
-            eBioMedicine (2023).
+            Guidance (2024), WHO guideline on lower-sodium salt substitutes
+            (2025), Neal et al. NEJM (2021), Wastyk et al. Cell (2021),
+            Dmitrieva et al. eBioMedicine (2023).
           </p>
         </CardContent>
       </Card>
@@ -372,7 +378,12 @@ export function MethodologySection() {
               <strong>Sleep:</strong> Pittsburgh Sleep Quality Index (PSQI)
               principles - duration, quality, latency, consistency, daytime
               dysfunction. Target 7-9h for adults (National Sleep Foundation;
-              AASM/SRS: at least 7h).
+              AASM/SRS: at least 7h). Bedroom light at night takes 10% of the
+              sleep score: among 88,905 UK Biobank adults wearing light
+              sensors, the brightest nights carried 28-56% more coronary
+              disease, heart attack, heart failure, atrial fibrillation and
+              stroke (Windred et al. 2025) and higher mortality (Windred et al.
+              2024).
             </li>
             <li>
               <strong>Social Connection:</strong> Holt-Lunstad meta-analyses
@@ -406,15 +417,20 @@ export function MethodologySection() {
             </li>
             <li>
               <strong>Habits:</strong> Smoking (WHO - 8M deaths/year),
-              alcohol (WHO - no safe level), caffeine.
+              alcohol (WHO - no safe level), caffeine, and cannabis at 10% of
+              the habits score: across 24 studies, use was linked to twice the
+              risk of cardiovascular death (RR 2.10), 29% more acute coronary
+              syndromes and 20% more strokes (Storck et al. 2025), rising with
+              days of use (Jeffers et al. 2024).
             </li>
           </ul>
           <p className="text-xs">
             Sources: PSQI (Buysse et al. 1989), WHO Sleep Guidelines, Holt-Lunstad
             et al. (2010, 2015 PNAS), Patel et al. American Journal of Epidemiology
             (2018, 2010), Holick NEJM (2007), Hansson et al. BMC Public Health
-            (2011), Laukkanen et al. JAMA Internal Medicine (2015), WHO/CDC
-            substance use evidence.
+            (2011), Laukkanen et al. JAMA Internal Medicine (2015), Windred et
+            al. PNAS (2024) and JAMA Network Open (2025), Storck et al. Heart
+            (2025), Jeffers et al. JAHA (2024), WHO/CDC substance use evidence.
           </p>
         </CardContent>
       </Card>
@@ -743,12 +759,17 @@ export function MethodologySection() {
             covers 10 of the 14 modifiable risk factors of the 2024 Lancet
             Commission (Livingston et al.): less education, hearing loss,
             vision loss, depression, physical inactivity, smoking, obesity,
-            excessive alcohol, social isolation and PM2.5 air pollution. Five
+            excessive alcohol, social isolation and PM2.5 air pollution. Six
             more come from LIBRA2 (Rosenau et al. 2024: cognitive activity and
             sleep), the Lancet diet-quality meta-analysis, perceived stress
-            (Franks et al. 2021) and family history (Cannon-Albright et al.
-            2019). Blood pressure, LDL cholesterol, diabetes and head injury
-            are not collected, so the profile can only under-count.
+            (Franks et al. 2021), family history (Cannon-Albright et al. 2019)
+            and, from age 50, the shingles vaccine: in a natural experiment in
+            Wales, vaccination cut new dementia diagnoses by 20% over 7 years
+            (Eyting et al. 2025, Nature), and a 2025 follow-up found fewer
+            mild cognitive impairment diagnoses and dementia deaths too (Xie
+            et al., Cell), so being unvaccinated counts as 1/0.8. Blood
+            pressure, LDL cholesterol, diabetes and head injury are not
+            collected, so the profile can only under-count.
           </p>
           <p>
             Each flagged factor adds its published relative risk, for example
@@ -783,11 +804,13 @@ export function MethodologySection() {
           <p>
             Built from answers you already gave, with no extra questions. It
             follows the European Code Against Cancer, 5th edition (IARC/WHO
-            2025): 10 of its 14 recommendations map onto your answers, namely
+            2025): 11 of its 14 recommendations map onto your answers, namely
             tobacco, second-hand smoke, body weight, physical activity, diet,
-            alcohol, sun protection, radon, air pollution and screening.
-            Infections and vaccines, workplace carcinogens, breastfeeding and
-            HRT are not collected, so the profile can only under-count.
+            alcohol, sun protection, radon, air pollution, screening and
+            cancer-causing infections (hepatitis B and HPV vaccination, and
+            hepatitis B, hepatitis C and HIV testing, from Preventive Care).
+            Workplace carcinogens, breastfeeding and HRT are not collected, so
+            the profile can only under-count.
           </p>
           <p>
             Weight, activity, plant foods, ultra-processed food, red and
@@ -826,7 +849,9 @@ export function MethodologySection() {
             1.5-2×, High from 2×, with values of 3× and above shown as
             &quot;3× or more&quot;. Screening mostly finds cancer earlier rather
             than preventing it, so its status is shown alongside the profile
-            rather than scored. This is a profile relative to someone with none
+            rather than scored. The infection vaccines and tests are shown the
+            same way: they only change cancer risk for someone who carries the
+            virus, which the app doesn&apos;t ask. This is a profile relative to someone with none
             of the assessed factors, not an absolute prediction: age and
             inherited variants such as BRCA or Lynch syndrome dominate absolute
             risk.

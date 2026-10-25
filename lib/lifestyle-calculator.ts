@@ -11,6 +11,10 @@
  *      for measuring sleep quality; scores >5 indicate poor sleep quality.
  *    - Adults need 7-9 hours (National Sleep Foundation, Hirshkowitz 2015; 7-8 h from
  *      age 65); AASM/SRS consensus: at least 7 hours (Watson 2015).
+ *    - Light at night (10% of the sleep score): wrist light sensors on 88,905 UK Biobank adults
+ *      link brighter nights to higher all-cause mortality (Windred et al., PNAS 2024) and, for
+ *      the brightest tenth vs the darkest half, to 28-56% more coronary disease, heart attack,
+ *      heart failure, atrial fibrillation and stroke (Windred et al., JAMA Netw Open 2025).
  *
  * 2. Social Connection & Work-Life Balance:
  *    - Holt-Lunstad et al. (2010, 2015): social isolation increases mortality
@@ -23,6 +27,9 @@
  * 3. Substance Use:
  *    - WHO/CDC evidence on smoking and alcohol health impacts
  *    - No safe level of alcohol consumption (WHO)
+ *    - Cannabis (10% of the habits score): RR 2.10 for cardiovascular death, 1.29 for acute
+ *      coronary syndrome and 1.20 for stroke across 24 studies (Storck et al., Heart 2025); daily
+ *      use: MI aOR 1.25 and stroke 1.42, rising with days of use (Jeffers et al., JAHA 2024).
  *
  * Overall score: 0-100, weighted across sub-domains.
  */
@@ -35,6 +42,8 @@ export interface LifestyleAnswers {
   sleepScheduleConsistency: "very-consistent" | "consistent" | "somewhat" | "inconsistent" | "very-inconsistent"
   sleepLatencyMinutes: number // PSQI: time to fall asleep (mins)
   daytimeDysfunction: "never" | "rarely" | "sometimes" | "often" | "always" // PSQI: trouble staying awake/motivation
+  // Optional: answers saved before it was added don't have it
+  bedroomLight?: "dark" | "dim" | "some-light" | "bright"
 
   // Social & Balance
   socialFrequency: "daily" | "several-weekly" | "weekly" | "monthly" | "rarely"
@@ -66,6 +75,8 @@ export interface LifestyleAnswers {
   alcoholFrequency: "never" | "monthly" | "weekly" | "several-weekly" | "daily"
   alcoholUnitsPerSession: number // 0-10+
   caffeineConsumption: "none" | "moderate" | "high" | "excessive" // cups of coffee equivalent
+  // Optional, same reason; "past" = not in the last 12 months
+  cannabisUse?: "never" | "past" | "occasional" | "weekly" | "daily"
 }
 
 export interface LifestyleResult {
@@ -90,6 +101,15 @@ const FREQ_MAP: Record<string, number> = {
   sometimes: 2,
   often: 3,
   always: 4,
+}
+
+// The UK Biobank cohorts measured light with wrist sensors; these bands are a self-report stand-in
+// for their dark-night reference (0-50th percentile) up to the brightest tenth
+const BEDROOM_LIGHT_SCORE: Record<NonNullable<LifestyleAnswers["bedroomLight"]>, number> = {
+  dark: 100,
+  dim: 85,
+  "some-light": 50,
+  bright: 20,
 }
 
 /**
@@ -169,18 +189,24 @@ function scoreSleep(answers: LifestyleAnswers): { score: number; risks: string[]
     risks.push("Frequent daytime sleepiness suggests insufficient or poor-quality sleep")
   }
 
-  const score = Math.max(
-    0,
-    Math.round(
-      durationScore * 0.25 +
-      qualityScore * 0.20 +
-      (100 - difficultyPenalty * 2) * 0.15 +
-      consistencyScore * 0.15 +
-      latencyScore * 0.15 +
-      dysfunctionScore * 0.10
+  const psqiScore =
+    durationScore * 0.25 +
+    qualityScore * 0.20 +
+    (100 - difficultyPenalty * 2) * 0.15 +
+    consistencyScore * 0.15 +
+    latencyScore * 0.15 +
+    dysfunctionScore * 0.10
+
+  const light = answers.bedroomLight
+  if (light === "some-light" || light === "bright") {
+    risks.push(
+      "Light in the bedroom at night disrupts the body clock: among 88,905 UK Biobank adults wearing light sensors, those with the brightest nights had 47% more heart attacks and 56% more heart failure than those with dark nights (Windred et al. 2025)"
     )
-  )
-  return { score, risks }
+  }
+  // Bedroom light takes 10% when answered; answers saved before it existed keep the PSQI weights
+  const score = light ? psqiScore * 0.9 + BEDROOM_LIGHT_SCORE[light] * 0.1 : psqiScore
+
+  return { score: Math.max(0, Math.round(score)), risks }
 }
 
 /**
@@ -362,8 +388,18 @@ function scoreLeisure(answers: LifestyleAnswers): { score: number; risks: string
   return { score: Math.max(0, Math.min(100, score)), risks }
 }
 
+// Storck 2025: RR 2.10 cardiovascular death, 1.29 acute coronary syndrome, 1.20 stroke. Jeffers
+// 2024: odds rise with days of use a month, so less-than-weekly use sits close to never
+const CANNABIS_SCORE: Record<NonNullable<LifestyleAnswers["cannabisUse"]>, number> = {
+  never: 100,
+  past: 90,
+  occasional: 65,
+  weekly: 35,
+  daily: 10,
+}
+
 /**
- * Habits score (smoking + alcohol + caffeine) (0-100)
+ * Habits score (smoking + alcohol + caffeine + cannabis) (0-100)
  * WHO/CDC evidence on smoking and alcohol health impacts
  */
 function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[] } {
@@ -415,7 +451,18 @@ function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[
     risks.push("Excessive caffeine can disrupt sleep, increase anxiety, and affect heart rhythm")
   }
 
-  return { score: Math.round(smokingScore * 0.45 + alcoholScore * 0.40 + caffeineScore * 0.15), risks }
+  const cannabis = answers.cannabisUse
+  if (cannabis === "weekly" || cannabis === "daily") {
+    risks.push(
+      "Regular cannabis use: across 24 studies it was linked to twice the risk of cardiovascular death and 29% more acute coronary syndromes (Storck et al. 2025)"
+    )
+  }
+
+  const substanceScore = smokingScore * 0.45 + alcoholScore * 0.40 + caffeineScore * 0.15
+  // Cannabis takes 10% when answered; answers saved before it existed keep the old weights
+  const score = cannabis ? substanceScore * 0.9 + CANNABIS_SCORE[cannabis] * 0.1 : substanceScore
+
+  return { score: Math.round(score), risks }
 }
 
 /**
@@ -499,6 +546,12 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   if (cm.score < 60) recommendations.push("Long commutes harm health: consider remote work, moving closer to work, or using commute time productively (audiobooks, podcasts, transit reading).")
   if (sa.score < 60) recommendations.push("Regular sauna use (4+ sessions/week) is associated with major cardiovascular benefits in long-term Finnish data.")
   if (hb.score < 60) recommendations.push("Reducing smoking and alcohol intake are among the highest-impact changes for longevity.")
+  if (answers.bedroomLight === "some-light" || answers.bedroomLight === "bright") {
+    recommendations.push("Make your bedroom dark: blackout curtains or an eye mask, cover standby lights, and switch off the TV and screens before you fall asleep.")
+  }
+  if (answers.cannabisUse === "weekly" || answers.cannabisUse === "daily") {
+    recommendations.push("Cut down on cannabis, especially smoked: regular use is linked to more heart attacks, strokes and cardiovascular deaths, and mixing it with tobacco adds the harms of smoking.")
+  }
 
   if (overallScore >= 80) {
     recommendations.push("Your lifestyle profile is strong. Maintain these healthy habits.")

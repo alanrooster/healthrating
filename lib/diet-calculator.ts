@@ -29,6 +29,10 @@
  * - Less than 10% of total energy from free sugars (~50g/day)
  * - Less than 30% of total energy from fats
  * - Less than 5g of salt per day
+ * - Use a potassium-enriched, lower-sodium salt substitute instead of regular table salt (WHO
+ *   guideline, January 2025; not in pregnancy, kidney impairment or with potassium-sparing
+ *   medicines or supplements). SSaSS (Neal et al., NEJM 2021, n = 20,995): stroke RR 0.86,
+ *   major cardiovascular events 0.87, death 0.88
  * - Limit processed meat and red meat
  * - Prefer fish and plant-based proteins
  */
@@ -300,6 +304,20 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     ],
   },
   {
+    id: "salt_substitute",
+    question: "Do you use a potassium-enriched salt substitute instead of regular salt?",
+    description:
+      "Lower-sodium salt with potassium chloride. WHO (2025) recommends it in place of regular table salt for adults, except in pregnancy, kidney disease, or with potassium-sparing medicines or supplements",
+    isHealthy: true,
+    options: [
+      { label: "Yes, instead of regular salt (or I never add salt)", value: 4 },
+      { label: "Sometimes, or mixed with regular salt", value: 2 },
+      { label: "No, I use regular salt", value: 0 },
+      // Negative values aren't scored: WHO excludes these groups from the advice
+      { label: "Not suitable for me (pregnancy, kidney disease, potassium-sparing medicines or supplements)", value: -1 },
+    ],
+  },
+  {
     id: "saturated_fat",
     question: "How often do you consume high saturated fat foods?",
     description: "Butter, cream, cheese, pastries, fried foods, fatty cuts of meat",
@@ -390,6 +408,11 @@ const FEEDBACK: Record<string, { good: string; moderate: string; poor: string }>
     moderate: "Try to reduce packaged and fast food. Cook more meals from whole ingredients.",
     poor: "Very high ultra-processed food intake is linked to obesity, diabetes, and heart disease.",
   },
+  salt_substitute: {
+    good: "Good choice: WHO (2025) recommends potassium-enriched salt in place of regular salt. In a trial of 20,995 people it cut strokes by 14% and deaths by 12%.",
+    moderate: "Use the salt substitute every time you salt food: the WHO advice is a full switch from regular table salt.",
+    poor: "Consider switching to a potassium-enriched salt substitute (WHO 2025): it lowered strokes by 14% and deaths by 12% in a trial of 20,995 people. Check with your doctor first if you take blood-pressure or heart medicines.",
+  },
   salt: {
     good: "Great salt management! This protects your cardiovascular health.",
     moderate: "Consider reducing salt. Use herbs and spices for flavor instead.",
@@ -459,7 +482,7 @@ export function calculateDietScore(answers: DietAnswers): DietResult {
 
   for (const q of DIET_QUESTIONS) {
     const answer = answers[q.id]
-    if (answer === undefined) continue
+    if (answer === undefined || answer < 0) continue
 
     let score: number
     if (q.isHealthy) {

@@ -87,7 +87,7 @@ export function CancerRiskCard({ data }: { data?: CancerRiskResult }) {
                 ))}
               </ul>
             )}
-            {(data.preventionScore || data.screening) && (
+            {(data.preventionScore || data.screening || data.infections) && (
               <ul
                 aria-label="Prevention status"
                 className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground"
@@ -109,6 +109,18 @@ export function CancerRiskCard({ data }: { data?: CancerRiskResult }) {
                       }`}
                     >
                       {data.screening === "due" ? "due" : "up to date"}
+                    </span>
+                  </li>
+                )}
+                {data.infections && (
+                  <li>
+                    Infection vaccines &amp; tests{" "}
+                    <span
+                      className={`font-semibold ${
+                        data.infections === "due" ? "text-amber-600" : "text-emerald-600"
+                      }`}
+                    >
+                      {data.infections === "due" ? "due" : "up to date"}
                     </span>
                   </li>
                 )}

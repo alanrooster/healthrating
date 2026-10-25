@@ -80,9 +80,9 @@ const STEPS = [
   },
   {
     title: "Fats & Salt",
-    description: "Saturated fat and sodium intake",
+    description: "Saturated fat, sodium and salt substitutes",
     icon: Leaf,
-    questionIds: ["saturated_fat", "salt"],
+    questionIds: ["saturated_fat", "salt", "salt_substitute"],
   },
   {
     title: "Gut Microbiome & Hydration",

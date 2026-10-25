@@ -2,7 +2,7 @@
  * Cancer risk profile: lifestyle and environmental cancer risk factors scored from answers already
  * given in other modules (no extra questions).
  *
- * The factors follow the European Code Against Cancer, 5th edition (ECAC5, IARC/WHO 2025): 10 of
+ * The factors follow the European Code Against Cancer, 5th edition (ECAC5, IARC/WHO 2025): 11 of
  * its 14 recommendations map onto collected answers. One source per factor, in priority order:
  * 1. WCRF/AICR 2018 Cancer Prevention Recommendations, operationalised with the standardised 0-7
  *    score (Shams-White et al., Nutrients 2019): weight, activity, plant foods, ultra-processed
@@ -18,9 +18,11 @@
  *
  * Relative risks multiply. The result is a profile versus someone with none of the assessed
  * factors, not an absolute prediction: age and inherited variants dominate absolute risk.
- * Infections and vaccines, workplace carcinogens, breastfeeding and HRT are not collected, so the
- * profile can only under-count. Screening mostly finds cancer earlier rather than preventing it, so
- * its status is reported alongside instead of being scored.
+ * Workplace carcinogens, breastfeeding and HRT are not collected, so the profile can only
+ * under-count. Screening mostly finds cancer earlier rather than preventing it, and the ECAC5
+ * infection items (hepatitis B and HPV vaccination; hepatitis B, hepatitis C and HIV testing) only
+ * change risk for someone who carries the virus, which isn't asked, so both are reported alongside
+ * instead of being scored.
  *
  * Cut-offs follow the app rule "strictest threshold, reference standard cited".
  */
@@ -30,7 +32,7 @@ import type { DietAnswers } from "./diet-calculator"
 import type { FamilyHistoryAnswers } from "./family-history-calculator"
 import type { HomeEnvironmentAnswers } from "./home-environment-calculator"
 import type { LifestyleAnswers } from "./lifestyle-calculator"
-import type { PreventiveCareAnswers } from "./preventive-care-calculator"
+import { isAskedAtAge, type PreventiveCareAnswers } from "./preventive-care-calculator"
 
 type Sex = "male" | "female"
 
@@ -63,6 +65,8 @@ export interface CancerRiskInputs {
   home?: HomeEnvironmentAnswers
   family?: FamilyHistoryAnswers
   preventive?: PreventiveCareAnswers
+  /** Picks the vaccines asked about at this age */
+  age?: number
 }
 
 export interface CancerRiskFactor {
@@ -84,6 +88,8 @@ export interface CancerRiskResult {
   /** 2018 WCRF/AICR score over the components answered */
   preventionScore?: { points: number; maxPoints: number }
   screening?: "up-to-date" | "due"
+  /** ECAC5 cancer-causing infections: hepatitis B and HPV vaccines, hepatitis B/C and HIV tests */
+  infections?: "up-to-date" | "due"
   factorsAssessed: number
   totalFactors: number
   notAssessed: string[]
@@ -142,8 +148,20 @@ const DIET_DRINKS_PER_WEEK = [0, 1.5, 4.5, 10.5, 21]
 
 const MIN_FACTORS_ASSESSED = 4
 const TOTAL_FACTORS = 13
-const NOT_ASSESSED = ["infections and vaccines", "workplace carcinogens"]
+const NOT_ASSESSED = ["workplace carcinogens"]
 const NOT_ASSESSED_WOMEN_ONLY = ["breastfeeding", "HRT"]
+const INFECTION_ITEMS = ["hpvVaccine", "hepBVaccine", "infectionTests"] as const
+
+function getInfectionStatus(
+  preventive: PreventiveCareAnswers | undefined,
+  age?: number,
+): CancerRiskResult["infections"] {
+  const statuses = INFECTION_ITEMS.filter((key) => isAskedAtAge(key, age))
+    .map((key) => preventive?.[key])
+    .filter((status) => status !== undefined && status !== "not-applicable")
+  if (statuses.length === 0) return undefined
+  return statuses.every((status) => status === "current") ? "up-to-date" : "due"
+}
 
 interface WcrfComponent {
   id: CancerFactorId
@@ -410,6 +428,7 @@ export function calculateCancerRisk(inputs: CancerRiskInputs): CancerRiskResult 
   // Two decimals: most single factors sit below 1.1, so one decimal would hide them
   const relativeRisk = Math.round(flagged.reduce((product, factor) => product * factor.relativeRisk, 1) * 100) / 100
   const screeningStatus = inputs.preventive?.cancerScreenings
+  const infections = getInfectionStatus(inputs.preventive, inputs.age)
 
   return {
     ...getBand(relativeRisk),
@@ -429,8 +448,13 @@ export function calculateCancerRisk(inputs: CancerRiskInputs): CancerRiskResult 
         : screeningStatus && screeningStatus !== "not-applicable"
           ? "due"
           : undefined,
+    infections,
     factorsAssessed: assessed,
     totalFactors: TOTAL_FACTORS,
-    notAssessed: sex === "male" ? NOT_ASSESSED : [...NOT_ASSESSED, ...NOT_ASSESSED_WOMEN_ONLY],
+    notAssessed: [
+      ...(infections ? [] : ["infections and vaccines"]),
+      ...NOT_ASSESSED,
+      ...(sex === "male" ? [] : NOT_ASSESSED_WOMEN_ONLY),
+    ],
   }
 }

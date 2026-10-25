@@ -11,6 +11,15 @@
  * - CDC adult immunization schedule (shingles and pneumococcal from 50; RSV from 75,
  *   or 50-74 at increased risk) and NHS programmes (shingles and pneumococcal from 65;
  *   RSV from 75, and 65-74 with immunosuppression or chronic respiratory disease)
+ * - European Code Against Cancer, 5th edition (IARC/WHO 2025), "Cancer-causing infections":
+ *   vaccinate against hepatitis B and HPV at the age recommended nationally, and take part in
+ *   testing and treatment for hepatitis B and C, HIV and H. pylori as recommended nationally.
+ *   The strictest national schedule sets the ages: HPV catch-up through 26 (CDC; ECAC5 asks for
+ *   at least 18), hepatitis B vaccination for all adults 19-59 (ACIP 2022), and one test in
+ *   adulthood for hepatitis C (CDC 2020), hepatitis B (CDC 2023) and HIV (CDC; USPSTF 2019).
+ *   H. pylori is only tested where a country runs stomach cancer screening, so it isn't scored.
+ * - 2025 ESC/EAS focused update on dyslipidaemias: measure Lp(a) at least once in every adult's
+ *   lifetime; above 50 mg/dL (105 nmol/L) it is a risk-enhancing factor.
  * - ADA / WHO oral health guidelines
  *
  * Studies suggest adherence to recommended preventive care can reduce
@@ -28,11 +37,15 @@ export interface PreventiveCareAnswers {
   shinglesVaccine?: CarePeriod      // 2 doses of recombinant zoster vaccine
   pneumococcalVaccine?: CarePeriod  // one-off conjugate vaccine
   rsvVaccine?: CarePeriod           // single dose
+  hpvVaccine?: CarePeriod           // full course; "overdue" = started, not finished
+  hepBVaccine?: CarePeriod          // full course; "overdue" = started, not finished
 
-  // Screenings
+  // Screenings (lpaTest and infectionTests are optional for the same reason)
   bloodPressureCheck: CarePeriod  // annual
   cholesterolCheck: CarePeriod    // every 4-6 yr
+  lpaTest?: CarePeriod            // once in a lifetime: "current" = done, "never" = not yet
   diabetesScreening: CarePeriod   // every 3 yr after 35
+  infectionTests?: CarePeriod     // hepatitis B, hepatitis C and HIV once: "overdue" = some of them
   cancerScreenings: CarePeriod    // age-appropriate (mammogram, colonoscopy, etc.)
   skinExam: CarePeriod            // annual recommended for higher-risk
 
@@ -65,6 +78,22 @@ export const VACCINE_MIN_AGE: Partial<Record<keyof PreventiveCareAnswers, number
   rsvVaccine: 50,
 }
 
+// Above this age routine vaccination stops: HPV catch-up runs through 26 (CDC; from 27 to 45 only
+// after shared decision-making) and universal hepatitis B vaccination through 59 (ACIP 2022; from
+// 60 only with risk factors).
+export const VACCINE_MAX_AGE: Partial<Record<keyof PreventiveCareAnswers, number>> = {
+  hpvVaccine: 26,
+  hepBVaccine: 59,
+}
+
+/** Whether an item applies at this age. Everything is asked when the age is unknown. */
+export function isAskedAtAge(key: keyof PreventiveCareAnswers, age?: number): boolean {
+  if (age === undefined) return true
+  const minAge = VACCINE_MIN_AGE[key]
+  const maxAge = VACCINE_MAX_AGE[key]
+  return (minAge === undefined || age >= minAge) && (maxAge === undefined || age <= maxAge)
+}
+
 const ITEMS: { key: keyof PreventiveCareAnswers; label: string; weight: number; recommendation: string }[] = [
   { key: "fluVaccine", label: "Annual flu vaccine", weight: 0.7, recommendation: "Get an annual flu vaccine, especially if over 50 or with chronic conditions." },
   { key: "tdapVaccine", label: "Tdap booster (every 10 years)", weight: 0.5, recommendation: "Update your Tdap booster - protects against tetanus, diphtheria, and pertussis." },
@@ -72,9 +101,13 @@ const ITEMS: { key: keyof PreventiveCareAnswers; label: string; weight: number; 
   { key: "shinglesVaccine", label: "Shingles vaccine (2 doses)", weight: 0.6, recommendation: "Get both doses of the recombinant shingles vaccine, 2-6 months apart. The CDC recommends it for all adults from 50; the NHS offers it from 65." },
   { key: "pneumococcalVaccine", label: "Pneumococcal vaccine", weight: 0.7, recommendation: "Get a one-off pneumococcal vaccine: recommended for all adults from 50 in the US and from 65 on the NHS, and earlier with some chronic conditions." },
   { key: "rsvVaccine", label: "RSV vaccine", weight: 0.6, recommendation: "Get a single RSV vaccine dose, ideally in late summer or early autumn. It's recommended for everyone from 75, and earlier with certain chronic conditions (from 50 in the US, 65 in the UK)." },
+  { key: "hpvVaccine", label: "HPV vaccine", weight: 0.5, recommendation: "Complete the HPV vaccine course while you're 26 or under: it prevents most cervical, anal and throat cancers caused by HPV (European Code Against Cancer 2025; CDC catch-up through 26). From 27 to 45, ask your doctor whether it's worth it for you." },
+  { key: "hepBVaccine", label: "Hepatitis B vaccine", weight: 0.5, recommendation: "Complete the hepatitis B vaccine course: chronic hepatitis B is a leading cause of liver cancer, and the CDC recommends the vaccine for all adults up to 59. Not sure? A blood test shows whether you're already immune." },
   { key: "bloodPressureCheck", label: "Blood pressure check", weight: 1.2, recommendation: "Have your blood pressure checked annually - hypertension is often silent." },
   { key: "cholesterolCheck", label: "Cholesterol panel", weight: 1.0, recommendation: "Get a lipid panel every 4-6 years (more often if elevated or with risk factors)." },
+  { key: "lpaTest", label: "Lp(a) blood test (once)", weight: 0.6, recommendation: "Ask for a one-off Lp(a) blood test: the 2025 ESC/EAS guideline advises it once in every adult's lifetime. Lp(a) is mostly inherited and isn't part of a standard cholesterol panel; above 50 mg/dL (105 nmol/L) it raises heart attack and stroke risk, so LDL and blood pressure need tighter control." },
   { key: "diabetesScreening", label: "Diabetes screening", weight: 0.9, recommendation: "Get screened for diabetes (HbA1c or fasting glucose) from age 35, or earlier with overweight plus another risk factor, and repeat at least every 3 years." },
+  { key: "infectionTests", label: "Hepatitis B, hepatitis C and HIV tests (once)", weight: 0.7, recommendation: "Get tested once for hepatitis B, hepatitis C and HIV, even without symptoms: the European Code Against Cancer (2025) advises it and the CDC recommends it for every adult. Treatment prevents liver cancer and AIDS-related cancers, and hepatitis C is curable in 8-12 weeks." },
   { key: "cancerScreenings", label: "Age-appropriate cancer screenings", weight: 1.5, recommendation: "Confirm you're current on age-appropriate cancer screenings: breast every 2 years from 40-50 depending on your country (USPSTF: from 40), colorectal from 45-50, cervical HPV testing, and low-dose lung CT if you have a heavy smoking history." },
   { key: "skinExam", label: "Skin examination", weight: 0.5, recommendation: "Schedule a skin check, especially with sun exposure history or family history of melanoma." },
   { key: "primaryCareVisit", label: "Annual primary care visit", weight: 1.0, recommendation: "An annual checkup catches early warning signs and keeps preventive care on track." },
@@ -89,8 +122,7 @@ export function calculatePreventiveCare(answers: PreventiveCareAnswers, age?: nu
   const recommendations: string[] = []
 
   for (const item of ITEMS) {
-    const minAge = VACCINE_MIN_AGE[item.key]
-    if (minAge !== undefined && age !== undefined && age < minAge) continue
+    if (!isAskedAtAge(item.key, age)) continue
     const status = answers[item.key] ?? "not-applicable"
     const score = PERIOD_SCORE[status]
     if (status !== "not-applicable") {

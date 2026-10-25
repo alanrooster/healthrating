@@ -8,6 +8,9 @@
  * 2. LIBRA2 (Rosenau et al., J Alzheimers Dis 2024): sleep problems and cognitive activity.
  * 3. Single meta-analyses where neither applies: perceived stress (Franks et al., J Alzheimers
  *    Dis 2021) and family history (Cannon-Albright et al., Neurology 2019).
+ * 4. Natural experiments where no meta-analysis exists yet: shingles vaccination from 50 (Eyting
+ *    et al., Nature 2025: 20% fewer new dementia diagnoses over 7 years in Wales; Xie et al.,
+ *    Cell 2025: also fewer mild cognitive impairment diagnoses and dementia deaths).
  *
  * Relative risks multiply (LIBRA sums 6 × ln RR, the same thing on a log scale). The result is a
  * profile versus someone with none of the assessed factors, not an absolute prediction: age and
@@ -24,6 +27,7 @@ import type { FamilyHistoryAnswers, FamilyRelation } from "./family-history-calc
 import type { LifeContextAnswers } from "./life-context-calculator"
 import type { LifestyleAnswers } from "./lifestyle-calculator"
 import { calculateMentalHealth, type MentalHealthAnswers } from "./mental-health-calculator"
+import { isAskedAtAge, type PreventiveCareAnswers } from "./preventive-care-calculator"
 import type { SensesOralAnswers } from "./senses-oral-calculator"
 import type { WorkAnswers } from "./work-calculator"
 
@@ -45,6 +49,7 @@ export type NeuroFactorId =
   | "cognitive"
   | "sleep"
   | "familyHistory"
+  | "shingles"
 
 export interface NeuroRiskInputs {
   bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
@@ -59,6 +64,9 @@ export interface NeuroRiskInputs {
   lifeContext?: LifeContextAnswers
   work?: WorkAnswers
   family?: FamilyHistoryAnswers
+  preventive?: PreventiveCareAnswers
+  /** The shingles vaccine only counts from the age it's offered */
+  age?: number
 }
 
 export interface NeuroRiskFactor {
@@ -98,6 +106,7 @@ const RELATIVE_RISK = {
   cognitive: 1 / 0.61, // LIBRA2: RR 0.61 for high cognitive activity
   sleep: Math.exp(1.1 / 6), // LIBRA2 weight +1.1 (= 6 × ln RR), RR ≈ 1.2
   stress: 1.44, // Franks 2021: higher perceived stress
+  shingles: 1 / 0.8, // Eyting 2025: 20% relative reduction in new dementia diagnoses when vaccinated
 }
 
 const FAMILY_HISTORY_RR: Record<FamilyRelation, number> = {
@@ -119,7 +128,7 @@ const MIN_SLEEP_HOURS = 7 // AASM/SRS adult minimum
 const MAX_SLEEP_HOURS = 9
 const K10_DISTRESS_CUTOFF = 20 // Andrews & Slade 2001: 20+ is at least mild distress
 const MIN_FACTORS_ASSESSED = 4
-const TOTAL_FACTORS = 15
+const TOTAL_FACTORS = 16
 const NOT_ASSESSED = ["blood pressure", "LDL cholesterol", "diabetes", "head injury"]
 
 const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], number> = {
@@ -331,6 +340,14 @@ export function calculateNeuroRisk(inputs: NeuroRiskInputs): NeuroRiskResult | n
     assessed++
     const relativeRisk = FAMILY_HISTORY_RR[familyRelation] ?? 1
     if (relativeRisk > 1) flag("familyHistory", "Family history", relativeRisk, false)
+  }
+
+  // Asked from 50; "not-applicable" means it isn't offered to the user yet
+  const shingles = inputs.preventive?.shinglesVaccine
+  if (shingles && shingles !== "not-applicable" && isAskedAtAge("shinglesVaccine", inputs.age)) {
+    assessed++
+    if (shingles === "current") protective.push("Shingles vaccine")
+    else flag("shingles", "No shingles vaccine", RELATIVE_RISK.shingles)
   }
 
   if (assessed < MIN_FACTORS_ASSESSED) return null

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import {
   calculatePreventiveCare,
-  VACCINE_MIN_AGE,
+  isAskedAtAge,
   type PreventiveCareAnswers,
   type PreventiveCareResult,
   type CarePeriod,
@@ -38,9 +38,13 @@ const DEFAULT_ANSWERS: PreventiveCareAnswers = {
   shinglesVaccine: "not-applicable",
   pneumococcalVaccine: "not-applicable",
   rsvVaccine: "not-applicable",
+  hpvVaccine: "not-applicable",
+  hepBVaccine: "not-applicable",
   bloodPressureCheck: "current",
   cholesterolCheck: "current",
+  lpaTest: "never",
   diabetesScreening: "current",
+  infectionTests: "never",
   cancerScreenings: "current",
   skinExam: "not-applicable",
   primaryCareVisit: "current",
@@ -56,16 +60,45 @@ const PERIOD_OPTIONS: { value: CarePeriod; label: string }[] = [
   { value: "not-applicable", label: "Not applicable for me" },
 ]
 
-const QUESTIONS: { id: keyof PreventiveCareAnswers; label: string; description?: string }[] = [
+const COURSE_OPTIONS: { value: CarePeriod; label: string }[] = [
+  { value: "current", label: "Fully vaccinated" },
+  { value: "overdue", label: "Started, not finished" },
+  { value: "never", label: "Not vaccinated / not sure" },
+  { value: "not-applicable", label: "Not applicable for me" },
+]
+
+const ONCE_OPTIONS: { value: CarePeriod; label: string }[] = [
+  { value: "current", label: "Done, at least once" },
+  { value: "never", label: "Not yet / not sure" },
+  { value: "not-applicable", label: "Not applicable for me" },
+]
+
+const INFECTION_TEST_OPTIONS: { value: CarePeriod; label: string }[] = [
+  { value: "current", label: "Tested for all three" },
+  { value: "overdue", label: "Tested for some of them" },
+  { value: "never", label: "None / not sure" },
+  { value: "not-applicable", label: "Not applicable for me" },
+]
+
+const QUESTIONS: {
+  id: keyof PreventiveCareAnswers
+  label: string
+  description?: string
+  options?: { value: CarePeriod; label: string }[]
+}[] = [
   { id: "fluVaccine", label: "Annual flu vaccine" },
   { id: "tdapVaccine", label: "Tdap booster", description: "Recommended every 10 years" },
   { id: "covidUpToDate", label: "COVID-19 vaccination" },
   { id: "shinglesVaccine", label: "Shingles vaccine", description: "2 doses of the recombinant vaccine (Shingrix). US: all adults from 50. UK: from 65, depending on your birth date. Choose \"Not applicable\" if it isn't offered to you yet." },
   { id: "pneumococcalVaccine", label: "Pneumococcal vaccine", description: "One-off dose. US: all adults from 50. UK: from 65, or earlier with some long-term conditions." },
   { id: "rsvVaccine", label: "RSV vaccine", description: "Single dose. Recommended for everyone from 75. Under 75, only with conditions such as chronic heart or lung disease or a weakened immune system (US from 50, UK from 65)." },
+  { id: "hpvVaccine", label: "HPV vaccine", description: "Asked up to age 26. Prevents most cervical, anal and throat cancers. The European Code Against Cancer (2025) asks for it at the age your country recommends, with catch-up at least to 18; the US offers catch-up through 26.", options: COURSE_OPTIONS },
+  { id: "hepBVaccine", label: "Hepatitis B vaccine", description: "Asked up to age 59. Usually 2-3 doses, often given in infancy or at school. Chronic hepatitis B is a leading cause of liver cancer; the US recommends the vaccine for all adults up to 59.", options: COURSE_OPTIONS },
   { id: "bloodPressureCheck", label: "Blood pressure check", description: "At least annually" },
   { id: "cholesterolCheck", label: "Cholesterol panel", description: "Every 4-6 years" },
+  { id: "lpaTest", label: "Lp(a) blood test", description: "Once in a lifetime (2025 ESC/EAS guideline). Lipoprotein(a) is mostly inherited and isn't part of a standard cholesterol panel. Above 50 mg/dL (105 nmol/L) it raises heart attack and stroke risk.", options: ONCE_OPTIONS },
   { id: "diabetesScreening", label: "Diabetes screening", description: "HbA1c or fasting glucose, every 3 years after 35" },
+  { id: "infectionTests", label: "Hepatitis B, hepatitis C and HIV tests", description: "Once as an adult, even without symptoms (European Code Against Cancer 2025; US CDC: every adult). Treating these infections prevents liver cancer and AIDS-related cancers. If your country screens for H. pylori (stomach cancer), take that test too.", options: INFECTION_TEST_OPTIONS },
   { id: "cancerScreenings", label: "Age-appropriate cancer screenings", description: "Colonoscopy, mammogram, Pap, prostate, etc." },
   { id: "skinExam", label: "Skin examination" },
   { id: "primaryCareVisit", label: "Annual primary care visit" },
@@ -102,10 +135,7 @@ export function PreventiveCareSection({ onResult, age, storedResult, onStoreResu
     return <PreventiveCareResults result={result} onRetake={handleRetake} />
   }
 
-  const visibleQuestions = QUESTIONS.filter((q) => {
-    const minAge = VACCINE_MIN_AGE[q.id]
-    return minAge === undefined || age === undefined || age >= minAge
-  })
+  const visibleQuestions = QUESTIONS.filter((q) => isAskedAtAge(q.id, age))
 
   return (
     <div className="flex flex-col gap-6">
@@ -123,8 +153,9 @@ export function PreventiveCareSection({ onResult, age, storedResult, onStoreResu
               </p>
               {age === undefined && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Shingles, pneumococcal and RSV vaccines are asked about from age 50. Add your
-                  age in the Body module to skip them if you&apos;re younger.
+                  Some vaccines depend on age: shingles, pneumococcal and RSV from 50, HPV up
+                  to 26 and hepatitis B up to 59. Add your age in the Body module to see only
+                  the ones that apply to you.
                 </p>
               )}
             </div>
@@ -140,7 +171,7 @@ export function PreventiveCareSection({ onResult, age, storedResult, onStoreResu
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PERIOD_OPTIONS.map((o) => (
+                  {(q.options ?? PERIOD_OPTIONS).map((o) => (
                     <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                   ))}
                 </SelectContent>
