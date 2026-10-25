@@ -563,10 +563,12 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Evaluates modifiable household exposures across three clusters:
-            cookware &amp; food-contact plastics (30%), food safety &amp;
-            cleaning (33%), and indoor air quality (37%). Individually each
-            exposure is small, but they are chronic and additive over a lifetime.
+            Evaluates modifiable household exposures across four clusters:
+            cookware &amp; food-contact plastics (27%), food safety &amp;
+            cleaning (30%), indoor air quality (33%), and PFAS in textiles
+            &amp; personal care (10%, the same weight PFAS has in the Water
+            score). Individually each exposure is small, but they are chronic
+            and additive over a lifetime.
           </p>
           <ul className="list-disc pl-5 flex flex-col gap-1">
             <li>
@@ -611,6 +613,44 @@ export function MethodologySection() {
               respiratory illness. Radon is the 2nd leading cause of lung cancer
               (~21,000 US deaths/yr, US EPA) and is only detectable by testing.
             </li>
+            <li>
+              <strong>PFAS in textiles &amp; personal care:</strong> Water-,
+              stain- and oil-repellent finishes are a common PFAS use: all 57
+              stain-resistant children&apos;s items tested contained PFAS, with
+              school uniforms on a par with outdoor wear (Xia et al. 2022). In
+              3D human-skin models up to 59% of short-chain PFAS passed through
+              the skin and long-chain PFAS stayed in it (Ragnarsdóttir et al.
+              2024); sweat multiplied modelled uptake from treated textiles (Li
+              et al. 2025). High fluorine was found in 82% of waterproof
+              mascaras, 63% of foundations and 62% of liquid lipsticks
+              (Whitehead et al. 2021); Oral-B Glide floss and stain-resistant
+              carpets or furniture were each linked to higher blood PFAS
+              (Boronow et al. 2019); some fluoroelastomer watch bands held PFHxA
+              at over 16,000 ng/g (Wicks et al. 2025); and rooms with PFAS-free
+              furniture and carpet had 78% less PFAS in dust (Young et al.
+              2021). Across 37 studies, skin contact was usually a small share
+              of total PFAS intake next to other routes, mainly food and
+              drinking water (Heywood et al. 2026), hence the 10% weight.
+              Clothing counts 40%, make-up, floss and watch bands 30%, and
+              furnishings 30%; &quot;Not sure&quot; scores 70, as an unchecked
+              water supply does. IARC (WHO) classifies PFOA as carcinogenic to
+              humans (Group 1) and PFOS as possibly carcinogenic (Group 2B).
+            </li>
+            <li>
+              <strong>PFAS rules for textiles:</strong> The EU restricts PFHxA
+              in consumer clothing, footwear and cosmetics from 10 October 2026,
+              and in carpets, upholstery and other home textiles from 10 October
+              2027 (Regulation (EU) 2024/2462). France has banned PFAS in
+              consumer clothing, footwear, cosmetics and ski wax since 1 January
+              2026 (all textiles from 2030), and Denmark in consumer clothing,
+              footwear and waterproofing products since 1 July 2026. California
+              has banned PFAS in most new textiles since 2025; outdoor gear
+              exempt until 2028 must be labelled &quot;Made with PFAS
+              chemicals&quot;. Items bought earlier aren&apos;t covered. Not
+              scored: food packaging (EU PFAS limits from 12 August 2026,
+              Regulation (EU) 2025/40) and children&apos;s products such as
+              stuffed toys (Nowak et al. 2026).
+            </li>
           </ul>
           <p className="text-xs">
             Sources: Luo et al. Sci. Total Environ. (2022), Hussain et al.
@@ -618,7 +658,17 @@ export function MethodologySection() {
             Perspect. (2011), Mitro et al. Environ. Sci. Technol. (2016),
             Svanes et al. AJRCCM (2018), Gruenwald et al. Int. J. Environ. Res.
             Public Health (2023), WHO Guidelines for Indoor Air Quality:
-            Dampness and Mould (2009), US EPA Radon Guidance, IARC Monographs.
+            Dampness and Mould (2009), US EPA Radon Guidance, IARC Monographs
+            (incl. Vol. 135, PFOA/PFOS, 2023), Xia et al. Environ. Sci.
+            Technol. (2022), Ragnarsdóttir et al. Environ. Int. (2024), Li et
+            al. Sci. Total Environ. (2025), Heywood et al. Risk Anal. (2026),
+            Whitehead et al. Environ. Sci. Technol. Lett. (2021), Boronow et
+            al. J. Expo. Sci. Environ. Epidemiol. (2019), Wicks et al. Environ.
+            Sci. Technol. Lett. (2025), Young et al. Environ. Int. (2021),
+            Nowak et al. J. Expo. Sci. Environ. Epidemiol. (2026), Regulation
+            (EU) 2024/2462, Regulation (EU) 2025/40, French Law 2025-188,
+            Danish PFAS ban for clothing, footwear and waterproofing agents
+            (2026), California AB 1817.
           </p>
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Home, CookingPot, SprayCan, Wind, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Home, CookingPot, SprayCan, Wind, Shirt, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,9 @@ const DEFAULTS: HomeEnvironmentAnswers = {
   scentedProducts: "occasional",
   radonStatus: "not-tested",
   smokeIndoors: "never",
+  repellentClothing: "unsure",
+  pfasPersonalCare: "unsure",
+  stainTreatedFurnishings: "unsure",
 }
 
 type Question = {
@@ -230,6 +233,50 @@ const GROUPS: Array<{
       },
     ],
   },
+  {
+    title: "PFAS in Textiles & Personal Care",
+    description:
+      "PFAS from treated fabrics and products can pass into the skin, more so with sweat (Ragnarsdóttir 2024; Li 2025). Skin contact is usually a smaller route than food and drinking water (Heywood 2026), but an easy one to cut.",
+    icon: Shirt,
+    questions: [
+      {
+        id: "repellentClothing",
+        label: "How much of your clothing has a water-, stain- or oil-repellent finish?",
+        description:
+          "Tags like 'water-repellent', 'stain-resistant', 'DWR' or 'easy care' often mean PFAS unless marked PFAS-free. Stain-resistant school uniforms held as much PFAS as outdoor wear (Xia 2022).",
+        options: [
+          { value: "pfas-free", label: "None, or only PFAS-free items" },
+          { value: "outer-layer", label: "Just an outer layer (rain or ski jacket)" },
+          { value: "next-to-skin", label: "Items worn against the skin most weeks" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+      {
+        id: "pfasPersonalCare",
+        label: "Do you use waterproof make-up, PTFE floss or a fluoroelastomer watch band most days?",
+        description:
+          "82% of waterproof mascaras were high in fluorine (Whitehead 2021), Glide-type floss users had higher blood PFAS (Boronow 2019), and some FKM watch bands contain PFHxA (Wicks 2025).",
+        options: [
+          { value: "none", label: "No, none of these" },
+          { value: "one", label: "Yes, one of them" },
+          { value: "two-plus", label: "Yes, two or more" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+      {
+        id: "stainTreatedFurnishings",
+        label: "Are your carpets, rugs or sofas treated to be stain-resistant?",
+        description:
+          "Stain treatments shed PFAS into house dust: rooms with PFAS-free furniture and carpet had 78% less (Young 2021).",
+        options: [
+          { value: "none", label: "No, or hard floors and untreated furniture" },
+          { value: "some", label: "One or two treated pieces" },
+          { value: "most", label: "Mostly, e.g. stain-resistant carpet" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+    ],
+  },
 ]
 
 export function HomeEnvironmentSection({
@@ -240,7 +287,8 @@ export function HomeEnvironmentSection({
   storedInputs,
   onStoreInputs,
 }: HomeEnvironmentSectionProps) {
-  const [answers, setAnswers] = useState<HomeEnvironmentAnswers>(storedInputs ?? DEFAULTS)
+  // Answers saved before newer questions existed lack them; the defaults fill the gaps
+  const [answers, setAnswers] = useState<HomeEnvironmentAnswers>({ ...DEFAULTS, ...storedInputs })
   const [result, setResult] = useState<HomeEnvironmentResult | null>(storedResult ?? null)
 
   useEffect(() => {
@@ -279,8 +327,8 @@ export function HomeEnvironmentSection({
             <div>
               <CardTitle>Home Environment & Exposures</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Everyday household choices — cookware, food storage, cleaning and indoor air — add up to meaningful
-                chemical and particulate exposure over a lifetime.
+                Everyday household choices — cookware, food storage, cleaning, treated textiles and indoor air — add
+                up to meaningful chemical and particulate exposure over a lifetime.
               </p>
             </div>
           </div>
@@ -346,6 +394,9 @@ function HomeEnvironmentResults({
     { label: "Cookware & Plastics", score: subScores.cookware },
     { label: "Food Safety & Cleaning", score: subScores.foodAndCleaning },
     { label: "Indoor Air", score: subScores.indoorAir },
+    ...(subScores.pfasProducts !== undefined
+      ? [{ label: "PFAS in Textiles & Care", score: subScores.pfasProducts }]
+      : []),
   ]
 
   return (
@@ -369,7 +420,7 @@ function HomeEnvironmentResults({
             </span>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className={items.length === 4 ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-4" : "grid gap-3 md:grid-cols-3"}>
             {items.map((it) => (
               <div key={it.label} className="flex flex-col gap-1 rounded-lg border border-border p-3">
                 <div className="flex items-center justify-between">

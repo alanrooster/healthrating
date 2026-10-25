@@ -1,7 +1,7 @@
 /**
  * Home Environment & Household Exposures assessment.
  *
- * Covers three research-backed clusters of modifiable household exposures:
+ * Covers four research-backed clusters of modifiable household exposures:
  *
  * 1) Cookware & food-contact plastics
  *    - Scratched nonstick (PTFE/Teflon) cookware: a single surface crack can release
@@ -35,6 +35,20 @@
  *      only detectable by testing.
  *    - Ventilation, HEPA filtration, and avoiding scented candles/incense (VOCs, benzene,
  *      formaldehyde, fine particulates) all improve indoor air.
+ *
+ * 4) PFAS in textiles & personal care
+ *    - Water-, stain- and oil-repellent finishes are a common PFAS use: all 57 stain-resistant
+ *      children's items tested contained PFAS, school uniforms on a par with outdoor wear
+ *      (Xia et al. 2022, Environ. Sci. Technol.).
+ *    - PFAS pass into human skin: 3D skin models absorbed up to 59% of short-chain doses and
+ *      retained long-chain PFAS in the tissue (Ragnarsdóttir et al. 2024, Environ. Int.); sweat
+ *      multiplied modelled uptake from treated textiles (Li et al. 2025, Sci. Total Environ.).
+ *    - High fluorine in 82% of waterproof mascaras (Whitehead et al. 2021, ES&T Letters); Oral-B
+ *      Glide floss and stain-resistant carpets/furniture linked to higher serum PFAS (Boronow et
+ *      al. 2019, JESEE); PFHxA in fluoroelastomer watch bands (Wicks et al. 2025, ES&T Letters).
+ *    - PFAS-free furniture and carpet cut PFAS in dust by 78% (Young et al. 2021, Environ. Int.).
+ *    - Skin contact is usually a small share of total PFAS intake next to other routes, mainly
+ *      food and drinking water (Heywood et al. 2026, Risk Analysis, 37 studies).
  *
  * NOTE: Educational composite. Rewards present-day protective behaviors and flags
  * common, fixable household exposures without alarmism.
@@ -76,6 +90,12 @@ export interface HomeEnvironmentAnswers {
   scentedProducts: "none" | "occasional" | "frequent" // candles / incense / plug-in air fresheners
   radonStatus: "tested-safe" | "mitigated" | "not-tested" | "high-untested"
   smokeIndoors: "never" | "occasional" | "regular" // tobacco/vape smoked inside the home
+
+  // --- 4) PFAS in textiles & personal care ---
+  // Optional because answers saved before these questions existed lack them; missing = "unsure"
+  repellentClothing?: "pfas-free" | "outer-layer" | "next-to-skin" | "unsure" // water/stain/oil-repellent finishes
+  pfasPersonalCare?: "none" | "one" | "two-plus" | "unsure" // daily waterproof make-up, PTFE floss, FKM watch band
+  stainTreatedFurnishings?: "none" | "some" | "most" | "unsure" // stain-resistant carpets, rugs, sofas
 }
 
 export interface HomeEnvironmentResult {
@@ -84,6 +104,7 @@ export interface HomeEnvironmentResult {
     cookware: number
     foodAndCleaning: number
     indoorAir: number
+    pfasProducts?: number // absent in results saved before PFAS products were scored
   }
   protectiveFactors: string[]
   riskFactors: string[]
@@ -310,15 +331,71 @@ function scoreIndoorAir(a: HomeEnvironmentAnswers): { score: number; protective:
   return { score, protective, risks }
 }
 
+type RepellentClothing = NonNullable<HomeEnvironmentAnswers["repellentClothing"]>
+type PfasPersonalCare = NonNullable<HomeEnvironmentAnswers["pfasPersonalCare"]>
+type StainTreatedFurnishings = NonNullable<HomeEnvironmentAnswers["stainTreatedFurnishings"]>
+
+// "unsure" scores 70, like an unchecked supply in the Water PFAS score: most homes hold some
+// treated items
+function scorePfasProducts(a: HomeEnvironmentAnswers): { score: number; protective: string[]; risks: string[] } {
+  const protective: string[] = []
+  const risks: string[] = []
+
+  const clothing = a.repellentClothing ?? "unsure"
+  const clothingMap: Record<RepellentClothing, number> = {
+    "pfas-free": 100,
+    "outer-layer": 80,
+    "next-to-skin": 40,
+    unsure: 70,
+  }
+  if (clothing === "pfas-free") {
+    protective.push("No PFAS-finished clothing: PFAS can pass into the skin, more so with sweat (Ragnarsdóttir 2024; Li 2025)")
+  } else if (clothing === "next-to-skin") {
+    risks.push("Stain- or water-repellent clothing worn against the skin is direct PFAS contact, and sweat raises uptake (Li 2025)")
+  }
+
+  const care = a.pfasPersonalCare ?? "unsure"
+  const careMap: Record<PfasPersonalCare, number> = {
+    none: 100,
+    one: 65,
+    "two-plus": 40,
+    unsure: 70,
+  }
+  if (care === "none") {
+    protective.push("No daily waterproof make-up, PTFE floss or fluoroelastomer watch band")
+  } else if (care === "one" || care === "two-plus") {
+    risks.push("Waterproof make-up, PTFE floss and fluoroelastomer watch bands are daily PFAS contacts (Whitehead 2021; Boronow 2019; Wicks 2025)")
+  }
+
+  const furnishings = a.stainTreatedFurnishings ?? "unsure"
+  const furnishingsMap: Record<StainTreatedFurnishings, number> = {
+    none: 100,
+    some: 65,
+    most: 35,
+    unsure: 70,
+  }
+  if (furnishings === "none") {
+    protective.push("Untreated furnishings keep PFAS out of house dust (78% less in Young 2021)")
+  } else if (furnishings === "some" || furnishings === "most") {
+    risks.push("Stain-resistant carpets and sofas shed PFAS into dust and were linked to higher blood PFAS (Boronow 2019)")
+  }
+
+  const score = Math.round(clothingMap[clothing] * 0.4 + careMap[care] * 0.3 + furnishingsMap[furnishings] * 0.3)
+  return { score, protective, risks }
+}
+
 export function calculateHomeEnvironment(a: HomeEnvironmentAnswers): HomeEnvironmentResult {
   const c = scoreCookware(a)
   const fc = scoreFoodAndCleaning(a)
   const ia = scoreIndoorAir(a)
+  const p = scorePfasProducts(a)
 
-  const overallScore = Math.round(c.score * 0.3 + fc.score * 0.33 + ia.score * 0.37)
+  // PFAS products weigh 10%, as PFAS does in the Water score: skin contact is a smaller route
+  // than food and drinking water (Heywood 2026)
+  const overallScore = Math.round(c.score * 0.27 + fc.score * 0.3 + ia.score * 0.33 + p.score * 0.1)
 
-  const protectiveFactors = [...c.protective, ...fc.protective, ...ia.protective]
-  const riskFactors = [...c.risks, ...fc.risks, ...ia.risks]
+  const protectiveFactors = [...c.protective, ...fc.protective, ...ia.protective, ...p.protective]
+  const riskFactors = [...c.risks, ...fc.risks, ...ia.risks, ...p.risks]
 
   const recommendations: string[] = []
   if (a.cookwareType === "nonstick-scratched") {
@@ -348,6 +425,21 @@ export function calculateHomeEnvironment(a: HomeEnvironmentAnswers): HomeEnviron
   if (a.ventilation === "rarely" || a.ventilation === "occasional") {
     recommendations.push("Air out your home daily, even briefly, to flush indoor pollutants.")
   }
+  if (a.repellentClothing === "next-to-skin") {
+    recommendations.push("As stain- or water-repellent clothing you wear against the skin wears out, replace it with PFAS-free items (OEKO-TEX STANDARD 100 has excluded intentional PFAS since 2023).")
+  }
+  if (a.pfasPersonalCare === "one" || a.pfasPersonalCare === "two-plus") {
+    recommendations.push("Choose make-up without PTFE or 'perfluoro-' ingredients, non-PTFE floss, and a silicone or fabric watch band instead of fluoroelastomer (FKM).")
+  }
+  if (a.stainTreatedFurnishings === "some" || a.stainTreatedFurnishings === "most") {
+    recommendations.push("Skip stain-protection treatments on new carpets and sofas; until you replace treated ones, HEPA-vacuum weekly to keep PFAS in dust down.")
+  }
+  const pfasUnsure = [a.repellentClothing, a.pfasPersonalCare, a.stainTreatedFurnishings].some(
+    (v) => v === undefined || v === "unsure"
+  )
+  if (pfasUnsure) {
+    recommendations.push("Check labels: 'water-repellent', 'stain-resistant' or 'DWR' finishes are often PFAS-based unless marked PFAS-free, and PTFE or 'perfluoro-' make-up ingredients and fluoroelastomer (FKM) watch bands are PFAS.")
+  }
   if (overallScore >= 80) {
     recommendations.push("Your home environment shows strong protective habits — maintain them.")
   }
@@ -358,6 +450,7 @@ export function calculateHomeEnvironment(a: HomeEnvironmentAnswers): HomeEnviron
       cookware: c.score,
       foodAndCleaning: fc.score,
       indoorAir: ia.score,
+      pfasProducts: p.score,
     },
     protectiveFactors,
     riskFactors,
