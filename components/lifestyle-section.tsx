@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import {
   calculateLifestyle,
+  reportsDrugUse,
   type LifestyleAnswers,
   type LifestyleResult,
 } from "@/lib/lifestyle-calculator"
@@ -74,6 +75,8 @@ const DEFAULT_ANSWERS: LifestyleAnswers = {
   saunaSessionsPerWeek: 0,
   smokingStatus: "never",
   cannabisUse: "never",
+  otherDrugUse: "never",
+  injectedDrugs: "never",
   alcoholFrequency: "monthly",
   alcoholUnitsPerSession: 2,
   caffeineConsumption: "moderate",
@@ -95,6 +98,7 @@ interface QuestionDef {
   max?: number
   step?: number
   unit?: string
+  showIf?: (answers: LifestyleAnswers) => boolean
 }
 
 const QUESTION_GROUPS: QuestionGroup[] = [
@@ -389,14 +393,41 @@ const QUESTION_GROUPS: QuestionGroup[] = [
       {
         id: "cannabisUse",
         label: "Cannabis use",
-        description: "Smoked, vaped or edible. Regular use is linked to more heart attacks and strokes (Heart, 2025). If you mix it with tobacco, count that as smoking too.",
+        description: "Smoked, vaped or edible, at any point in your life. Regular use is linked to more heart attacks and strokes (Heart, 2025). If you mix it with tobacco, count that as smoking too.",
         type: "select",
         options: [
           { value: "never", label: "Never" },
-          { value: "past", label: "Not in the past 12 months" },
-          { value: "occasional", label: "Less than once a week" },
+          { value: "past", label: "Tried once or a few times, not in the past 12 months" },
+          { value: "former", label: "Used regularly before, not in the past 12 months" },
+          { value: "occasional", label: "In the past 12 months, less than once a week" },
           { value: "weekly", label: "1-4 days a week" },
           { value: "daily", label: "Daily or almost daily" },
+        ],
+      },
+      {
+        id: "otherDrugUse",
+        label: "Other drugs",
+        description: "Cocaine, amphetamines, ecstasy (MDMA), heroin or other opioids, ketamine, LSD or mushrooms, GHB, nitrous oxide or poppers, and painkillers, sedatives or stimulants not prescribed to you. Even a single use counts. Like every answer, it stays in your browser.",
+        type: "select",
+        options: [
+          { value: "never", label: "Never" },
+          { value: "past", label: "Tried once or a few times, not in the past 12 months" },
+          { value: "former", label: "Used regularly before, not in the past 12 months" },
+          { value: "occasional", label: "Once or a few times in the past 12 months" },
+          { value: "monthly", label: "1-3 times a month" },
+          { value: "weekly", label: "Weekly or more" },
+        ],
+      },
+      {
+        id: "injectedDrugs",
+        label: "Have you ever injected drugs?",
+        description: "Drugs not prescribed by a doctor. Even once, years ago, matters: shared needles and equipment can pass on hepatitis B, hepatitis C and HIV, which can stay silent for years.",
+        type: "select",
+        showIf: reportsDrugUse,
+        options: [
+          { value: "never", label: "No, never" },
+          { value: "past", label: "Yes, but not in the past 12 months" },
+          { value: "recent", label: "Yes, in the past 12 months" },
         ],
       },
       {
@@ -561,7 +592,7 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
               </p>
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
-              {group.questions.map((q) => (
+              {group.questions.filter((q) => !q.showIf || q.showIf(answers)).map((q) => (
                 <div key={q.id} className="flex flex-col gap-1.5">
                   <Label className="text-sm text-foreground">{q.label}</Label>
                   {q.description && (
@@ -595,7 +626,7 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
                       value={answers[q.id] as string}
                       onValueChange={(val) => updateAnswer(q.id, val)}
                     >
-                      <SelectTrigger className="w-full max-w-xs">
+                      <SelectTrigger className="h-auto min-h-10 w-full max-w-md text-left [&>span]:line-clamp-2">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

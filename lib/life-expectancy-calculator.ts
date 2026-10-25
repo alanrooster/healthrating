@@ -35,6 +35,8 @@ export interface LifeExpectancyInputs {
   
   // Specific risk factors (from various modules)
   smokingStatus?: string
+  otherDrugUse?: string
+  injectedDrugs?: string
   alcoholFrequency?: string
   sleepHours?: number
   socialConnection?: string
@@ -263,6 +265,27 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     }
   }
   
+  // === DRUG USE ===
+  // Opioid dependence cuts life expectancy at 18 by 14.7 years for men and 15.8 for women (SMR
+  // 6.06; Lewer et al., J Psychiatr Res 2020). Regular cocaine and amphetamine use carry similar
+  // SMRs (6.1, 6.8), so weekly use of any drug other than cannabis counts the same. People who
+  // inject drugs have an SMR of 14.7 (Mathers et al., Bull WHO 2013), so injecting in the past
+  // year gets at least the same. Less frequent or past use has no measured effect on life
+  // expectancy and lowers the habits score only.
+  if (inputs.otherDrugUse || inputs.injectedDrugs) {
+    dataPoints++
+    if (inputs.otherDrugUse === "weekly" || inputs.injectedDrugs === "recent") {
+      const years = inputs.sex === "female" ? -15.8 : inputs.sex === "male" ? -14.7 : -15
+      adjustments.push({
+        factor: "Drug Use",
+        years,
+        direction: "negative",
+        source: "Lewer et al., J Psychiatr Res 2020; Mathers et al., Bull WHO 2013",
+      })
+      totalAdjustment += years
+    }
+  }
+
   // === AIR QUALITY ===
   // Each sustained 10 μg/m³ of PM2.5 above the WHO guideline costs 0.98 years of life
   // expectancy (AQLI 2025 Annual Update, EPIC University of Chicago)

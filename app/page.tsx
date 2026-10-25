@@ -35,6 +35,7 @@ import {
   type ModuleScore,
 } from "@/lib/health-score"
 import { calculateLifeExpectancy, type LifeExpectancyInputs } from "@/lib/life-expectancy-calculator"
+import { reportsDrugUse } from "@/lib/lifestyle-calculator"
 
 const EMPTY_SCORE: ModuleScore = { score: 0, completed: false, label: "" }
 
@@ -325,6 +326,11 @@ export default function Page() {
       personalityScore: personalityScore.completed ? personalityScore.score : undefined,
       homeEnvironmentScore: homeEnvironmentScore.completed ? homeEnvironmentScore.score : undefined,
       smokingStatus: lifestyleData?.smokingStatus,
+      otherDrugUse: lifestyleScore.completed ? storedInputs.lifestyle?.otherDrugUse : undefined,
+      injectedDrugs:
+        lifestyleScore.completed && storedInputs.lifestyle && reportsDrugUse(storedInputs.lifestyle)
+          ? storedInputs.lifestyle.injectedDrugs
+          : undefined,
       alcoholFrequency: lifestyleData?.alcoholFrequency,
       sleepHours: lifestyleData?.sleepHours,
       socialConnection: lifestyleData?.socialConnection,
@@ -349,7 +355,7 @@ export default function Page() {
         direction: a.direction as "positive" | "negative",
       })),
     }
-  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, homeEnvironmentScore, lifestyleData, dietData, airData, bodyDemographics])
+  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, homeEnvironmentScore, lifestyleData, dietData, airData, bodyDemographics, storedInputs])
 
   // Biological age requires a known chronological age (from the Body module)
   const biologicalAgeData = useMemo(() => {

@@ -98,7 +98,7 @@ const QUESTIONS: {
   { id: "cholesterolCheck", label: "Cholesterol panel", description: "Every 4-6 years" },
   { id: "lpaTest", label: "Lp(a) blood test", description: "Once in a lifetime (2025 ESC/EAS guideline). Lipoprotein(a) is mostly inherited and isn't part of a standard cholesterol panel. Above 50 mg/dL (105 nmol/L) it raises heart attack and stroke risk.", options: ONCE_OPTIONS },
   { id: "diabetesScreening", label: "Diabetes screening", description: "HbA1c or fasting glucose, every 3 years after 35" },
-  { id: "infectionTests", label: "Hepatitis B, hepatitis C and HIV tests", description: "Once as an adult, even without symptoms (European Code Against Cancer 2025; US CDC: every adult). Treating these infections prevents liver cancer and AIDS-related cancers. If your country screens for H. pylori (stomach cancer), take that test too.", options: INFECTION_TEST_OPTIONS },
+  { id: "infectionTests", label: "Hepatitis B, hepatitis C and HIV tests", description: "Once as an adult, even without symptoms (European Code Against Cancer 2025; US CDC: every adult). Treating these infections prevents liver cancer and AIDS-related cancers. If your country screens for H. pylori (stomach cancer), take that test too. If you have ever injected drugs, even once or years ago, these tests matter most; retest every year while you inject.", options: INFECTION_TEST_OPTIONS },
   { id: "cancerScreenings", label: "Age-appropriate cancer screenings", description: "Colonoscopy, mammogram, Pap, prostate, etc." },
   { id: "skinExam", label: "Skin examination" },
   { id: "primaryCareVisit", label: "Annual primary care visit" },

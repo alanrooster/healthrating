@@ -27,9 +27,20 @@
  * 3. Substance Use:
  *    - WHO/CDC evidence on smoking and alcohol health impacts
  *    - No safe level of alcohol consumption (WHO)
- *    - Cannabis (10% of the habits score): RR 2.10 for cardiovascular death, 1.29 for acute
- *      coronary syndrome and 1.20 for stroke across 24 studies (Storck et al., Heart 2025); daily
- *      use: MI aOR 1.25 and stroke 1.42, rising with days of use (Jeffers et al., JAHA 2024).
+ *    - Drug use is subtracted from the habits score, so people who never used drugs score as if
+ *      the questions didn't exist. Any lifetime use counts: the strictest reading of WHO ASSIST,
+ *      which asks about lifetime use first and injecting last.
+ *    - Cannabis: RR 2.10 for cardiovascular death, 1.29 for acute coronary syndrome and 1.20 for
+ *      stroke across 24 studies (Storck et al., Heart 2025); daily use: MI aOR 1.25 and stroke
+ *      1.42, rising with days of use (Jeffers et al., JAHA 2024).
+ *    - Other drugs: regular use multiplies mortality 6.1x for cocaine (Peacock et al., Addiction
+ *      2021), 6.8x for amphetamines (Stockings et al., Addiction 2019) and 10x for opioids
+ *      (Larney et al., JAMA Psychiatry 2020); heart-attack risk is 23.7x in the hour after cocaine
+ *      (Mittleman et al., Circulation 1999). Having ever used cocaine was not linked to heart
+ *      attacks but more than 10 uses was, in adults under 45 (Aslibekyan et al., Am J Cardiol
+ *      2008), so a single past use costs only a few points.
+ *    - Injecting: 38.8% of people who inject drugs have current hepatitis C and 15.2% live with
+ *      HIV (Degenhardt et al., Lancet Glob Health 2023).
  *
  * Overall score: 0-100, weighted across sub-domains.
  */
@@ -75,8 +86,11 @@ export interface LifestyleAnswers {
   alcoholFrequency: "never" | "monthly" | "weekly" | "several-weekly" | "daily"
   alcoholUnitsPerSession: number // 0-10+
   caffeineConsumption: "none" | "moderate" | "high" | "excessive" // cups of coffee equivalent
-  // Optional, same reason; "past" = not in the last 12 months
-  cannabisUse?: "never" | "past" | "occasional" | "weekly" | "daily"
+  // Optional, same reason. "past" = tried once or a few times, "former" = used regularly; both
+  // not in the last 12 months. Injecting only counts alongside reported drug use, as in WHO ASSIST
+  cannabisUse?: "never" | "past" | "former" | "occasional" | "weekly" | "daily"
+  otherDrugUse?: "never" | "past" | "former" | "occasional" | "monthly" | "weekly"
+  injectedDrugs?: "never" | "past" | "recent"
 }
 
 export interface LifestyleResult {
@@ -388,18 +402,51 @@ function scoreLeisure(answers: LifestyleAnswers): { score: number; risks: string
   return { score: Math.max(0, Math.min(100, score)), risks }
 }
 
-// Storck 2025: RR 2.10 cardiovascular death, 1.29 acute coronary syndrome, 1.20 stroke. Jeffers
-// 2024: odds rise with days of use a month, so less-than-weekly use sits close to never
-const CANNABIS_SCORE: Record<NonNullable<LifestyleAnswers["cannabisUse"]>, number> = {
-  never: 100,
-  past: 90,
-  occasional: 65,
-  weekly: 35,
-  daily: 10,
+// Points off the habits score. Daily smoking costs about 40 points, so daily cannabis sits below
+// it (Storck 2025, Jeffers 2024) and weekly use of other drugs above it (6-10x mortality)
+const CANNABIS_PENALTY: Record<NonNullable<LifestyleAnswers["cannabisUse"]>, number> = {
+  never: 0,
+  past: 2,
+  former: 5,
+  occasional: 8,
+  weekly: 15,
+  daily: 25,
+}
+
+const OTHER_DRUG_PENALTY: Record<NonNullable<LifestyleAnswers["otherDrugUse"]>, number> = {
+  never: 0,
+  past: 5,
+  former: 15,
+  occasional: 25,
+  monthly: 45,
+  weekly: 65,
+}
+
+const INJECTION_PENALTY: Record<NonNullable<LifestyleAnswers["injectedDrugs"]>, number> = {
+  never: 0,
+  past: 15,
+  recent: 35,
+}
+
+type DrugAnswers = Pick<LifestyleAnswers, "cannabisUse" | "otherDrugUse" | "injectedDrugs">
+
+export function reportsDrugUse(answers: DrugAnswers): boolean {
+  return (answers.cannabisUse ?? "never") !== "never" || (answers.otherDrugUse ?? "never") !== "never"
+}
+
+function hasInjectedDrugs(answers: DrugAnswers): boolean {
+  return reportsDrugUse(answers) && (answers.injectedDrugs === "past" || answers.injectedDrugs === "recent")
+}
+
+function drugUsePenalty(answers: DrugAnswers): number {
+  const cannabis = CANNABIS_PENALTY[answers.cannabisUse ?? "never"] ?? 0
+  const otherDrugs = OTHER_DRUG_PENALTY[answers.otherDrugUse ?? "never"] ?? 0
+  const injection = reportsDrugUse(answers) ? (INJECTION_PENALTY[answers.injectedDrugs ?? "never"] ?? 0) : 0
+  return cannabis + otherDrugs + injection
 }
 
 /**
- * Habits score (smoking + alcohol + caffeine + cannabis) (0-100)
+ * Habits score (smoking + alcohol + caffeine, minus drug use) (0-100)
  * WHO/CDC evidence on smoking and alcohol health impacts
  */
 function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[] } {
@@ -458,9 +505,24 @@ function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[
     )
   }
 
+  const otherDrugs = answers.otherDrugUse
+  if (otherDrugs === "weekly") {
+    risks.push(
+      "Weekly drug use: people who regularly use cocaine, amphetamines or opioids die at 6 to 10 times the usual rate, and opioid dependence shortens life by about 15 years (Lewer et al. 2020)"
+    )
+  } else if (otherDrugs === "occasional" || otherDrugs === "monthly") {
+    risks.push(
+      "Even occasional drug use carries acute risks: in the hour after taking cocaine, the risk of a heart attack is 24 times higher (Mittleman et al. 1999)"
+    )
+  }
+  if (hasInjectedDrugs(answers)) {
+    risks.push(
+      "Injecting drugs, even once, can pass on hepatitis C, hepatitis B and HIV: worldwide, 39% of people who inject drugs have hepatitis C and 15% live with HIV (Degenhardt et al. 2023)"
+    )
+  }
+
   const substanceScore = smokingScore * 0.45 + alcoholScore * 0.40 + caffeineScore * 0.15
-  // Cannabis takes 10% when answered; answers saved before it existed keep the old weights
-  const score = cannabis ? substanceScore * 0.9 + CANNABIS_SCORE[cannabis] * 0.1 : substanceScore
+  const score = Math.max(0, substanceScore - drugUsePenalty(answers))
 
   return { score: Math.round(score), risks }
 }
@@ -545,12 +607,18 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   if (su.score < 60) recommendations.push("Aim for 10-30 minutes of daily sun exposure; use sunscreen and avoid sunburns to balance vitamin D and skin cancer risk.")
   if (cm.score < 60) recommendations.push("Long commutes harm health: consider remote work, moving closer to work, or using commute time productively (audiobooks, podcasts, transit reading).")
   if (sa.score < 60) recommendations.push("Regular sauna use (4+ sessions/week) is associated with major cardiovascular benefits in long-term Finnish data.")
-  if (hb.score < 60) recommendations.push("Reducing smoking and alcohol intake are among the highest-impact changes for longevity.")
+  if (hb.score < 60) recommendations.push("Cutting down on smoking, alcohol and drugs is among the highest-impact changes for longevity.")
   if (answers.bedroomLight === "some-light" || answers.bedroomLight === "bright") {
     recommendations.push("Make your bedroom dark: blackout curtains or an eye mask, cover standby lights, and switch off the TV and screens before you fall asleep.")
   }
   if (answers.cannabisUse === "weekly" || answers.cannabisUse === "daily") {
     recommendations.push("Cut down on cannabis, especially smoked: regular use is linked to more heart attacks, strokes and cardiovascular deaths, and mixing it with tobacco adds the harms of smoking.")
+  }
+  if (answers.otherDrugUse === "occasional" || answers.otherDrugUse === "monthly" || answers.otherDrugUse === "weekly") {
+    recommendations.push("Consider stopping drug use; your doctor or a local drug service can help in confidence. If you do use, don't use alone, don't mix drugs with alcohol or sleeping pills, and use a drug-checking service where one exists.")
+  }
+  if (hasInjectedDrugs(answers)) {
+    recommendations.push("Get tested for hepatitis C, hepatitis B and HIV: the US CDC asks anyone who has ever injected drugs, even once or years ago, to test, and to retest every year while injecting. Ask about the hepatitis B vaccine too.")
   }
 
   if (overallScore >= 80) {

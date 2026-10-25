@@ -417,11 +417,24 @@ export function MethodologySection() {
             </li>
             <li>
               <strong>Habits:</strong> Smoking (WHO - 8M deaths/year),
-              alcohol (WHO - no safe level), caffeine, and cannabis at 10% of
-              the habits score: across 24 studies, use was linked to twice the
-              risk of cardiovascular death (RR 2.10), 29% more acute coronary
-              syndromes and 20% more strokes (Storck et al. 2025), rising with
-              days of use (Jeffers et al. 2024).
+              alcohol (WHO - no safe level) and caffeine, minus points for drug
+              use. Any use in your life counts, the strictest reading of the WHO
+              ASSIST screening questions (lifetime use, recent use, injecting),
+              though a single use long ago has no measured long-term effect, so
+              it costs only a few points (Aslibekyan et al. 2008). Cannabis
+              takes off 2 points if tried once, up to 25 if used daily: regular
+              use was linked to twice the risk of cardiovascular death (Storck
+              et al. 2025), rising with days of use (Jeffers et al. 2024). Other
+              drugs (cocaine, amphetamines, ecstasy, opioids, ketamine,
+              hallucinogens, medicines not prescribed to you) take off 5 points
+              if tried once, up to 65 if used weekly: regular use multiplies
+              mortality 6 to 10 times (Peacock et al. 2021; Stockings et al.
+              2019; Larney et al. 2020). Injecting takes off 15 more, or 35
+              within the past year, as it can pass on hepatitis and HIV
+              (Degenhardt et al. 2023). Weekly use of these drugs or injecting
+              in the past year also takes about 15 years off life expectancy
+              (Lewer et al. 2020). People who never used drugs score exactly as
+              they would without these questions.
             </li>
           </ul>
           <p className="text-xs">
