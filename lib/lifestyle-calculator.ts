@@ -74,6 +74,10 @@ export interface LifestyleAnswers {
   sunExposureMinutes: number // typical daily direct sun exposure (mins)
   sunscreenUse: "always" | "usually" | "sometimes" | "rarely" | "never"
   sunburnsPerYear: number // 0+ (skin cancer risk indicator)
+  // Optional: answers saved before these questions existed don't have them (missing = never/none)
+  sunbedUse?: "never" | "past" | "occasional" | "regular" // past = not in the last 12 months; regular = 10+ sessions a year
+  sunbedFirstUse?: "before-35" | "35-plus" | "unsure" // "unsure" counts as before 35, the stricter reading
+  flightHoursPerYear?: "none" | "under-50" | "50-100" | "100-200" | "200-plus" // as a passenger; aircrew answer in Work
 
   // Commute (Hansson et al. 2011 - long commutes raise depression/obesity risk)
   commuteMinutesOneWay: number // 0+ minutes one-way
@@ -261,29 +265,79 @@ function scoreSedentary(answers: LifestyleAnswers): { score: number; risks: stri
 }
 
 /**
- * Sun exposure score (0-100)
- * Balance: enough for vitamin D synthesis, not so much that skin cancer risk rises.
- * Holick (2007): 10-30 min midday sun on arms/legs several times weekly is generally sufficient.
- * AAD: regular sunscreen + lifetime sunburns are key skin cancer predictors.
+ * Daily sun-minute bands at the local UV level. `uvFactor` = the city's yearly UV dose / Boston's,
+ * where the 10-30 minute advice was researched (Webb, Kline & Holick 1988). Each band moves only
+ * towards its stricter side: more UV shortens the safe window, less UV raises the vitamin D
+ * minimum, and neither loosens the other.
  */
-function scoreSun(answers: LifestyleAnswers): { score: number; risks: string[] } {
-  const risks: string[] = []
+export function sunExposureBands(uvFactor = 1) {
+  const factor = Number.isFinite(uvFactor) && uvFactor > 0 ? uvFactor : 1
+  const brighter = Math.max(factor, 1)
+  const dimmer = Math.min(factor, 1)
+  const minimum = Math.round(5 / dimmer)
+  const ideal = Math.max(minimum, Math.round(30 / brighter))
+  return {
+    minimum,
+    ideal,
+    long: Math.round(60 / brighter),
+    extended: Math.round(120 / brighter),
+    /** The "10-30 minutes" advice at this UV dose, for display; the low end never drops below `minimum` */
+    window: [Math.min(ideal, Math.max(minimum, Math.round(10 / factor))), ideal] as const,
+  }
+}
 
-  // Exposure: sweet spot is 10-30 min/day
+// Points off the sun & radiation score, so people who use neither keep the same score
+const SUNBED_PENALTY: Record<NonNullable<LifestyleAnswers["sunbedUse"]>, number> = {
+  never: 0,
+  past: 5,
+  occasional: 15,
+  regular: 30,
+}
+// Nothing below 100 hours a year (under 0.5 mSv)
+const FLIGHT_PENALTY: Record<NonNullable<LifestyleAnswers["flightHoursPerYear"]>, number> = {
+  none: 0,
+  "under-50": 0,
+  "50-100": 0,
+  "100-200": 2,
+  "200-plus": 5,
+}
+
+/**
+ * Sun & radiation score (0-100)
+ * Balance: enough for vitamin D synthesis, not so much that skin cancer risk rises.
+ * Holick (2007): 10-30 min midday sun on arms/legs several times weekly is generally sufficient;
+ * the minute bands follow the local UV level (`sunExposureBands`, NASA POWER climatology).
+ * AAD: regular sunscreen + lifetime sunburns are key skin cancer predictors.
+ * Sunbeds are IARC Group 1 and the European Code Against Cancer (2025) advises against any use:
+ * ever use RR 1.20 for melanoma, 1.87 when first used before 35, +1.8% per yearly session
+ * (Boniol et al., BMJ 2012).
+ * Flights: cosmic radiation runs at 4-5 µSv an hour on long-haul routes (Bagshaw, Travel Med
+ * Infect Dis 2008), so 200 hours a year reach 1 mSv, the EU dose limit for the public and the
+ * level from which airlines must assess crew doses (Directive 2013/59/Euratom, Art. 35(3)).
+ */
+function scoreSun(answers: LifestyleAnswers, uvFactor = 1): { score: number; risks: string[] } {
+  const risks: string[] = []
+  const bands = sunExposureBands(uvFactor)
+
   let exposureScore: number
   const m = answers.sunExposureMinutes
-  if (m < 5) {
+  if (m < bands.minimum) {
     exposureScore = 30
     risks.push("Very limited sun exposure increases vitamin D deficiency risk")
-  } else if (m <= 30) {
+  } else if (m <= bands.ideal) {
     exposureScore = 100
-  } else if (m <= 60) {
+  } else if (m <= bands.long) {
     exposureScore = 75
-  } else if (m <= 120) {
+  } else if (m <= bands.extended) {
     exposureScore = 50
   } else {
     exposureScore = 25
     risks.push("Extended unprotected sun exposure raises skin cancer and photoaging risk")
+  }
+  if (uvFactor > 1 && m > bands.ideal) {
+    risks.push(
+      `Strong UV where you live (${uvFactor.toFixed(1)}x Boston's, where the 10-30 minute advice comes from): ${bands.ideal} minutes here give the UV dose of 30 there`,
+    )
   }
 
   // Sunscreen
@@ -311,7 +365,26 @@ function scoreSun(answers: LifestyleAnswers): { score: number; risks: string[] }
     risks.push(`${b} sunburns per year significantly increases melanoma risk`)
   }
 
-  const score = Math.round(exposureScore * 0.4 + sunscreenScore * 0.3 + burnScore * 0.3)
+  const sunbeds = answers.sunbedUse ?? "never"
+  if (sunbeds === "occasional" || sunbeds === "regular") {
+    risks.push(
+      "Sunbeds are a proven cause of skin cancer (IARC Group 1): any use raises melanoma risk by 20%, and starting before 35 by 87% (Boniol et al. 2012)",
+    )
+  } else if (sunbeds === "past") {
+    risks.push("Past sunbed use still counts: melanoma risk stays about 20% higher, or 87% higher if you started before 35 (Boniol et al. 2012)")
+  }
+
+  const flights = answers.flightHoursPerYear ?? "none"
+  if (flights === "200-plus") {
+    risks.push(
+      "Flying over 200 hours a year adds more than 1 mSv of cosmic radiation: the EU dose limit for the public, and the level at which airlines must track their crews' doses",
+    )
+  } else if (flights === "100-200") {
+    risks.push("Flying 100-200 hours a year adds 0.5-1 mSv of cosmic radiation, up to a third of a year's natural background")
+  }
+
+  const baseScore = exposureScore * 0.4 + sunscreenScore * 0.3 + burnScore * 0.3
+  const score = Math.max(0, Math.round(baseScore - (SUNBED_PENALTY[sunbeds] ?? 0) - (FLIGHT_PENALTY[flights] ?? 0)))
   return { score, risks }
 }
 
@@ -572,15 +645,15 @@ function scoreSauna(answers: LifestyleAnswers): { score: number; risks: string[]
 
 /**
  * Main lifestyle assessment function
- * Sub-domain weights: Sleep 22%, Social 16%, Sedentary 13%, Sun 8%,
+ * Sub-domain weights: Sleep 22%, Social 16%, Sedentary 13%, Sun & radiation 8%,
  * Leisure 12%, Commute 8%, Sauna 5%, Habits 16%
  */
-export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
+export function calculateLifestyle(answers: LifestyleAnswers, options: { uvFactor?: number } = {}): LifestyleResult {
   const sl = scoreSleep(answers)
   const so = scoreSocial(answers)
   const le = scoreLeisure(answers)
   const sd = scoreSedentary(answers)
-  const su = scoreSun(answers)
+  const su = scoreSun(answers, options.uvFactor)
   const cm = scoreCommute(answers)
   const sa = scoreSauna(answers)
   const hb = scoreHabits(answers)
@@ -604,7 +677,16 @@ export function calculateLifestyle(answers: LifestyleAnswers): LifestyleResult {
   if (so.score < 60) recommendations.push("Strengthen social connections: schedule regular time with friends/family, join community groups.")
   if (le.score < 60) recommendations.push("Balance screen time with outdoor activities and hobbies you enjoy.")
   if (sd.score < 60) recommendations.push("Break up sitting time: stand or move every 30-60 minutes; aim for under 8 hours sitting per day.")
-  if (su.score < 60) recommendations.push("Aim for 10-30 minutes of daily sun exposure; use sunscreen and avoid sunburns to balance vitamin D and skin cancer risk.")
+  const [sunLow, sunHigh] = sunExposureBands(options.uvFactor).window
+  if (su.score < 60) recommendations.push(`Aim for ${sunLow}-${sunHigh} minutes of daily sun at your local UV level; use sunscreen and avoid sunburns to balance vitamin D and skin cancer risk.`)
+  if (answers.sunbedUse === "occasional" || answers.sunbedUse === "regular") {
+    recommendations.push("Stop using sunbeds: the European Code Against Cancer (2025) advises against any use. Use self-tanning lotion for colour, and have your skin checked, as sunbed users develop more melanomas.")
+  } else if (answers.sunbedUse === "past") {
+    recommendations.push("After past sunbed use, check your skin for new or changing moles and ask your doctor about a skin exam.")
+  }
+  if (answers.flightHoursPerYear === "200-plus") {
+    recommendations.push("Long-haul and polar routes give the highest cosmic doses. If you're pregnant, count your flights: the EU protects pregnant aircrew at the public level, 1 mSv for the rest of the pregnancy.")
+  }
   if (cm.score < 60) recommendations.push("Long commutes harm health: consider remote work, moving closer to work, or using commute time productively (audiobooks, podcasts, transit reading).")
   if (sa.score < 60) recommendations.push("Regular sauna use (4+ sessions/week) is associated with major cardiovascular benefits in long-term Finnish data.")
   if (hb.score < 60) recommendations.push("Cutting down on smoking, alcohol and drugs is among the highest-impact changes for longevity.")

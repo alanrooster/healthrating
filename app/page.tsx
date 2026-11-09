@@ -36,6 +36,7 @@ import {
 } from "@/lib/health-score"
 import { calculateLifeExpectancy, type LifeExpectancyInputs } from "@/lib/life-expectancy-calculator"
 import { reportsDrugUse } from "@/lib/lifestyle-calculator"
+import { getLocalUv } from "@/lib/uv-exposure"
 
 const EMPTY_SCORE: ModuleScore = { score: 0, completed: false, label: "" }
 
@@ -134,6 +135,7 @@ export default function Page() {
   } | null>(null)
   const [airData, setAirData] = useState<{
     country: string
+    city?: string
     pm25Level?: number
   } | null>(null)
   const [bodyDemographics, setBodyDemographics] = useState<{
@@ -447,7 +449,9 @@ export default function Page() {
     }
   }
 
-  function handleAirResult(score: number, countryData?: { country: string; pm25Level?: number }) {
+  const localUv = airScore.completed ? getLocalUv(airData?.country, airData?.city) : undefined
+
+  function handleAirResult(score: number, countryData?: { country: string; city?: string; pm25Level?: number }) {
     setAirScore({ score, completed: true, label: "Air Quality" })
     if (countryData) {
       setAirData(countryData)
@@ -552,7 +556,7 @@ export default function Page() {
       case "work":
         return <WorkSection onResult={handleWorkResult} storedResult={storedResults.work} onStoreResult={(r) => storeResult("work", r)} onRetake={() => clearResult("work")} storedInputs={storedInputs.work} onStoreInputs={(i) => storeInputs("work", i)} />
       case "lifestyle":
-        return <LifestyleSection onResult={handleLifestyleResult} storedResult={storedResults.lifestyle} onStoreResult={(r) => storeResult("lifestyle", r)} onRetake={() => clearResult("lifestyle")} storedInputs={storedInputs.lifestyle} onStoreInputs={(i) => storeInputs("lifestyle", i)} />
+        return <LifestyleSection uvLevel={localUv} onResult={handleLifestyleResult} storedResult={storedResults.lifestyle} onStoreResult={(r) => storeResult("lifestyle", r)} onRetake={() => clearResult("lifestyle")} storedInputs={storedInputs.lifestyle} onStoreInputs={(i) => storeInputs("lifestyle", i)} />
       case "mental":
         return <MentalHealthSection onResult={handleMentalHealthResult} storedResult={storedResults.mental} onStoreResult={(r) => storeResult("mental", r)} onRetake={() => clearResult("mental")} storedInputs={storedInputs.mental} onStoreInputs={(i) => storeInputs("mental", i)} />
       case "family":

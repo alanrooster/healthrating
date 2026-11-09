@@ -14,7 +14,11 @@
  * 3. Single meta-analyses for carcinogens that act on one site, scaled to all cancers by that
  *    site's share of new cases in Europe (GLOBOCAN 2024): second-hand smoke (Hackshaw et al., BMJ
  *    1997), radon (Darby et al., BMJ 2005) and PM2.5 (Hamra et al., EHP 2014) for lung cancer, and
- *    sunburn for melanoma (Gandini et al., Eur J Cancer 2005).
+ *    sunburn (Gandini et al., Eur J Cancer 2005) and sunbeds (Boniol et al., BMJ 2012: ever use
+ *    RR 1.20, first use before 35 RR 1.87; "not sure" counts as before 35) for melanoma.
+ * 4. Beyond ECAC5, medical imaging, the largest man-made radiation dose: lifetime CT, PET-CT and
+ *    nuclear medicine scans at 7.7 mSv each (a body CT, RadiologyInfo 2025), with solid cancer
+ *    risk rising 52% per Gy (INWORKS, Richardson et al., BMJ 2023), counted as past exposure.
  *
  * Relative risks multiply. The result is a profile versus someone with none of the assessed
  * factors, not an absolute prediction: age and inherited variants dominate absolute risk.
@@ -32,7 +36,12 @@ import type { DietAnswers } from "./diet-calculator"
 import type { FamilyHistoryAnswers } from "./family-history-calculator"
 import type { HomeEnvironmentAnswers } from "./home-environment-calculator"
 import type { LifestyleAnswers } from "./lifestyle-calculator"
-import { isAskedAtAge, type PreventiveCareAnswers } from "./preventive-care-calculator"
+import {
+  IMAGING_MSV_PER_SCAN,
+  IMAGING_SCAN_COUNT,
+  isAskedAtAge,
+  type PreventiveCareAnswers,
+} from "./preventive-care-calculator"
 
 type Sex = "male" | "female"
 
@@ -49,7 +58,9 @@ export type CancerFactorId =
   | "sugaryDrinks"
   | "alcohol"
   | "sunburn"
+  | "sunbeds"
   | "radon"
+  | "medicalImaging"
   | "airPollution"
   | "familyHistory"
 
@@ -116,6 +127,8 @@ const RADON_LUNG_ERR_PER_100_BQ = 0.16 // Darby 2005, corrected for measurement 
 // recommends 100 Bq/m³
 const HIGH_RADON_BQ = 300
 const SUNBURN_MELANOMA_RR = 2.03 // Gandini 2005: history of sunburn
+const SUNBED_MELANOMA_RR = { ever: 1.2, firstUseBefore35: 1.87 } // Boniol 2012
+const SOLID_CANCER_ERR_PER_GY = 0.52 // INWORKS 2023, lagged 10 years
 const PM25_LUNG_RR_PER_10 = 1.09 // Hamra 2014, the meta-analysis behind IARC Monograph 109
 const WHO_PM25_GUIDELINE = 5 // WHO AQG 2021 annual mean
 // The linear dose-response isn't extrapolated beyond WHO interim target 2
@@ -147,7 +160,7 @@ const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], nu
 const DIET_DRINKS_PER_WEEK = [0, 1.5, 4.5, 10.5, 21]
 
 const MIN_FACTORS_ASSESSED = 4
-const TOTAL_FACTORS = 13
+const TOTAL_FACTORS = 15
 const NOT_ASSESSED = ["workplace carcinogens"]
 const NOT_ASSESSED_WOMEN_ONLY = ["breastfeeding", "HRT"]
 const INFECTION_ITEMS = ["hpvVaccine", "hepBVaccine", "infectionTests"] as const
@@ -383,8 +396,39 @@ export function calculateCancerRisk(inputs: CancerRiskInputs): CancerRiskResult 
     assessed++
     if (lifestyle.sunburnsPerYear >= 1) {
       flag("sunburn", "Sunburns", allCancerRisk(SUNBURN_MELANOMA_RR, MELANOMA_SHARE, sex))
-    } else if (lifestyle.sunscreenUse === "always" || lifestyle.sunscreenUse === "usually") {
+    } else if (
+      (lifestyle.sunscreenUse === "always" || lifestyle.sunscreenUse === "usually") &&
+      (lifestyle.sunbedUse ?? "never") === "never"
+    ) {
       protective.push("Sun-safe")
+    }
+  }
+
+  // Answers saved before the sunbed question existed don't have it, so it isn't counted
+  if (lifestyle?.sunbedUse) {
+    assessed++
+    if (lifestyle.sunbedUse !== "never") {
+      const melanomaRelativeRisk =
+        lifestyle.sunbedFirstUse === "35-plus" ? SUNBED_MELANOMA_RR.ever : SUNBED_MELANOMA_RR.firstUseBefore35
+      flag("sunbeds", "Sunbeds", allCancerRisk(melanomaRelativeRisk, MELANOMA_SHARE, sex), lifestyle.sunbedUse !== "past")
+    } else {
+      protective.push("No sunbeds")
+    }
+  }
+
+  const imaging = inputs.preventive?.imagingScans
+  if (imaging && imaging !== "unsure") {
+    assessed++
+    const doseMSv = IMAGING_SCAN_COUNT[imaging] * IMAGING_MSV_PER_SCAN
+    if (doseMSv > 0) {
+      flag(
+        "medicalImaging",
+        `CT and nuclear scans (~${Math.round(doseMSv)} mSv)`,
+        1 + (SOLID_CANCER_ERR_PER_GY * doseMSv) / 1000,
+        false,
+      )
+    } else {
+      protective.push("No CT scans")
     }
   }
 

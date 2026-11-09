@@ -24,6 +24,13 @@
  * 8. EU-OSHA Psychosocial Risks Framework (2022-2025)
  * 9. ILO Psychosocial Hazards at Work (2022)
  * 10. Maslach Burnout Inventory dimensions (Maslach & Jackson 1981)
+ * 11. Ionising radiation at work (Directive 2013/59/Euratom): aircrew doses must be assessed above
+ *     1 mSv a year (Art. 35(3)); industries processing naturally-occurring radioactive material
+ *     (NORM, Annex VI: phosphate fertiliser, oil and gas, coal-fired power plants, zircon, rare
+ *     earths, metal smelting, groundwater filtration...) must assess workers' doses; workplace
+ *     radon reference level at most 300 Bq/m³; the unborn child is protected like the public
+ *     (Art. 10). Solid cancer mortality rises 52% per Gy even at low doses (INWORKS, Richardson et
+ *     al., BMJ 2023). Points are subtracted, so people without exposure keep the same score.
  */
 
 export type EmploymentStatus =
@@ -46,6 +53,8 @@ export interface WorkAnswers {
   shiftType: "day" | "rotating" | "night" | "flexible"
   yearsOfShiftWork: number
   commuteMinutes: number
+  // Optional: answers saved before it existed don't have it (missing = none)
+  radiationAtWork?: "none" | "monitored" | "aircrew" | "norm" | "underground" | "unsure"
   
   // === WORK STRESS - Core Burnout (CBI/MBI inspired) ===
   workExhaustion: FrequencyLevel       // Physical/emotional exhaustion
@@ -524,6 +533,42 @@ function scoreStudent(answers: WorkAnswers): { score: number; risks: string[] } 
 /**
  * Main work assessment function
  */
+type RadiationAtWork = NonNullable<WorkAnswers["radiationAtWork"]>
+
+// Points off the work score: monitored workers wear a dosimeter and stay well under the 20 mSv
+// limit; aircrew fly at 4-5 µSv an hour on long-haul routes (Bagshaw 2008), several mSv a year
+// on a full roster; NORM sites and underground radon are often unmonitored.
+const WORK_RADIATION_PENALTY: Record<RadiationAtWork, number> = {
+  none: 0,
+  monitored: 2,
+  aircrew: 5,
+  norm: 5,
+  underground: 6,
+  unsure: 2,
+}
+
+const WORK_RADIATION_ADVICE: Partial<Record<RadiationAtWork, { risk?: string; rec: string }>> = {
+  monitored: {
+    risk: "Radiation work: cancer risk rises with dose even at low levels (INWORKS 2023), so your dose record matters",
+    rec: "Wear your dosimeter every shift and check your yearly dose record. If you become pregnant, tell your employer early: the EU protects the unborn child like a member of the public.",
+  },
+  aircrew: {
+    risk: "Aircrew get cosmic radiation at 4-5 µSv an hour on long-haul flights (Bagshaw 2008), several mSv a year on a full roster",
+    rec: "Ask your airline for your yearly dose record: in the EU it must assess crew doses above 1 mSv a year and use them to plan rosters. If you're pregnant, tell the airline early so the baby's dose stays under 1 mSv.",
+  },
+  norm: {
+    risk: "Industries handling naturally radioactive material (phosphate fertiliser, oil and gas, coal ash, zircon and mineral sands, rare earths, smelting) are on the EU list of sectors that must assess workers' radiation doses",
+    rec: "Ask your employer for the radiation dose assessment the EU requires for NORM industries, and use dust control, masks and good hygiene where scale, sludge or dust is handled.",
+  },
+  underground: {
+    risk: "Radon builds up in mines, tunnels, caves and spas; the EU reference level for workplaces is 300 Bq/m³",
+    rec: "Ask whether radon has been measured where you work: in the EU, workplaces above 300 Bq/m³ must act to bring it down.",
+  },
+  unsure: {
+    rec: "Not sure about radiation at work? Ask your employer or safety officer: aircrew, medical imaging, nuclear work, NORM industries and underground sites are the usual exposures.",
+  },
+}
+
 export function calculateWork(answers: WorkAnswers): WorkResult {
   const { base, skipFull } = getEmploymentBaseScore(answers.employmentStatus)
   const allRisks: string[] = []
@@ -568,6 +613,12 @@ export function calculateWork(answers: WorkAnswers): WorkResult {
       relationshipsScore * 0.20 +
       securityScore * 0.13
     )
+
+    const radiation = answers.radiationAtWork ?? "none"
+    finalScore = Math.max(0, finalScore - (WORK_RADIATION_PENALTY[radiation] ?? 0))
+    const radiationAdvice = WORK_RADIATION_ADVICE[radiation]
+    if (radiationAdvice?.risk) allRisks.push(radiationAdvice.risk)
+    if (radiationAdvice) recommendations.push(radiationAdvice.rec)
 
     // Generate recommendations based on lowest scores
     const scores = [

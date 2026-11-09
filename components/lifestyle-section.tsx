@@ -29,6 +29,7 @@ import {
 import {
   calculateLifestyle,
   reportsDrugUse,
+  sunExposureBands,
   type LifestyleAnswers,
   type LifestyleResult,
 } from "@/lib/lifestyle-calculator"
@@ -50,6 +51,8 @@ interface LifestyleSectionProps {
   onRetake?: () => void
   storedInputs?: LifestyleAnswers | null
   onStoreInputs?: (inputs: LifestyleAnswers) => void
+  /** UV at the Air Quality location, relative to Boston */
+  uvLevel?: { place: string; factor: number }
 }
 
 const DEFAULT_ANSWERS: LifestyleAnswers = {
@@ -71,6 +74,9 @@ const DEFAULT_ANSWERS: LifestyleAnswers = {
   sunExposureMinutes: 20,
   sunscreenUse: "sometimes",
   sunburnsPerYear: 0,
+  sunbedUse: "never",
+  sunbedFirstUse: "unsure",
+  flightHoursPerYear: "none",
   commuteMinutesOneWay: 20,
   saunaSessionsPerWeek: 0,
   smokingStatus: "never",
@@ -305,7 +311,7 @@ const QUESTION_GROUPS: QuestionGroup[] = [
     ],
   },
   {
-    title: "Sun Exposure",
+    title: "Sun & Radiation",
     icon: Sun,
     questions: [
       {
@@ -340,6 +346,43 @@ const QUESTION_GROUPS: QuestionGroup[] = [
         max: 20,
         step: 1,
         unit: "burns",
+      },
+      {
+        id: "sunbedUse",
+        label: "Sunbeds or tanning lamps",
+        description: "Any use counts. Sunbeds are a proven cause of skin cancer (IARC Group 1), and the European Code Against Cancer (2025) advises against using them at all.",
+        type: "select",
+        options: [
+          { value: "never", label: "Never" },
+          { value: "past", label: "In the past, not in the last 12 months" },
+          { value: "occasional", label: "In the last 12 months, fewer than 10 sessions" },
+          { value: "regular", label: "In the last 12 months, 10 or more sessions" },
+        ],
+      },
+      {
+        id: "sunbedFirstUse",
+        label: "How old were you the first time?",
+        description: "Starting before 35 nearly doubles melanoma risk (BMJ, 2012).",
+        type: "select",
+        showIf: (a) => (a.sunbedUse ?? "never") !== "never",
+        options: [
+          { value: "before-35", label: "Under 35" },
+          { value: "35-plus", label: "35 or older" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+      {
+        id: "flightHoursPerYear",
+        label: "Hours a year in the air, as a passenger",
+        description: "Cosmic radiation is stronger at cruise altitude: each long-haul return trip (about 17 hours in the air) adds roughly the dose of a chest X-ray. Pilots and cabin crew: answer in the Work section.",
+        type: "select",
+        options: [
+          { value: "none", label: "None" },
+          { value: "under-50", label: "Under 50 hours (a few long-haul trips)" },
+          { value: "50-100", label: "50-100 hours" },
+          { value: "100-200", label: "100-200 hours" },
+          { value: "200-plus", label: "Over 200 hours" },
+        ],
       },
     ],
   },
@@ -494,7 +537,7 @@ function deriveSocialConnection(a: LifestyleAnswers): "strong" | "moderate" | "w
   return "isolated"
 }
 
-export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs }: LifestyleSectionProps) {
+export function LifestyleSection({ onResult, storedResult, onStoreResult, onRetake, storedInputs, onStoreInputs, uvLevel }: LifestyleSectionProps) {
   const [answers, setAnswers] = useState<LifestyleAnswers>({ ...DEFAULT_ANSWERS, ...storedInputs })
   const [result, setResult] = useState<LifestyleResult | null>(storedResult ?? null)
   const [currentGroup, setCurrentGroup] = useState(0)
@@ -521,7 +564,7 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
   }
 
   function handleCalculate() {
-    const r = calculateLifestyle(answers)
+    const r = calculateLifestyle(answers, { uvFactor: uvLevel?.factor })
     setResult(r)
     onStoreResult?.(r)
     // Derive social connection level (Holt-Lunstad 2010 categories) from the
@@ -552,6 +595,10 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
   const isLastGroup = currentGroup === QUESTION_GROUPS.length - 1
   const group = QUESTION_GROUPS[currentGroup]
   const GroupIcon = group.icon
+  const [sunLow, sunHigh] = sunExposureBands(uvLevel?.factor).window
+  const sunDescription = uvLevel
+    ? `Sweet spot where you live: about ${sunLow}-${sunHigh} min for vitamin D. ${uvLevel.place} gets ${uvLevel.factor.toFixed(1)}x the yearly UV of Boston, where the 10-30 minute advice was researched.`
+    : "Sweet spot is 10-30 min for vitamin D, at Boston's UV level. Complete Air Quality to adjust it to the UV where you live."
 
   return (
     <div className="flex flex-col gap-6">
@@ -595,8 +642,10 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
               {group.questions.filter((q) => !q.showIf || q.showIf(answers)).map((q) => (
                 <div key={q.id} className="flex flex-col gap-1.5">
                   <Label className="text-sm text-foreground">{q.label}</Label>
-                  {q.description && (
-                    <p className="text-xs text-muted-foreground">{q.description}</p>
+                  {(q.id === "sunExposureMinutes" ? sunDescription : q.description) && (
+                    <p className="text-xs text-muted-foreground">
+                      {q.id === "sunExposureMinutes" ? sunDescription : q.description}
+                    </p>
                   )}
                   {q.type === "number" ? (
                     <div className="flex items-center gap-2">
@@ -681,7 +730,7 @@ function LifestyleResults({
     { label: "Social Connection", score: subScores.social, icon: Users },
     { label: "Leisure & Balance", score: subScores.leisure, icon: Tv },
     { label: "Sedentary Time", score: subScores.sedentary, icon: Armchair },
-    { label: "Sun Exposure", score: subScores.sun, icon: Sun },
+    { label: "Sun & Radiation", score: subScores.sun, icon: Sun },
     { label: "Commute", score: subScores.commute, icon: Car },
     { label: "Sauna", score: subScores.sauna, icon: Flame },
     { label: "Habits", score: subScores.habits, icon: Cigarette },

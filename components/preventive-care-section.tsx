@@ -18,6 +18,7 @@ import {
   type PreventiveCareAnswers,
   type PreventiveCareResult,
   type CarePeriod,
+  type ImagingScans,
 } from "@/lib/preventive-care-calculator"
 import { getScoreColor } from "@/lib/health-score"
 
@@ -50,6 +51,7 @@ const DEFAULT_ANSWERS: PreventiveCareAnswers = {
   primaryCareVisit: "current",
   dentalVisit: "current",
   eyeExam: "current",
+  imagingScans: "none",
 }
 
 const PERIOD_OPTIONS: { value: CarePeriod; label: string }[] = [
@@ -80,11 +82,20 @@ const INFECTION_TEST_OPTIONS: { value: CarePeriod; label: string }[] = [
   { value: "not-applicable", label: "Not applicable for me" },
 ]
 
+const IMAGING_OPTIONS: { value: ImagingScans; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "1-2", label: "1-2" },
+  { value: "3-5", label: "3-5" },
+  { value: "6-10", label: "6-10" },
+  { value: "over-10", label: "More than 10" },
+  { value: "unsure", label: "Not sure" },
+]
+
 const QUESTIONS: {
   id: keyof PreventiveCareAnswers
   label: string
   description?: string
-  options?: { value: CarePeriod; label: string }[]
+  options?: { value: string; label: string }[]
 }[] = [
   { id: "fluVaccine", label: "Annual flu vaccine" },
   { id: "tdapVaccine", label: "Tdap booster", description: "Recommended every 10 years" },
@@ -101,6 +112,12 @@ const QUESTIONS: {
   { id: "infectionTests", label: "Hepatitis B, hepatitis C and HIV tests", description: "Once as an adult, even without symptoms (European Code Against Cancer 2025; US CDC: every adult). Treating these infections prevents liver cancer and AIDS-related cancers. If your country screens for H. pylori (stomach cancer), take that test too. If you have ever injected drugs, even once or years ago, these tests matter most; retest every year while you inject.", options: INFECTION_TEST_OPTIONS },
   { id: "cancerScreenings", label: "Age-appropriate cancer screenings", description: "Colonoscopy, mammogram, Pap, prostate, etc." },
   { id: "skinExam", label: "Skin examination" },
+  {
+    id: "imagingScans",
+    label: "CT, PET and nuclear medicine scans in your life",
+    description: "Count CT scans (including CT angiography), PET-CT, nuclear medicine scans and X-ray-guided procedures such as angiograms. A body CT is about 7.7 mSv, 2.6 years of natural background radiation. Ordinary and dental X-rays, mammograms and low-dose lung screening are far lower, so leave them out.",
+    options: IMAGING_OPTIONS,
+  },
   { id: "primaryCareVisit", label: "Annual primary care visit" },
   { id: "dentalVisit", label: "Dental cleaning", description: "Every 6 months" },
   { id: "eyeExam", label: "Eye examination", description: "Every 1-2 years" },
@@ -116,7 +133,7 @@ export function PreventiveCareSection({ onResult, age, storedResult, onStoreResu
   }, [answers])
 
   function update(id: keyof PreventiveCareAnswers, value: string) {
-    setAnswers((prev) => ({ ...prev, [id]: value as CarePeriod }))
+    setAnswers((prev) => ({ ...prev, [id]: value }) as PreventiveCareAnswers)
   }
 
   function handleCalculate() {

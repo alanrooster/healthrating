@@ -60,6 +60,7 @@ const DEFAULT_ANSWERS: WorkAnswers = {
   shiftType: "day",
   yearsOfShiftWork: 0,
   commuteMinutes: 30,
+  radiationAtWork: "none",
   // Burnout
   workExhaustion: "sometimes",
   workOverwhelm: "sometimes",
@@ -480,6 +481,36 @@ function handleCalculate() {
                         />
                         <span className="text-sm text-muted-foreground">minutes</span>
                       </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="work-radiation" className="text-sm text-foreground">
+                        Ionising radiation at work
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Pilots and cabin crew get extra cosmic radiation, some industries handle naturally radioactive
+                        materials (NORM), and radon builds up underground.
+                      </p>
+                      <Select
+                        value={answers.radiationAtWork ?? "none"}
+                        onValueChange={(val) => updateAnswer("radiationAtWork", val as WorkAnswers["radiationAtWork"])}
+                      >
+                        <SelectTrigger id="work-radiation" className="h-auto min-h-10 w-full max-w-md text-left [&>span]:line-clamp-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No</SelectItem>
+                          <SelectItem value="monitored">
+                            Yes, with a personal dosimeter (medical, dental, veterinary, nuclear, industrial)
+                          </SelectItem>
+                          <SelectItem value="aircrew">Pilot or cabin crew</SelectItem>
+                          <SelectItem value="norm">
+                            Naturally radioactive materials: phosphate fertiliser, oil and gas, coal ash, zircon sands
+                          </SelectItem>
+                          <SelectItem value="underground">Underground: mine, tunnel, cave or spa</SelectItem>
+                          <SelectItem value="unsure">Not sure</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </>
                 )}

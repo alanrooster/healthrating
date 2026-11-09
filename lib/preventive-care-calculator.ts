@@ -21,12 +21,20 @@
  * - 2025 ESC/EAS focused update on dyslipidaemias: measure Lp(a) at least once in every adult's
  *   lifetime; above 50 mg/dL (105 nmol/L) it is a risk-enhancing factor.
  * - ADA / WHO oral health guidelines
+ * - Medical imaging, the largest man-made radiation dose for most people: CT scans done in the US
+ *   in 2023 are projected to cause about 103,000 cancers, 91% of them in adults (Smith-Bindman et
+ *   al., JAMA Intern Med 2025). Avoiding unneeded scans is "quaternary prevention", so lifetime
+ *   CT, PET-CT and nuclear medicine scans subtract a few points; scans are usually needed, so the
+ *   penalty stays small and people with none keep the same score.
  *
  * Studies suggest adherence to recommended preventive care can reduce
  * mortality by 5-15% over a decade and add several years of life expectancy.
  */
 
 export type CarePeriod = "current" | "overdue" | "long-overdue" | "never" | "not-applicable"
+
+/** Lifetime CT (incl. CT angiography and PET-CT), nuclear medicine scans and X-ray-guided procedures */
+export type ImagingScans = "none" | "1-2" | "3-5" | "6-10" | "over-10" | "unsure"
 
 export interface PreventiveCareAnswers {
   // Vaccines
@@ -53,6 +61,33 @@ export interface PreventiveCareAnswers {
   primaryCareVisit: CarePeriod    // annual checkup
   dentalVisit: CarePeriod         // every 6 mo
   eyeExam: CarePeriod             // every 1-2 yr
+
+  // Medical radiation (optional for answers saved before it existed; missing = none)
+  imagingScans?: ImagingScans
+}
+
+type CareItemKey = Exclude<keyof PreventiveCareAnswers, "imagingScans">
+
+// A body CT (abdomen and pelvis) is about 7.7 mSv, 2.6 years of the ~3 mSv a year of natural
+// background (RadiologyInfo, ACR/RSNA, reviewed 2025). Counts use the middle of each band.
+export const IMAGING_MSV_PER_SCAN = 7.7
+export const BACKGROUND_MSV_PER_YEAR = 3
+export const IMAGING_SCAN_COUNT: Record<ImagingScans, number> = {
+  none: 0,
+  "1-2": 1.5,
+  "3-5": 4,
+  "6-10": 8,
+  "over-10": 12,
+  unsure: 0,
+}
+// Each scan adds about 0.4% to cancer risk (52% per Gy, INWORKS), so the points stay small
+const IMAGING_PENALTY: Record<ImagingScans, number> = {
+  none: 0,
+  "1-2": 1,
+  "3-5": 3,
+  "6-10": 6,
+  "over-10": 10,
+  unsure: 1,
 }
 
 export interface PreventiveCareResult {
@@ -94,7 +129,7 @@ export function isAskedAtAge(key: keyof PreventiveCareAnswers, age?: number): bo
   return (minAge === undefined || age >= minAge) && (maxAge === undefined || age <= maxAge)
 }
 
-const ITEMS: { key: keyof PreventiveCareAnswers; label: string; weight: number; recommendation: string }[] = [
+const ITEMS: { key: CareItemKey; label: string; weight: number; recommendation: string }[] = [
   { key: "fluVaccine", label: "Annual flu vaccine", weight: 0.7, recommendation: "Get an annual flu vaccine, especially if over 50 or with chronic conditions." },
   { key: "tdapVaccine", label: "Tdap booster (every 10 years)", weight: 0.5, recommendation: "Update your Tdap booster - protects against tetanus, diphtheria, and pertussis." },
   { key: "covidUpToDate", label: "COVID-19 vaccination current", weight: 0.5, recommendation: "Stay current on COVID-19 vaccinations per latest guidance." },
@@ -137,7 +172,21 @@ export function calculatePreventiveCare(answers: PreventiveCareAnswers, age?: nu
     }
   }
 
-  const overallScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 50
+  const scheduleScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 50
+  const imaging = answers.imagingScans ?? "none"
+  const overallScore = Math.max(0, scheduleScore - (IMAGING_PENALTY[imaging] ?? 0))
+
+  const scans = IMAGING_SCAN_COUNT[imaging] ?? 0
+  if (scans >= 4) {
+    const dose = Math.round(scans * IMAGING_MSV_PER_SCAN)
+    recommendations.push(
+      `Your scans add up to roughly ${dose} mSv, about ${Math.round(dose / BACKGROUND_MSV_PER_YEAR)} years of natural background radiation. Before a new CT, ask whether the result will change your treatment and whether ultrasound or MRI, which use no ionising radiation, could answer the same question, and bring earlier images so nothing is repeated. Never refuse a scan your doctor says you need.`,
+    )
+  } else if (imaging === "unsure") {
+    recommendations.push(
+      "Keep a list of your CT and nuclear medicine scans with their dates: it helps doctors avoid repeating them, and a body CT is about 7.7 mSv, 2.6 years of natural background radiation.",
+    )
+  }
 
   if (overallScore >= 85 && recommendations.length === 0) {
     recommendations.push("Your preventive care is excellent - keep maintaining these visits.")

@@ -310,6 +310,12 @@ export function MethodologySection() {
           <ul className="list-disc pl-5 flex flex-col gap-1">
             <li>
               <strong>Work Schedule (12%):</strong> Hours, shift type, commute.
+              Radiation at work (aircrew, industries handling naturally
+              radioactive material, underground radon, dosimeter-monitored jobs)
+              takes off 2-6 points: the EU requires dose assessment for aircrew
+              above 1 mSv a year and for these industries (Directive
+              2013/59/Euratom), and solid cancer risk rises 52% per Gy even at
+              low doses (INWORKS, Richardson et al. 2023).
               WHO/ILO Joint Estimates (2021) show 55+ hours/week increases stroke
               risk by 35% and ischaemic heart disease by 17%. IARC Monograph 124
               classifies night shift work as Group 2A (probably carcinogenic).
@@ -396,9 +402,20 @@ export function MethodologySection() {
               of exercise. Breaking up sitting reduces metabolic harm.
             </li>
             <li>
-              <strong>Sun Exposure:</strong> Holick (2007) for vitamin D
-              synthesis (10-30 min/day optimal); AAD on sunscreen and sunburn
-              skin cancer risk.
+              <strong>Sun &amp; Radiation:</strong> Holick (2007) for vitamin D
+              synthesis (10-30 min/day optimal, researched in Boston: Webb, Kline
+              &amp; Holick 1988); AAD on sunscreen and sunburn skin cancer risk.
+              The minute bands follow the yearly UV dose of your Air Quality
+              city against Boston (NASA POWER climatology 2001-2025, 564 cities;
+              r = 0.93 with WHO&apos;s 2004 country values) and only move to the
+              stricter side: in Sydney (1.6× Boston) the window ends at 19
+              minutes, while in Oslo (0.6×) the vitamin D minimum rises and the
+              upper end stays at 30. Sunbeds (IARC Group 1) take off 5 points for
+              past use and up to 30 for regular use: any use raises melanoma risk
+              by 20%, first use before 35 by 87% (Boniol et al. 2012). Flying as
+              a passenger takes off 2 points from 100 hours a year and 5 from
+              200, when cosmic radiation at 4-5 µSv an hour (Bagshaw 2008)
+              reaches 1 mSv, the EU dose limit for the public.
             </li>
             <li>
               <strong>Commute:</strong> Hansson et al. 2011 (Sweden) -
@@ -592,12 +609,12 @@ export function MethodologySection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
-            Evaluates modifiable household exposures across four clusters:
-            cookware &amp; food-contact plastics (27%), food safety &amp;
-            cleaning (30%), indoor air quality (33%), and PFAS in textiles
-            &amp; personal care (10%, the same weight PFAS has in the Water
-            score). Individually each exposure is small, but they are chronic
-            and additive over a lifetime.
+            Evaluates modifiable household exposures across five clusters:
+            cookware &amp; food-contact plastics (25%), food safety &amp;
+            cleaning (28%), indoor air quality (30%), PFAS in textiles &amp;
+            personal care (9%, close to the 10% PFAS has in the Water score)
+            and radiation &amp; fields (8%). Individually each exposure is
+            small, but they are chronic and additive over a lifetime.
           </p>
           <ul className="list-disc pl-5 flex flex-col gap-1">
             <li>
@@ -639,8 +656,7 @@ export function MethodologySection() {
               <strong>Indoor air:</strong> Gruenwald et al. 2023 attributed
               ~12.7% of US childhood asthma to gas-stove NO2 (vented hoods cut
               this sharply). WHO 2009 ties indoor damp/mould to ~30-50% higher
-              respiratory illness. Radon is the 2nd leading cause of lung cancer
-              (~21,000 US deaths/yr, US EPA) and is only detectable by testing.
+              respiratory illness.
             </li>
             <li>
               <strong>PFAS in textiles &amp; personal care:</strong> Water-,
@@ -659,11 +675,46 @@ export function MethodologySection() {
               furniture and carpet had 78% less PFAS in dust (Young et al.
               2021). Across 37 studies, skin contact was usually a small share
               of total PFAS intake next to other routes, mainly food and
-              drinking water (Heywood et al. 2026), hence the 10% weight.
+              drinking water (Heywood et al. 2026), hence the small 9% weight.
               Clothing counts 40%, make-up, floss and watch bands 30%, and
               furnishings 30%; &quot;Not sure&quot; scores 70, as an unchecked
               water supply does. IARC (WHO) classifies PFOA as carcinogenic to
               humans (Group 1) and PFOS as possibly carcinogenic (Group 2B).
+            </li>
+            <li>
+              <strong>Radiation &amp; fields (8%):</strong> Radon (60% of the
+              cluster) is the 2nd leading cause of lung cancer (~21,000 US
+              deaths/yr, US EPA) and is only detectable by testing. Building
+              materials (25%): tuff, pozzolana, lava, granite and other igneous
+              stone are on the EU list of materials of concern for gamma rays,
+              with an indoor reference level of 1 mSv a year (Directive
+              2013/59/Euratom, Art. 75 and Annex XIII). Stone and bare earthen
+              walls also give off thoron (radon-220), which stays close to the
+              surface (55.6-second half-life, Tokonami 2020), reaches high levels
+              in earthen houses and isn&apos;t measured reliably by ordinary
+              radon tests. Plaster or paint holds thoron back but not gamma rays,
+              so covered stone scores 70, bare stone 50, covered earth 85, bare
+              earth 60 and &quot;Not sure&quot; 85 (most homes are brick,
+              concrete or wood). Power lines (15%) count only with children at
+              home: their magnetic fields are IARC Group 2B, and children living
+              within 50 m of 200 kV+ lines had OR 1.33 (95% CI 0.92-1.93) for
+              leukaemia in an international pooled analysis (Amoon et al. 2018),
+              with no consistent link in adults; 50-200 m scores 90, the
+              stricter reading. Elsewhere: sun, sunbeds and flights in
+              Lifestyle; CT, PET and nuclear medicine scans in Preventive Care
+              (a body CT is 7.7 mSv, 2.6 years of natural background,
+              RadiologyInfo 2025; up to 10 points off, as CT scans done in the
+              US in 2023 are projected to cause about 103,000 cancers,
+              Smith-Bindman et al. 2025); and radiation at work in Work. Not
+              scored: radiofrequency from phones, Wi-Fi, 5G or base stations,
+              IARC Group 2B since 2011 (the 2024 WHO-commissioned review found
+              no raised risk of glioma, meningioma or acoustic neuroma from
+              mobile phones, Karipidis et al., and living near base stations
+              wasn&apos;t linked to early childhood cancer, Elliott et al. 2010;
+              rats exposed to the whole body at high levels for two years did
+              develop more heart tumours, Mevissen et al. 2025), and home
+              altitude (more cosmic radiation, but 22% less heart disease and
+              12% less stroke mortality per 1,000 m, Faeh et al. 2009).
             </li>
             <li>
               <strong>PFAS rules for textiles:</strong> The EU restricts PFHxA
@@ -841,8 +892,13 @@ export function MethodologySection() {
             1.24, Hackshaw et al. 1997), radon known or likely to be high (+16%
             per 100 Bq/m³, Darby et al. 2005, at the EU reference level of 300
             Bq/m³), PM2.5 above the WHO guideline of 5 µg/m³ (1.09 per 10
-            µg/m³, Hamra et al. 2014, capped at 25) and sunburn (melanoma RR
-            2.03, Gandini et al. 2005).
+            µg/m³, Hamra et al. 2014, capped at 25), sunburn (melanoma RR 2.03,
+            Gandini et al. 2005) and sunbeds (melanoma RR 1.20 for any use, 1.87
+            when started before 35 or not sure, Boniol et al. 2012). Beyond the
+            Code, CT and nuclear medicine scans count as past radiation
+            exposure: 7.7 mSv per scan (RadiologyInfo 2025) at 52% more solid
+            cancer per Gy (INWORKS, Richardson et al. 2023), so 3-5 scans (about
+            31 mSv) add about 2%.
           </p>
           <p>
             The strictest thresholds apply, with the reference cited: only no

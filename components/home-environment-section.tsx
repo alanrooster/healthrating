@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Home, CookingPot, SprayCan, Wind, Shirt, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Home, CookingPot, SprayCan, Wind, Shirt, Radiation, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,9 @@ const DEFAULTS: HomeEnvironmentAnswers = {
   repellentClothing: "unsure",
   pfasPersonalCare: "unsure",
   stainTreatedFurnishings: "unsure",
+  wallMaterial: "unsure",
+  powerLineDistance: "none",
+  childrenAtHome: "no",
 }
 
 type Question = {
@@ -54,6 +57,7 @@ type Question = {
   label: string
   description?: string
   options: { value: string; label: string }[]
+  showIf?: (answers: HomeEnvironmentAnswers) => boolean
 }
 
 const GROUPS: Array<{
@@ -152,7 +156,7 @@ const GROUPS: Array<{
   {
     title: "Indoor Air Quality",
     description:
-      "Gas-stove NO2 (~12.7% of childhood asthma, Gruenwald 2023), indoor damp/mould (+30-50% respiratory illness, WHO 2009) and radon (2nd leading lung-cancer cause, EPA) are the big indoor drivers.",
+      "Gas-stove NO2 (~12.7% of childhood asthma, Gruenwald 2023), indoor damp/mould (+30-50% respiratory illness, WHO 2009) and indoor smoke are the big indoor air drivers.",
     icon: Wind,
     questions: [
       {
@@ -213,16 +217,6 @@ const GROUPS: Array<{
         ],
       },
       {
-        id: "radonStatus",
-        label: "Has your home been tested for radon?",
-        options: [
-          { value: "tested-safe", label: "Tested — levels are safe" },
-          { value: "mitigated", label: "Was elevated, now mitigated" },
-          { value: "not-tested", label: "Never tested" },
-          { value: "high-untested", label: "Known/likely high, not mitigated" },
-        ],
-      },
-      {
         id: "smokeIndoors",
         label: "Does anyone smoke or vape inside the home?",
         options: [
@@ -277,6 +271,62 @@ const GROUPS: Array<{
       },
     ],
   },
+  {
+    title: "Radiation & Fields",
+    description:
+      "Radon is the 2nd leading cause of lung cancer (US EPA) and only a test shows it. Some building stones add gamma rays and thoron, and high-voltage lines carry a weak, uncertain link with childhood leukaemia.",
+    icon: Radiation,
+    questions: [
+      {
+        id: "radonStatus",
+        label: "Has your home been tested for radon?",
+        description: "The EU reference level is 300 Bq/m³; WHO recommends staying under 100.",
+        options: [
+          { value: "tested-safe", label: "Tested — levels are safe" },
+          { value: "mitigated", label: "Was elevated, now mitigated" },
+          { value: "not-tested", label: "Never tested" },
+          { value: "high-untested", label: "Known/likely high, not mitigated" },
+        ],
+      },
+      {
+        id: "wallMaterial",
+        label: "What are your home's walls and floors mainly made of?",
+        description:
+          "Tuff, granite, lava and other volcanic stone are on the EU list of building materials of concern for gamma rays (reference level 1 mSv a year). Bare stone and earthen surfaces also give off thoron (radon-220), which ordinary radon tests don't measure reliably.",
+        options: [
+          { value: "brick-concrete", label: "Brick, concrete or cement blocks" },
+          { value: "wood", label: "Wood, timber frame or plasterboard" },
+          { value: "stone-covered", label: "Tuff, granite, lava or other stone, plastered or painted" },
+          { value: "stone-bare", label: "Natural stone left bare inside" },
+          { value: "earth-covered", label: "Earth (adobe, rammed earth, cob), plastered or painted" },
+          { value: "earth-bare", label: "Bare earth or clay walls or floors" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+      {
+        id: "powerLineDistance",
+        label: "How close is the nearest high-voltage power line?",
+        description:
+          "The overhead lines on large pylons, not ordinary street wiring. Their magnetic fields are 'possibly carcinogenic' (IARC 2B) because of a weak link with childhood leukaemia very close to them.",
+        options: [
+          { value: "none", label: "None within 200 m, or not that I know of" },
+          { value: "50-200", label: "50-200 m away" },
+          { value: "under-50", label: "Within 50 m" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+      {
+        id: "childrenAtHome",
+        label: "Do children under 15 live in your home?",
+        description: "The leukaemia link was only seen in children; studies in adults show no consistent risk.",
+        showIf: (a) => (a.powerLineDistance ?? "none") !== "none",
+        options: [
+          { value: "yes", label: "Yes" },
+          { value: "no", label: "No" },
+        ],
+      },
+    ],
+  },
 ]
 
 export function HomeEnvironmentSection({
@@ -327,8 +377,8 @@ export function HomeEnvironmentSection({
             <div>
               <CardTitle>Home Environment & Exposures</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Everyday household choices — cookware, food storage, cleaning, treated textiles and indoor air — add
-                up to meaningful chemical and particulate exposure over a lifetime.
+                Everyday household choices — cookware, food storage, cleaning, treated textiles, indoor air and
+                radiation — add up to meaningful chemical, particulate and radiation exposure over a lifetime.
               </p>
             </div>
           </div>
@@ -346,7 +396,7 @@ export function HomeEnvironmentSection({
                   </div>
                 </div>
                 <div className="flex flex-col gap-4">
-                  {g.questions.map((q) => (
+                  {g.questions.filter((q) => !q.showIf || q.showIf(answers)).map((q) => (
                     <div key={q.id} className="flex flex-col gap-2">
                       <Label className="text-foreground">{q.label}</Label>
                       {q.description && <p className="text-xs text-muted-foreground">{q.description}</p>}
@@ -397,6 +447,7 @@ function HomeEnvironmentResults({
     ...(subScores.pfasProducts !== undefined
       ? [{ label: "PFAS in Textiles & Care", score: subScores.pfasProducts }]
       : []),
+    ...(subScores.radiation !== undefined ? [{ label: "Radiation & Fields", score: subScores.radiation }] : []),
   ]
 
   return (

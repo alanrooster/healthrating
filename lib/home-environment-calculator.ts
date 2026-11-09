@@ -1,7 +1,7 @@
 /**
  * Home Environment & Household Exposures assessment.
  *
- * Covers four research-backed clusters of modifiable household exposures:
+ * Covers five research-backed clusters of modifiable household exposures:
  *
  * 1) Cookware & food-contact plastics
  *    - Scratched nonstick (PTFE/Teflon) cookware: a single surface crack can release
@@ -31,8 +31,6 @@
  *    - Gas stoves: ~12.7% of US childhood asthma is attributable to gas-stove NO2
  *      (Gruenwald et al. 2023). Vented range hoods sharply cut indoor NO2/PM2.5.
  *    - Indoor dampness/mould raises respiratory illness ~30-50% (WHO 2009; Fisk et al. 2007).
- *    - Radon is the 2nd leading cause of lung cancer (~21,000 US deaths/yr; US EPA) and is
- *      only detectable by testing.
  *    - Ventilation, HEPA filtration, and avoiding scented candles/incense (VOCs, benzene,
  *      formaldehyde, fine particulates) all improve indoor air.
  *
@@ -49,6 +47,26 @@
  *    - PFAS-free furniture and carpet cut PFAS in dust by 78% (Young et al. 2021, Environ. Int.).
  *    - Skin contact is usually a small share of total PFAS intake next to other routes, mainly
  *      food and drinking water (Heywood et al. 2026, Risk Analysis, 37 studies).
+ *
+ * 5) Radiation & fields
+ *    - Radon is the 2nd leading cause of lung cancer (~21,000 US deaths/yr; US EPA) and is
+ *      only detectable by testing.
+ *    - Building materials: tuff, pozzolana, lava, granites and other igneous stone and alum-shale
+ *      are on the EU list of materials of concern for gamma radiation, with a reference level of
+ *      1 mSv a year indoors (Directive 2013/59/Euratom, Art. 75 and Annex XIII). Stone and bare
+ *      earthen walls or floors also give off thoron (radon-220): with a 55.6-second half-life it
+ *      stays close to the surface (Tokonami 2020, IJERPH), reaches high levels in earthen houses
+ *      (Front Public Health 2019) and isn't measured reliably by ordinary radon tests (thoron
+ *      interference, IJERPH 2020). Plaster or paint holds thoron back but not gamma rays.
+ *    - Power lines: magnetic fields are IARC Group 2B. Children living under 50 m from 200 kV+
+ *      lines had OR 1.33 (0.92-1.93) for leukaemia in an international pooled analysis (Amoon et
+ *      al., Br J Cancer 2018), with no consistent link in adults, so the item only counts with
+ *      children at home. 50-200 m scores 90, the stricter reading of a null result there.
+ *    - Not scored: home altitude (Colorado or New Mexico residents get about 1.5 mSv a year more
+ *      than at sea level, RadiologyInfo 2025, but cohort studies find less heart disease and stroke
+ *      higher up: -22% and -12% per 1,000 m, Faeh et al., Circulation 2009) and
+ *      radiofrequency from phones, Wi-Fi or base stations (no raised cancer risk in the WHO
+ *      review, Karipidis et al., Environ Int 2024; Elliott et al., BMJ 2010 for base stations).
  *
  * NOTE: Educational composite. Rewards present-day protective behaviors and flags
  * common, fixable household exposures without alarmism.
@@ -96,6 +114,19 @@ export interface HomeEnvironmentAnswers {
   repellentClothing?: "pfas-free" | "outer-layer" | "next-to-skin" | "unsure" // water/stain/oil-repellent finishes
   pfasPersonalCare?: "none" | "one" | "two-plus" | "unsure" // daily waterproof make-up, PTFE floss, FKM watch band
   stainTreatedFurnishings?: "none" | "some" | "most" | "unsure" // stain-resistant carpets, rugs, sofas
+
+  // --- 5) Radiation & fields (radonStatus above scores here too) ---
+  // Optional for the same reason: missing walls = "unsure"; a missing power line counts as none
+  wallMaterial?:
+    | "brick-concrete"
+    | "wood" // timber frame, plasterboard
+    | "stone-covered" // tuff, granite, lava or other natural stone, plastered or painted inside
+    | "stone-bare"
+    | "earth-covered" // adobe, rammed earth, cob, clay plaster, painted or plastered
+    | "earth-bare"
+    | "unsure"
+  powerLineDistance?: "none" | "50-200" | "under-50" | "unsure" // high-voltage overhead lines (large pylons)
+  childrenAtHome?: "yes" | "no" // under 15; asked when a line may be within 200 m
 }
 
 export interface HomeEnvironmentResult {
@@ -105,6 +136,7 @@ export interface HomeEnvironmentResult {
     foodAndCleaning: number
     indoorAir: number
     pfasProducts?: number // absent in results saved before PFAS products were scored
+    radiation?: number // absent in results saved before the radiation cluster existed
   }
   protectiveFactors: string[]
   riskFactors: string[]
@@ -291,6 +323,61 @@ function scoreIndoorAir(a: HomeEnvironmentAnswers): { score: number; protective:
     risks.push("Frequent candles/incense/air fresheners emit VOCs (benzene, formaldehyde) and fine particulates")
   }
 
+  const smokeMap: Record<HomeEnvironmentAnswers["smokeIndoors"], number> = {
+    never: 100,
+    occasional: 45,
+    regular: 10,
+  }
+  const smokeScore = smokeMap[a.smokeIndoors]
+  if (a.smokeIndoors === "regular") {
+    risks.push("Indoor tobacco/vape smoke is a primary source of harmful indoor particulates")
+  } else if (a.smokeIndoors === "never") {
+    protective.push("Smoke-free home eliminates a major indoor air pollutant")
+  }
+
+  // The old weights without radon (13%, now in the radiation cluster), rescaled to 100%
+  const score = Math.round(
+    ventScore * 0.16 +
+    cookVentScore * 0.14 +
+    fuelScore * 0.11 +
+    dampScore * 0.21 +
+    purifierScore * 0.09 +
+    scentScore * 0.11 +
+    smokeScore * 0.18
+  )
+  return { score, protective, risks }
+}
+
+type WallMaterial = NonNullable<HomeEnvironmentAnswers["wallMaterial"]>
+type PowerLineDistance = NonNullable<HomeEnvironmentAnswers["powerLineDistance"]>
+
+// Plaster or paint holds thoron back but not gamma rays, so covered stone stays below covered
+// earth. "unsure" scores 85, not the PFAS 70: most homes are brick, concrete or wood.
+const WALL_SCORE: Record<WallMaterial, number> = {
+  "brick-concrete": 100,
+  wood: 100,
+  "stone-covered": 70,
+  "stone-bare": 50,
+  "earth-covered": 85,
+  "earth-bare": 60,
+  unsure: 85,
+}
+// Only scored with children at home (Amoon 2018); 50-200 m and "unsure" take the stricter reading
+const POWER_LINE_SCORE_WITH_CHILDREN: Record<PowerLineDistance, number> = {
+  none: 100,
+  "50-200": 90,
+  "under-50": 50,
+  unsure: 90,
+}
+
+export function childrenNearPowerLine(a: Pick<HomeEnvironmentAnswers, "powerLineDistance" | "childrenAtHome">): boolean {
+  return a.childrenAtHome === "yes" && (a.powerLineDistance ?? "none") !== "none"
+}
+
+function scoreRadiation(a: HomeEnvironmentAnswers): { score: number; protective: string[]; risks: string[] } {
+  const protective: string[] = []
+  const risks: string[] = []
+
   const radonMap: Record<HomeEnvironmentAnswers["radonStatus"], number> = {
     "tested-safe": 100,
     mitigated: 90,
@@ -306,28 +393,25 @@ function scoreIndoorAir(a: HomeEnvironmentAnswers): { score: number; protective:
     risks.push("Home never tested for radon — inexpensive test kits are widely available")
   }
 
-  const smokeMap: Record<HomeEnvironmentAnswers["smokeIndoors"], number> = {
-    never: 100,
-    occasional: 45,
-    regular: 10,
+  const walls = a.wallMaterial ?? "unsure"
+  if (walls === "stone-covered" || walls === "stone-bare") {
+    risks.push(
+      "Tuff, granite, lava and other volcanic or igneous stone are on the EU list of building materials of concern for gamma radiation, and also release radon and thoron",
+    )
   }
-  const smokeScore = smokeMap[a.smokeIndoors]
-  if (a.smokeIndoors === "regular") {
-    risks.push("Indoor tobacco/vape smoke is a primary source of harmful indoor particulates")
-  } else if (a.smokeIndoors === "never") {
-    protective.push("Smoke-free home eliminates a major indoor air pollutant")
+  if (walls === "stone-bare" || walls === "earth-bare") {
+    risks.push("Bare stone or earthen walls and floors give off thoron (radon-220), which ordinary radon tests don't measure reliably")
   }
 
-  const score = Math.round(
-    ventScore * 0.14 +
-    cookVentScore * 0.12 +
-    fuelScore * 0.1 +
-    dampScore * 0.18 +
-    purifierScore * 0.08 +
-    scentScore * 0.1 +
-    radonScore * 0.13 +
-    smokeScore * 0.15
-  )
+  const line = a.powerLineDistance ?? "none"
+  const lineScore = childrenNearPowerLine(a) ? POWER_LINE_SCORE_WITH_CHILDREN[line] : 100
+  if (a.childrenAtHome === "yes" && line === "under-50") {
+    risks.push(
+      "Children living within 50 m of a high-voltage line had a weak, uncertain link with leukaemia (OR 1.33, 95% CI 0.92-1.93; Amoon 2018): power-line magnetic fields are possibly carcinogenic (IARC 2B)",
+    )
+  }
+
+  const score = Math.round(radonScore * 0.6 + WALL_SCORE[walls] * 0.25 + lineScore * 0.15)
   return { score, protective, risks }
 }
 
@@ -389,13 +473,15 @@ export function calculateHomeEnvironment(a: HomeEnvironmentAnswers): HomeEnviron
   const fc = scoreFoodAndCleaning(a)
   const ia = scoreIndoorAir(a)
   const p = scorePfasProducts(a)
+  const r = scoreRadiation(a)
 
-  // PFAS products weigh 10%, as PFAS does in the Water score: skin contact is a smaller route
-  // than food and drinking water (Heywood 2026)
-  const overallScore = Math.round(c.score * 0.27 + fc.score * 0.3 + ia.score * 0.33 + p.score * 0.1)
+  // PFAS products weigh about 10%, as PFAS does in the Water score: skin contact is a smaller
+  // route than food and drinking water (Heywood 2026). Radiation takes 8%, which keeps radon's
+  // share of the total close to its old 13% of indoor air; the others shrink in proportion.
+  const overallScore = Math.round(c.score * 0.25 + fc.score * 0.28 + ia.score * 0.3 + p.score * 0.09 + r.score * 0.08)
 
-  const protectiveFactors = [...c.protective, ...fc.protective, ...ia.protective, ...p.protective]
-  const riskFactors = [...c.risks, ...fc.risks, ...ia.risks, ...p.risks]
+  const protectiveFactors = [...c.protective, ...fc.protective, ...ia.protective, ...p.protective, ...r.protective]
+  const riskFactors = [...c.risks, ...fc.risks, ...ia.risks, ...p.risks, ...r.risks]
 
   const recommendations: string[] = []
   if (a.cookwareType === "nonstick-scratched") {
@@ -421,6 +507,12 @@ export function calculateHomeEnvironment(a: HomeEnvironmentAnswers): HomeEnviron
   }
   if (a.radonStatus === "not-tested" || a.radonStatus === "high-untested") {
     recommendations.push("Test your home for radon with an inexpensive kit; mitigate if levels are elevated.")
+  }
+  if (a.wallMaterial === "stone-covered" || a.wallMaterial === "stone-bare" || a.wallMaterial === "earth-covered" || a.wallMaterial === "earth-bare") {
+    recommendations.push("With stone or earthen walls, ask for a test that reports thoron separately from radon (most radon tests don't), seal bare walls and floors with plaster, paint or tiles, and air rooms daily.")
+  }
+  if (a.childrenAtHome === "yes" && a.powerLineDistance === "under-50") {
+    recommendations.push("Near a high-voltage line, there's no need to move: the link is weak and unproven. Where it's easy, give children the bedrooms farthest from the line, as the field drops quickly with distance.")
   }
   if (a.ventilation === "rarely" || a.ventilation === "occasional") {
     recommendations.push("Air out your home daily, even briefly, to flush indoor pollutants.")
@@ -451,6 +543,7 @@ export function calculateHomeEnvironment(a: HomeEnvironmentAnswers): HomeEnviron
       foodAndCleaning: fc.score,
       indoorAir: ia.score,
       pfasProducts: p.score,
+      radiation: r.score,
     },
     protectiveFactors,
     riskFactors,

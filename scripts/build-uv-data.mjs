@@ -26,15 +26,23 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const J_PER_M2_PER_UV_INDEX_DAY = 86400 / 40
 const REFERENCE = { city: "Boston", country: "United States", lat: 42.3601, lon: -71.0589 }
 
-// Picker names the geocoder doesn't resolve inside the right country: [latitude, longitude]
-const COORDINATE_OVERRIDES = {}
+// Picker names the geocoder doesn't resolve inside the right country: [latitude, longitude].
+// GeoNames uses Québec, Haiphong, Bengaluru, Astana and Marrakesh, and files Hong Kong under HK.
+const COORDINATE_OVERRIDES = {
+  "Quebec City|Canada": [46.8139, -71.208],
+  "Hong Kong|China": [22.3193, 114.1694],
+  "Hai Phong|Vietnam": [20.8449, 106.6881],
+  "Bangalore|India": [12.9716, 77.5946],
+  "Nur-Sultan|Kazakhstan": [51.1694, 71.4491],
+  "Marrakech|Morocco": [31.6295, -7.9811],
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function fetchJson(url, attempts = 4) {
   for (let attempt = 1; ; attempt++) {
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { signal: AbortSignal.timeout(30000) })
       if (res.ok) return await res.json()
       if (attempt >= attempts || (res.status < 500 && res.status !== 429)) throw new Error(`${res.status} ${url}`)
     } catch (error) {
