@@ -211,20 +211,18 @@
 
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]) {
-    transition: transform 160ms ease, box-shadow 160ms ease,
-      background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+    transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease,
+      color 160ms ease;
   }
 
   button:not(:disabled):hover,
   [role="button"]:not([aria-disabled="true"]):hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px hsl(var(--foreground) / 0.12);
   }
 
   button:not(:disabled):active,
   [role="button"]:not([aria-disabled="true"]):active {
     transform: translateY(0);
-    box-shadow: none;
   }
 
 }

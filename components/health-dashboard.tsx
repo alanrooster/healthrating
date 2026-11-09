@@ -611,9 +611,9 @@ export function HealthDashboard({
               key={key}
               type="button"
               onClick={() => onNavigate(meta.section)}
-              className="text-left transition-shadow hover:shadow-md"
+              className="group text-left"
             >
-              <Card className="h-full">
+              <Card className="h-full transition-colors group-hover:border-primary/40">
                 <CardContent className="flex items-center gap-4 py-4">
                   <div
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
