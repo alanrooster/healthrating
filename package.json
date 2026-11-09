@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "build:country-data": "node scripts/build-country-data.mjs"
+    "build:country-data": "node scripts/build-country-data.mjs",
+    "build:uv-data": "node scripts/build-uv-data.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
