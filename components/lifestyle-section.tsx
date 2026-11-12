@@ -613,6 +613,8 @@ export function LifestyleSection({ onResult, storedResult, onStoreResult, onReta
                 key={g.title}
                 type="button"
                 onClick={() => setCurrentGroup(i)}
+                aria-label={`Section ${i + 1} of ${QUESTION_GROUPS.length}: ${g.title}`}
+                aria-current={i === currentGroup ? "step" : undefined}
                 className={`h-1.5 flex-1 rounded-full transition-colors ${
                   i <= currentGroup ? "bg-primary" : "bg-muted"
                 }`}

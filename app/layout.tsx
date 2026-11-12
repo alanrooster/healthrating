@@ -1,11 +1,8 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { Inter, Space_Mono } from 'next/font/google'
 
+import { JsonLd } from '@/components/json-ld'
 import './globals.css'
-
-const _inter = Inter({ subsets: ['latin'] })
-const _spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://healthrating.org'),
@@ -14,7 +11,7 @@ export const metadata: Metadata = {
     template: '%s | HealthRating.org',
   },
   description:
-    'Discover your life expectancy, biological age, and disease risks with 14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research. Free, private, no sign-up.',
+    'Discover your life expectancy, biological age, and disease risks with 14 in-depth assessments covering 100+ life factors, each grounded in peer-reviewed research. Free, private, no sign-up.',
   applicationName: 'HealthRating.org',
   category: 'health',
   keywords: [
@@ -26,7 +23,7 @@ export const metadata: Metadata = {
     'BMI calculator',
     'body composition calculator',
     'diabetes risk calculator',
-    'cardiovascular risk',
+    'cardiovascular health score',
     'dementia risk',
     'cancer risk',
     'health rating',
@@ -38,6 +35,7 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  // Each route sets its own canonical: this one is the home page's
   alternates: {
     canonical: 'https://healthrating.org',
   },
@@ -50,10 +48,6 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
-  },
-  icons: {
-    icon: [{ url: '/icon.png', type: 'image/png', sizes: '512x512' }],
-    apple: [{ url: '/icon.png', sizes: '512x512' }],
   },
   openGraph: {
     title: 'HealthRating.org — The Most Comprehensive Health Score on the Web',
@@ -83,9 +77,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#2f9e7f',
-  maximumScale: 1,
 }
 
+// Site-wide entities. Each page adds its own (the home page: WebPage, WebApplication and FAQPage).
 const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -96,7 +90,7 @@ const structuredData = {
       url: 'https://healthrating.org',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://healthrating.org/icon.png',
+        url: 'https://healthrating.org/icon-512.png',
         width: 512,
         height: 512,
       },
@@ -119,78 +113,6 @@ const structuredData = {
         'The most comprehensive health scoring on the web: life expectancy, biological age, and disease risk from 14 research-backed assessments.',
       inLanguage: 'en',
     },
-    {
-      '@type': 'WebPage',
-      '@id': 'https://healthrating.org/#webpage',
-      url: 'https://healthrating.org',
-      name: 'HealthRating.org — The Most Comprehensive Health Score on the Web',
-      isPartOf: { '@id': 'https://healthrating.org/#website' },
-      about: { '@id': 'https://healthrating.org/#app' },
-      inLanguage: 'en',
-      speakable: {
-        '@type': 'SpeakableSpecification',
-        cssSelector: ['h1', '#faq-heading'],
-      },
-    },
-    {
-      '@type': 'WebApplication',
-      '@id': 'https://healthrating.org/#app',
-      name: 'HealthRating.org Health Score',
-      url: 'https://healthrating.org',
-      applicationCategory: 'HealthApplication',
-      operatingSystem: 'Web',
-      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      publisher: { '@id': 'https://healthrating.org/#organization' },
-      description:
-        '14 in-depth assessments covering 100+ life factors, each weighted by peer-reviewed research, computing your health score, life expectancy, biological age, and cardiovascular, diabetes, dementia, and cancer risk.',
-      featureList: [
-        'Life expectancy estimate',
-        'Biological age estimate',
-        'Cardiovascular risk screen',
-        'Type 2 diabetes risk screen (FINDRISC-adapted)',
-        'Dementia risk profile (Lancet Commission 2024 risk factors)',
-        'Cancer risk profile (European Code Against Cancer 2025, WCRF/AICR score)',
-        'Body composition analysis',
-      ],
-    },
-    {
-      '@type': 'FAQPage',
-      '@id': 'https://healthrating.org/#faq',
-      mainEntity: [
-        {
-          '@type': 'Question',
-          name: 'What does HealthRating.org calculate?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, type 2 diabetes risk, dementia risk, and cancer risk.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Is HealthRating.org free and private?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Yes. All assessments are free with no sign-up required, and your answers never leave your browser — nothing is sent to any server.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Is the health score scientifically grounded?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Every factor is weighted using published, peer-reviewed research — over 60 studies including Chetty et al. 2016 (income and longevity), Holt-Lunstad 2010 (social connection), and the FINDRISC diabetes screening questionnaire. It is an educational tool, not a medical diagnosis.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'How is biological age different from life expectancy?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Life expectancy estimates how many years you may live based on your current habits and risk factors. Biological age expresses the same signal differently: whether your body is effectively younger or older than your calendar age.',
-          },
-        },
-      ],
-    },
   ],
 }
 
@@ -202,11 +124,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <script
-          type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
+        <JsonLd data={structuredData} />
         {children}
       </body>
     </html>

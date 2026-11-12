@@ -152,6 +152,28 @@ const SMOKING_YEARS_LOST: Record<string, number> = {
   daily: 10,
 }
 
+// Stopping smoking at 30, 40, 50 or 60 wins back about 10, 9, 6 or 3 of the 10 years (Doll et
+// al., BMJ 2004): the share of the loss a current smoker can still recover, by age
+const QUIT_RECOVERY_BY_AGE: [age: number, share: number][] = [
+  [30, 1],
+  [40, 0.9],
+  [50, 0.6],
+  [60, 0.3],
+]
+
+function recoverableSmokingShare(age: number): number {
+  const [firstAge, firstShare] = QUIT_RECOVERY_BY_AGE[0]
+  if (age <= firstAge) return firstShare
+  for (let i = 1; i < QUIT_RECOVERY_BY_AGE.length; i++) {
+    const [upperAge, upperShare] = QUIT_RECOVERY_BY_AGE[i]
+    if (age <= upperAge) {
+      const [lowerAge, lowerShare] = QUIT_RECOVERY_BY_AGE[i - 1]
+      return lowerShare + ((upperShare - lowerShare) * (age - lowerAge)) / (upperAge - lowerAge)
+    }
+  }
+  return QUIT_RECOVERY_BY_AGE[QUIT_RECOVERY_BY_AGE.length - 1][1]
+}
+
 export interface SubstanceUse {
   sex?: "male" | "female"
   smokingStatus?: string
@@ -500,9 +522,17 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // narrows with age in the same proportion as the scaled effects.
   const percentile = Math.min(99, Math.max(1, 100 * normalCdf(totalAdjustment / LIFESPAN_SD_YEARS)))
 
-  // Years still to gain by reaching the best case on the completed modules: every loss removed
-  // and every gain at its maximum, combined the same way
-  const potentialGain = Math.max(0, (combineGains(maxPossibleGain) - totalAdjustment) * ageScale)
+  // Years still to gain by reaching the best case on the completed modules (an upper bound):
+  // every gain at its maximum and every loss removed, except the part of the smoking loss that
+  // stopping at this age no longer wins back. Past smokers have already taken their gain.
+  const smokingLossKept =
+    inputs.smokingStatus === "former"
+      ? substances.smoking
+      : substances.smoking * (1 - recoverableSmokingShare(age))
+  const potentialGain = Math.max(
+    0,
+    (combineGains(maxPossibleGain) - totalAdjustment - smokingLossKept) * ageScale,
+  )
 
   // Confidence based on data points
   let confidence: "low" | "medium" | "high" = "low"

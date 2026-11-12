@@ -539,9 +539,9 @@ export function HealthDashboard({
                       diabetesRiskData.band === "low"
                         ? "hsl(var(--success))"
                         : diabetesRiskData.band === "slightly-elevated"
-                          ? "#f59e0b"
+                          ? "#d97706"
                           : diabetesRiskData.band === "moderate"
-                            ? "#fb923c"
+                            ? "#ea580c"
                             : "#f43f5e",
                   }}
                 >

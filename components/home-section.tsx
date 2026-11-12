@@ -12,15 +12,17 @@ import {
   LockKeyhole,
   Sparkles,
 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { JsonLd } from "@/components/json-ld"
 
-// Keep in sync with the FAQPage JSON-LD in app/layout.tsx
+// Shown on the page and published as FAQPage structured data, so the two can't drift apart
 const FAQ_ITEMS = [
   {
     question: "What does HealthRating.org calculate?",
     answer:
-      "HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular risk, type 2 diabetes risk, dementia risk, and cancer risk.",
+      "HealthRating.org combines 14 in-depth assessments — body composition, diet, exercise, sleep, mental health, environment, family history, and more — into a single health score, plus estimates of your life expectancy, biological age, cardiovascular health, type 2 diabetes risk, dementia risk, and cancer risk.",
   },
   {
     question: "Is HealthRating.org free and private?",
@@ -30,7 +32,7 @@ const FAQ_ITEMS = [
   {
     question: "Is the health score scientifically grounded?",
     answer:
-      "Every factor is weighted using published, peer-reviewed research — over 60 studies including Chetty et al. 2016 (income and longevity), Holt-Lunstad 2010 (social connection), and the FINDRISC diabetes screening questionnaire. It is an educational tool, not a medical diagnosis.",
+      "Every factor is scored using published, peer-reviewed research — over 60 studies including Chetty et al. 2016 (income and longevity), Holt-Lunstad 2010 (social connection), and the FINDRISC diabetes screening questionnaire — and every source is listed on the Methodology page. How the factors are weighted into one score is our own judgement. It is an educational tool, not a medical diagnosis.",
   },
   {
     question: "How is biological age different from life expectancy?",
@@ -38,6 +40,55 @@ const FAQ_ITEMS = [
       "Life expectancy estimates how many years you may live based on your current habits and risk factors. Biological age expresses the same signal differently: whether your body is effectively younger or older than your calendar age.",
   },
 ]
+
+const HOME_STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://healthrating.org/#webpage",
+      url: "https://healthrating.org",
+      name: "HealthRating.org — The Most Comprehensive Health Score on the Web",
+      isPartOf: { "@id": "https://healthrating.org/#website" },
+      about: { "@id": "https://healthrating.org/#app" },
+      inLanguage: "en",
+      speakable: {
+        "@type": "SpeakableSpecification",
+        cssSelector: ["h1", "#faq-heading"],
+      },
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "https://healthrating.org/#app",
+      name: "HealthRating.org Health Score",
+      url: "https://healthrating.org",
+      applicationCategory: "HealthApplication",
+      operatingSystem: "Web",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      publisher: { "@id": "https://healthrating.org/#organization" },
+      description:
+        "14 in-depth assessments covering 100+ life factors, each grounded in peer-reviewed research, computing your health score, life expectancy, biological age, cardiovascular health, and diabetes, dementia, and cancer risk.",
+      featureList: [
+        "Life expectancy estimate",
+        "Biological age estimate",
+        "Cardiovascular health score (American Heart Association Life's Essential 8 metrics)",
+        "Type 2 diabetes risk screen (FINDRISC-adapted)",
+        "Dementia risk profile (Lancet Commission 2024 risk factors)",
+        "Cancer risk profile (European Code Against Cancer 2025, WCRF/AICR score)",
+        "Body composition analysis",
+      ],
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://healthrating.org/#faq",
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
+    },
+  ],
+}
 
 interface HomeSectionProps {
   completedCount: number
@@ -50,7 +101,7 @@ const HIGHLIGHTS = [
     icon: Hourglass,
     title: "Life Expectancy",
     description:
-      "A personalized estimate built from WHO baselines and peer-reviewed adjustments for every factor you assess.",
+      "A personalized estimate built from United Nations life tables for your country, age and sex, and peer-reviewed adjustments for every factor you assess.",
   },
   {
     icon: HeartPulse,
@@ -62,7 +113,7 @@ const HIGHLIGHTS = [
     icon: Activity,
     title: "Disease Risk Screens",
     description:
-      "Evidence-based cardiovascular, type 2 diabetes, dementia, and cancer risk screens, computed from data you already entered.",
+      "A cardiovascular health score and evidence-based type 2 diabetes, dementia, and cancer risk screens, computed from data you already entered.",
   },
 ]
 
@@ -83,7 +134,7 @@ const STEPS = [
     icon: Sparkles,
     title: "Act on what matters most",
     description:
-      "A prioritized action plan shows which changes buy you the most healthy years, ranked by scientific impact.",
+      "A prioritized action plan shows where you have the most room to improve, ranked by each area's weight in your score.",
   },
 ]
 
@@ -92,20 +143,21 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
 
   return (
     <div className="flex flex-col gap-12 py-4">
+      <JsonLd data={HOME_STRUCTURED_DATA} />
       {/* Hero */}
       <section className="flex flex-col items-center gap-6 text-center">
         <p className="font-mono text-sm font-bold tracking-wide text-primary">
           healthrating.org
         </p>
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-medium text-foreground">
-          <Dna className="h-3.5 w-3.5 text-primary" />
-          <span>The most accurate &amp; comprehensive health scoring on the web</span>
+          <Dna aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
+          <span>The most comprehensive health scoring on the web</span>
         </div>
         <h1 className="max-w-2xl text-balance text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl">
           Score your health today, understand how to improve it and become biologically younger...
         </h1>
         <p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
-          14 in-depth assessments, 100+ life factors, every one weighted by
+          14 in-depth assessments, 100+ life factors, every one grounded in
           peer-reviewed research — distilled into a clear picture of your life
           expectancy, biological age, and the levers you control.
         </p>
@@ -198,17 +250,15 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          className="shrink-0 self-start md:self-auto"
-          onClick={() => onNavigate("methodology")}
-        >
-          <BookOpenCheck className="mr-2 h-4 w-4" />
-          Read the methodology
+        <Button asChild variant="ghost" className="shrink-0 self-start md:self-auto">
+          <Link href="/methodology">
+            <BookOpenCheck aria-hidden="true" className="mr-2 h-4 w-4" />
+            Read the methodology
+          </Link>
         </Button>
       </section>
 
-      {/* FAQ — mirrors the FAQPage structured data in layout.tsx for SEO */}
+      {/* FAQ: also published as FAQPage structured data (HOME_STRUCTURED_DATA) */}
       <section className="flex flex-col gap-5" aria-labelledby="faq-heading">
         <h2 id="faq-heading" className="text-center text-2xl font-semibold text-foreground">
           Frequently asked questions

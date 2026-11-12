@@ -1,4 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type { ReactNode } from "react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+
+// A real heading: CardTitle renders a div, which gives screen readers and search engines no outline
+function SectionTitle({ children }: { children: ReactNode }) {
+  return <h2 className="text-lg font-semibold leading-tight tracking-tight text-balance text-foreground">{children}</h2>
+}
 
 export function MethodologySection() {
   return (
@@ -15,9 +21,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Body Composition (11% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -61,9 +67,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Air Quality (5% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -92,9 +98,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Water Quality (4% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -167,9 +173,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Diet Assessment (11% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -236,9 +242,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Exercise Assessment (10% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -324,9 +330,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Work Assessment (7% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -401,9 +407,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Lifestyle Assessment (10% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -519,9 +525,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Life Context & Relationships (6% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -606,9 +612,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Personality & Outlook (5% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -667,9 +673,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Home Environment & Exposures (4% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -821,9 +827,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Mental Health Screening (12% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -867,9 +873,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Family History (5% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -900,9 +906,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Preventive Care (6% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -939,9 +945,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Senses &amp; Oral Health (4% of overall score)
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -968,9 +974,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Overall Health Score
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1008,9 +1014,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Life Expectancy Estimate
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1062,7 +1068,12 @@ export function MethodologySection() {
           <p>
             &quot;Longer than x% of peers&quot; places the estimate on a
             normal curve with a standard deviation of 10 years, a rough
-            approximation. Confidence is low with fewer than 3 inputs, medium
+            approximation. The &quot;potential&quot; figure is an upper bound:
+            the years the estimate would gain if every completed module were
+            at its best, counting only the part of the smoking loss that
+            stopping at your age wins back (about 10, 9, 6 or 3 of the 10
+            years at 30, 40, 50 or 60, Doll et al. 2004). Confidence is low
+            with fewer than 3 inputs, medium
             with 3 to 5 and high from 6. The work, water and home adjustments
             are small modelling assumptions: no study gives years of life for
             those scores. This is an educational estimate, not an actuarial
@@ -1089,9 +1100,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Biological Age Estimate
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1123,9 +1134,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Peer Comparison
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1143,9 +1154,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Cardiovascular Health
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1207,9 +1218,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Type 2 Diabetes Risk Screen
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1240,9 +1251,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Neurodegenerative (Dementia) Risk Profile
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>
@@ -1287,9 +1298,9 @@ export function MethodologySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-foreground">
+          <SectionTitle>
             Cancer Risk Profile
-          </CardTitle>
+          </SectionTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
           <p>

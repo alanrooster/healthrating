@@ -4,8 +4,8 @@ import type { NeuroRiskBand, NeuroRiskResult } from "@/lib/neuro-risk-calculator
 
 const BAND_STYLES: Record<NeuroRiskBand, { border: string; color: string }> = {
   low: { border: "border-emerald-500/20", color: "hsl(var(--success))" },
-  moderate: { border: "border-amber-500/20", color: "#f59e0b" },
-  elevated: { border: "border-orange-500/20", color: "#fb923c" },
+  moderate: { border: "border-amber-500/20", color: "#d97706" },
+  elevated: { border: "border-orange-500/20", color: "#ea580c" },
   high: { border: "border-rose-500/20", color: "#f43f5e" },
 }
 
