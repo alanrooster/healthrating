@@ -36,15 +36,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { OverallHealthResult } from "@/lib/health-score"
 import { getScoreColor, getGradeColor } from "@/lib/health-score"
-import {
-  calculateCardiovascularRisk,
-  buildActionPlan,
-  calculatePeerComparison,
-} from "@/lib/insights-calculator"
+import { buildActionPlan, calculatePeerComparison } from "@/lib/insights-calculator"
 import type { CancerRiskResult } from "@/lib/cancer-risk-calculator"
+import type { CardiovascularHealthResult } from "@/lib/cardiovascular-health"
 import type { NeuroRiskResult } from "@/lib/neuro-risk-calculator"
 import { ActionPlanCard } from "@/components/action-plan-card"
 import { CancerRiskCard } from "@/components/cancer-risk-card"
+import { CardiovascularHealthCard } from "@/components/cardiovascular-health-card"
 import { NeuroRiskCard } from "@/components/neuro-risk-card"
 import { PeerComparisonCard } from "@/components/peer-comparison-card"
 
@@ -72,9 +70,14 @@ interface HealthDashboardProps {
   onNavigate: (section: string) => void
   lifeExpectancyData?: LifeExpectancyData
   biologicalAgeData?: BiologicalAgeData
+  cardiovascularHealthData?: CardiovascularHealthResult
   diabetesRiskData?: DiabetesRiskData
   neuroRiskData?: NeuroRiskResult
   cancerRiskData?: CancerRiskResult
+}
+
+function formatPoints(points: number) {
+  return Number.isInteger(points) ? String(points) : points.toFixed(1)
 }
 
 interface DiabetesRiskData {
@@ -114,14 +117,13 @@ export function HealthDashboard({
   onNavigate,
   lifeExpectancyData,
   biologicalAgeData,
+  cardiovascularHealthData,
   diabetesRiskData,
   neuroRiskData,
   cancerRiskData,
 }: HealthDashboardProps) {
-  const { overallScore, letterGrade, completedCount, totalModules, scores, summary } =
-  result
+  const { overallScore, letterGrade, completedCount, totalModules, scores, summary, deductions } = result
 
-  const cvRisk = calculateCardiovascularRisk(scores)
   const actionPlan = buildActionPlan(scores)
   const peerComparison = calculatePeerComparison(overallScore, completedCount)
   const rankedModules = Object.entries(scores)
@@ -201,6 +203,23 @@ export function HealthDashboard({
                   </div>
                 </div>
                 <p className="text-center text-sm text-muted-foreground">{summary}</p>
+                {deductions.length > 0 && (
+                  <div className="flex flex-col items-center gap-1.5">
+                    <ul aria-label="Points taken off the score" className="flex flex-wrap justify-center gap-1">
+                      {deductions.map((deduction) => (
+                        <li
+                          key={deduction.label}
+                          className="rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-600"
+                        >
+                          {`−${formatPoints(deduction.points)} ${deduction.label}`}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-center text-xs text-muted-foreground">
+                      One point off for each year of life expectancy these cost.
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <div className="relative flex min-h-[256px] flex-col justify-between gap-5 overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-card to-muted/50 p-5 sm:p-6">
@@ -358,7 +377,9 @@ export function HealthDashboard({
             {lifeExpectancyData && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-col sm:items-end sm:gap-1.5">
                 <div className="flex items-center gap-1.5 text-sm">
-                  <span className="text-muted-foreground">Top {lifeExpectancyData.percentile}%</span>
+                  <span className="text-muted-foreground">
+                    {`Longer than ${lifeExpectancyData.percentile}% of peers`}
+                  </span>
                 </div>
                 {lifeExpectancyData.potentialGain > 0 && (
                   <div className="flex items-center gap-1 text-xs text-emerald-500">
@@ -486,50 +507,9 @@ export function HealthDashboard({
         weaknesses={peerWeaknesses}
       />
 
-      {/* Risk cards: Cardiovascular, Type 2 Diabetes, Neurodegenerative, Cancer */}
+      {/* Cardiovascular health, then the Type 2 Diabetes, Neurodegenerative and Cancer risk screens */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Cardiovascular Risk */}
-        <Card className={`flex flex-col border-${cvRisk.band === "low" ? "emerald" : cvRisk.band === "borderline" ? "amber" : cvRisk.band === "intermediate" ? "orange" : "rose"}-500/20`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <HeartPulse className="h-5 w-5 text-rose-500" />
-              Cardiovascular Risk
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-2">
-            <span
-              className="text-2xl font-bold"
-              style={{
-                color:
-                  cvRisk.band === "low"
-                    ? "hsl(var(--success))"
-                    : cvRisk.band === "borderline"
-                    ? "#f59e0b"
-                    : cvRisk.band === "intermediate"
-                    ? "#fb923c"
-                    : "#f43f5e",
-              }}
-            >
-              {cvRisk.label}
-            </span>
-            <p className="text-xs text-muted-foreground leading-relaxed">{cvRisk.estimate}</p>
-            {cvRisk.drivers.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {cvRisk.drivers.map((d) => (
-                  <span
-                    key={d}
-                    className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-medium text-rose-600"
-                  >
-                    {d}
-                  </span>
-                ))}
-              </div>
-            )}
-            <p className="mt-auto pt-1 text-[10px] text-muted-foreground italic">
-              Educational estimate. Not a substitute for ASCVD/QRISK3.
-            </p>
-          </CardContent>
-        </Card>
+        <CardiovascularHealthCard data={cardiovascularHealthData} />
 
         {/* Type 2 Diabetes Risk (FINDRISC-adapted) */}
         <Card

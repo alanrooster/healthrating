@@ -132,6 +132,15 @@ const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], nu
   daily: 7,
 }
 
+/** The Lifestyle answers other calculators use, handed on when the module is completed */
+export type LifestyleExtras = Pick<
+  LifestyleAnswers,
+  "smokingStatus" | "alcoholFrequency" | "alcoholUnitsPerSession"
+> & {
+  sleepHours: number
+  socialConnection: "strong" | "moderate" | "weak" | "isolated"
+}
+
 /** Grams of pure alcohol a week. Anyone who drinks at all counts at least one drink a session. */
 export function weeklyAlcoholGrams(
   answers: Pick<LifestyleAnswers, "alcoholFrequency" | "alcoholUnitsPerSession">,

@@ -118,7 +118,8 @@ export function PeerComparisonCard({
               </div>
             )}
             <p className="text-[10px] italic text-muted-foreground">
-              Approximate population-level comparison based on completed modules.
+              Estimated bands: how scores are spread among peers is this tool&apos;s own assumption, not measured
+              against survey data.
             </p>
           </div>
         )}

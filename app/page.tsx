@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { HealthDashboard } from "@/components/health-dashboard"
 import { calculateBiologicalAge } from "@/lib/biological-age-calculator"
 import { calculateCancerRisk } from "@/lib/cancer-risk-calculator"
+import { calculateCardiovascularHealth } from "@/lib/cardiovascular-health"
 import { calculateDiabetesRisk } from "@/lib/diabetes-risk-calculator"
 import { calculateNeuroRisk } from "@/lib/neuro-risk-calculator"
 import { HomeSection } from "@/components/home-section"
@@ -34,11 +35,38 @@ import {
   type HealthScores,
   type ModuleScore,
 } from "@/lib/health-score"
-import { calculateLifeExpectancy, type LifeExpectancyInputs } from "@/lib/life-expectancy-calculator"
-import { reportsDrugUse } from "@/lib/lifestyle-calculator"
+import {
+  calculateLifeExpectancy,
+  substanceYearsLost,
+  type LifeExpectancyInputs,
+  type SubstanceUse,
+} from "@/lib/life-expectancy-calculator"
+import { reportsDrugUse, weeklyAlcoholGrams, type LifestyleExtras } from "@/lib/lifestyle-calculator"
+import { SAVED_STATE_KEY, isRecord, readModuleScore } from "@/lib/saved-state"
 import { getLocalUv } from "@/lib/uv-exposure"
 
 const EMPTY_SCORE: ModuleScore = { score: 0, completed: false, label: "" }
+
+interface BodyDemographics {
+  age: number
+  sex: "male" | "female"
+  bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
+  /** Raw BMI, as the FINDRISC diabetes screen uses it */
+  bmi?: number
+  /** Composite BMI behind the category; absent in results saved before it was passed on */
+  compositeBmi?: number
+  waistCm?: number
+}
+
+interface DietExtras {
+  processedMeatFrequency: number
+}
+
+interface AirExtras {
+  country: string
+  city?: string
+  pm25Level?: number
+}
 
 function PageHeader({ title }: { title: string }) {
   const { toggleSidebar } = useSidebar()
@@ -123,28 +151,17 @@ export default function Page() {
   })
 
   // Cross-module data for the life expectancy, biological age and risk screens
-  const [dietData, setDietData] = useState<{
-    processedMeatFrequency: number
-  } | null>(null)
-  const [lifestyleData, setLifestyleData] = useState<{
-    smokingStatus: string
-    alcoholFrequency: string
-    alcoholUnitsPerSession: number
-    sleepHours?: number
-    socialConnection?: "strong" | "moderate" | "weak" | "isolated"
-  } | null>(null)
-  const [airData, setAirData] = useState<{
-    country: string
-    city?: string
-    pm25Level?: number
-  } | null>(null)
-  const [bodyDemographics, setBodyDemographics] = useState<{
-    age: number
-    sex: "male" | "female"
-    bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
-    bmi?: number
-    waistCm?: number
-  } | null>(null)
+  const [dietData, setDietData] = useState<DietExtras | null>(null)
+  const [lifestyleData, setLifestyleData] = useState<LifestyleExtras | null>(null)
+  const [airData, setAirData] = useState<AirExtras | null>(null)
+  const [bodyDemographics, setBodyDemographics] = useState<BodyDemographics | null>(null)
+
+  // A module's data counts only while the module is completed, so a retake in progress doesn't
+  // leak the previous answers into the estimates
+  const completedBody = bodyScore.completed ? bodyDemographics : null
+  const completedLifestyle = lifestyleScore.completed ? lifestyleData : null
+  const completedAir = airScore.completed ? airData : null
+  const completedDiet = dietScore.completed ? dietData : null
 
   // Store full results for each section to persist when navigating
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,7 +173,6 @@ export default function Page() {
 
   // ---- localStorage persistence ----
   // All assessment data is saved to the browser so it survives page refreshes.
-  const STORAGE_KEY = "health-hub-state-v1"
   // Must be state (not a ref): saving is only safe on the re-render AFTER the
   // restored values have been applied. A ref flips too early and the save
   // effect would overwrite storage with the initial empty state on mount.
@@ -165,33 +181,38 @@ export default function Page() {
   // Hydrate once on mount
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const s = JSON.parse(raw)
-        if (s.bodyScore) setBodyScore(s.bodyScore)
-        if (s.airScore) setAirScore(s.airScore)
-        if (s.waterScore) setWaterScore(s.waterScore)
-        if (s.dietScore) setDietScore(s.dietScore)
-        if (s.exerciseScore) setExerciseScore(s.exerciseScore)
-        if (s.workScore) setWorkScore(s.workScore)
-        if (s.lifestyleScore) setLifestyleScore(s.lifestyleScore)
-        if (s.mentalHealthScore) setMentalHealthScore(s.mentalHealthScore)
-        if (s.familyHistoryScore) setFamilyHistoryScore(s.familyHistoryScore)
-        if (s.preventiveCareScore) setPreventiveCareScore(s.preventiveCareScore)
-        if (s.sensesOralScore) setSensesOralScore(s.sensesOralScore)
-        if (s.lifeContextScore) setLifeContextScore(s.lifeContextScore)
-        if (s.personalityScore) setPersonalityScore(s.personalityScore)
-        if (s.homeEnvironmentScore) setHomeEnvironmentScore(s.homeEnvironmentScore)
-        if (s.dietData) setDietData(s.dietData)
-        if (s.lifestyleData) setLifestyleData(s.lifestyleData)
-        if (s.airData) setAirData(s.airData)
-        if (s.bodyDemographics) setBodyDemographics(s.bodyDemographics)
-        if (s.storedResults) {
+      const raw = localStorage.getItem(SAVED_STATE_KEY)
+      // Saved state is untrusted input: only well-formed parts are restored
+      const s: unknown = raw ? JSON.parse(raw) : null
+      if (isRecord(s)) {
+        const restoreScore = (value: unknown, label: string, setScore: (score: ModuleScore) => void) => {
+          const score = readModuleScore(value, label)
+          if (score) setScore(score)
+        }
+        restoreScore(s.bodyScore, "Body Composition", setBodyScore)
+        restoreScore(s.airScore, "Air Quality", setAirScore)
+        restoreScore(s.waterScore, "Water Quality", setWaterScore)
+        restoreScore(s.dietScore, "Diet", setDietScore)
+        restoreScore(s.exerciseScore, "Exercise", setExerciseScore)
+        restoreScore(s.workScore, "Work", setWorkScore)
+        restoreScore(s.lifestyleScore, "Lifestyle", setLifestyleScore)
+        restoreScore(s.mentalHealthScore, "Mental Health", setMentalHealthScore)
+        restoreScore(s.familyHistoryScore, "Family History", setFamilyHistoryScore)
+        restoreScore(s.preventiveCareScore, "Preventive Care", setPreventiveCareScore)
+        restoreScore(s.sensesOralScore, "Senses & Oral Health", setSensesOralScore)
+        restoreScore(s.lifeContextScore, "Life Context", setLifeContextScore)
+        restoreScore(s.personalityScore, "Personality & Outlook", setPersonalityScore)
+        restoreScore(s.homeEnvironmentScore, "Home Environment", setHomeEnvironmentScore)
+        if (isRecord<DietExtras>(s.dietData)) setDietData(s.dietData)
+        if (isRecord<LifestyleExtras>(s.lifestyleData)) setLifestyleData(s.lifestyleData)
+        if (isRecord<AirExtras>(s.airData)) setAirData(s.airData)
+        if (isRecord<BodyDemographics>(s.bodyDemographics)) setBodyDemographics(s.bodyDemographics)
+        if (isRecord(s.storedResults)) {
           // Left behind by the Carbon Footprint module, which has been removed
           delete s.storedResults.carbon
           setStoredResults(s.storedResults)
         }
-        if (s.storedInputs) setStoredInputs(s.storedInputs)
+        if (isRecord(s.storedInputs)) setStoredInputs(s.storedInputs)
       }
     } catch {
       // Corrupt or inaccessible storage — start fresh
@@ -208,7 +229,7 @@ export default function Page() {
     if (!hydrated) return
     try {
       localStorage.setItem(
-        STORAGE_KEY,
+        SAVED_STATE_KEY,
         JSON.stringify({
           bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore,
           lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore,
@@ -305,7 +326,23 @@ export default function Page() {
     [bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, familyHistoryScore, preventiveCareScore, sensesOralScore, lifeContextScore, personalityScore, homeEnvironmentScore]
   )
 
-  const overallResult = useMemo(() => calculateOverallHealth(scores), [scores])
+  // Tobacco, alcohol and drug answers, once the Lifestyle module is completed
+  const substanceUse = useMemo<SubstanceUse | undefined>(() => {
+    if (!completedLifestyle) return undefined
+    const answers = storedInputs.lifestyle
+    return {
+      sex: completedBody?.sex,
+      smokingStatus: completedLifestyle.smokingStatus,
+      alcoholGramsPerWeek: weeklyAlcoholGrams(completedLifestyle),
+      otherDrugUse: answers?.otherDrugUse,
+      injectedDrugs: answers && reportsDrugUse(answers) ? answers.injectedDrugs : undefined,
+    }
+  }, [completedLifestyle, completedBody, storedInputs.lifestyle])
+
+  const overallResult = useMemo(
+    () => calculateOverallHealth(scores, substanceUse && substanceYearsLost(substanceUse)),
+    [scores, substanceUse],
+  )
 
   // Calculate life expectancy based on all available data
   const lifeExpectancyData = useMemo(() => {
@@ -314,8 +351,10 @@ export default function Page() {
     if (!hasData) return undefined
 
     const inputs: LifeExpectancyInputs = {
-      age: bodyDemographics?.age,
-      sex: bodyDemographics?.sex,
+      age: completedBody?.age,
+      sex: completedBody?.sex,
+      bmiCategory: completedBody?.bmiCategory,
+      compositeBmi: completedBody?.compositeBmi,
       bodyScore: bodyScore.completed ? bodyScore.score : undefined,
       airQualityScore: airScore.completed ? airScore.score : undefined,
       waterQualityScore: waterScore.completed ? waterScore.score : undefined,
@@ -327,19 +366,15 @@ export default function Page() {
       lifeContextScore: lifeContextScore.completed ? lifeContextScore.score : undefined,
       personalityScore: personalityScore.completed ? personalityScore.score : undefined,
       homeEnvironmentScore: homeEnvironmentScore.completed ? homeEnvironmentScore.score : undefined,
-      smokingStatus: lifestyleData?.smokingStatus,
-      otherDrugUse: lifestyleScore.completed ? storedInputs.lifestyle?.otherDrugUse : undefined,
-      injectedDrugs:
-        lifestyleScore.completed && storedInputs.lifestyle && reportsDrugUse(storedInputs.lifestyle)
-          ? storedInputs.lifestyle.injectedDrugs
-          : undefined,
-      alcoholFrequency: lifestyleData?.alcoholFrequency,
-      sleepHours: lifestyleData?.sleepHours,
-      socialConnection: lifestyleData?.socialConnection,
-      bmiCategory: bodyDemographics?.bmiCategory,
-      processedMeatFrequency: dietData?.processedMeatFrequency,
-      pm25Level: airData?.pm25Level,
-      country: airData?.country,
+      smokingStatus: substanceUse?.smokingStatus,
+      alcoholGramsPerWeek: substanceUse?.alcoholGramsPerWeek,
+      otherDrugUse: substanceUse?.otherDrugUse,
+      injectedDrugs: substanceUse?.injectedDrugs,
+      sleepHours: completedLifestyle?.sleepHours,
+      socialConnection: completedLifestyle?.socialConnection,
+      processedMeatFrequency: completedDiet?.processedMeatFrequency,
+      pm25Level: completedAir?.pm25Level,
+      country: completedAir?.country,
     }
 
     const result = calculateLifeExpectancy(inputs)
@@ -357,42 +392,68 @@ export default function Page() {
         direction: a.direction as "positive" | "negative",
       })),
     }
-  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, homeEnvironmentScore, lifestyleData, dietData, airData, bodyDemographics, storedInputs])
+  }, [scores, bodyScore, airScore, waterScore, dietScore, exerciseScore, workScore, lifestyleScore, mentalHealthScore, lifeContextScore, personalityScore, homeEnvironmentScore, substanceUse, completedBody, completedLifestyle, completedDiet, completedAir])
 
   // Biological age requires a known chronological age (from the Body module)
   const biologicalAgeData = useMemo(() => {
-    if (!bodyDemographics || !lifeExpectancyData) return undefined
+    if (!completedBody || !lifeExpectancyData) return undefined
     const completedCount = Object.values(scores).filter(s => s.completed).length
     return calculateBiologicalAge({
-      chronologicalAge: bodyDemographics.age,
+      chronologicalAge: completedBody.age,
       totalAdjustment: lifeExpectancyData.referenceAdjustment,
       dataPoints: completedCount,
     })
-  }, [bodyDemographics, lifeExpectancyData, scores])
+  }, [completedBody, lifeExpectancyData, scores])
 
-  // Type 2 diabetes risk screen (FINDRISC-adapted) — computed entirely from
-  // data already collected in the Body, Exercise, Diet, and Family History modules
+  // Type 2 diabetes risk screen (FINDRISC-adapted), computed entirely from answers already
+  // given in the Body, Exercise, Diet, and Family History modules
   const diabetesRiskData = useMemo(() => {
-    const r = calculateDiabetesRisk({
-      age: bodyDemographics?.age,
-      sex: bodyDemographics?.sex,
-      bmi: bodyDemographics?.bmi,
-      waistCm: bodyDemographics?.waistCm,
-      exerciseScore: exerciseScore.completed ? exerciseScore.score : undefined,
-      dietScore: dietScore.completed ? dietScore.score : undefined,
-      familyDiabetes: storedInputs.family?.diabetes,
-    })
-    return r ?? undefined
-  }, [bodyDemographics, exerciseScore, dietScore, storedInputs.family])
+    const dietAnswers = dietScore.completed ? storedInputs.diet : undefined
+    return (
+      calculateDiabetesRisk({
+        age: completedBody?.age,
+        sex: completedBody?.sex,
+        bmi: completedBody?.bmi,
+        waistCm: completedBody?.waistCm,
+        activeMinutesPerWeek: exerciseScore.completed
+          ? storedResults.exercise?.breakdown?.totalMinutesPerWeek
+          : undefined,
+        fruitServings: dietAnswers?.fruits,
+        vegetableServings: dietAnswers?.vegetables,
+        familyDiabetes: familyHistoryScore.completed ? storedInputs.family?.diabetes : undefined,
+      }) ?? undefined
+    )
+  }, [
+    completedBody, exerciseScore, dietScore, familyHistoryScore,
+    storedResults.exercise, storedInputs.diet, storedInputs.family,
+  ])
+
+  // Cardiovascular health on the Life's Essential 8 metrics the modules already cover
+  const cardiovascularHealthData = useMemo(
+    () =>
+      calculateCardiovascularHealth({
+        smokingStatus: completedLifestyle?.smokingStatus,
+        smokeIndoors: homeEnvironmentScore.completed ? storedInputs.home?.smokeIndoors : undefined,
+        sleepHours: completedLifestyle?.sleepHours,
+        metMinutesPerWeek: exerciseScore.completed ? storedResults.exercise?.totalMETMinutes : undefined,
+        bmiCategory: completedBody?.bmiCategory,
+        compositeBmi: completedBody?.compositeBmi,
+        dietScore: dietScore.completed ? dietScore.score : undefined,
+      }) ?? undefined,
+    [
+      completedLifestyle, completedBody, homeEnvironmentScore, exerciseScore, dietScore,
+      storedInputs.home, storedResults.exercise,
+    ],
+  )
 
   // Dementia risk profile, also built only from answers already collected. A module's answers
   // count once it's completed, so drafts and retakes don't leak into the profile.
   const neuroRiskData = useMemo(
     () =>
       calculateNeuroRisk({
-        bmiCategory: bodyScore.completed ? bodyDemographics?.bmiCategory : undefined,
-        pm25: airScore.completed ? airData?.pm25Level : undefined,
-        socialConnection: lifestyleScore.completed ? lifestyleData?.socialConnection : undefined,
+        bmiCategory: completedBody?.bmiCategory,
+        pm25: completedAir?.pm25Level,
+        socialConnection: completedLifestyle?.socialConnection,
         lifestyle: lifestyleScore.completed ? storedInputs.lifestyle : undefined,
         mental: mentalHealthScore.completed ? storedInputs.mental : undefined,
         exercise: exerciseScore.completed ? storedInputs.exercise : undefined,
@@ -402,10 +463,10 @@ export default function Page() {
         work: workScore.completed ? storedInputs.work : undefined,
         family: familyHistoryScore.completed ? storedInputs.family : undefined,
         preventive: preventiveCareScore.completed ? storedInputs.preventive : undefined,
-        age: bodyDemographics?.age,
+        age: completedBody?.age,
       }) ?? undefined,
     [
-      bodyScore, bodyDemographics, airScore, airData, lifestyleScore, lifestyleData,
+      completedBody, completedAir, completedLifestyle, lifestyleScore,
       mentalHealthScore, exerciseScore, dietScore, sensesOralScore, lifeContextScore,
       workScore, familyHistoryScore, preventiveCareScore, storedInputs,
     ],
@@ -415,43 +476,34 @@ export default function Page() {
   const cancerRiskData = useMemo(
     () =>
       calculateCancerRisk({
-        sex: bodyScore.completed ? bodyDemographics?.sex : undefined,
-        bmiCategory: bodyScore.completed ? bodyDemographics?.bmiCategory : undefined,
-        waistCm: bodyScore.completed ? bodyDemographics?.waistCm : undefined,
-        pm25: airScore.completed ? airData?.pm25Level : undefined,
+        sex: completedBody?.sex,
+        bmiCategory: completedBody?.bmiCategory,
+        waistCm: completedBody?.waistCm,
+        pm25: completedAir?.pm25Level,
         lifestyle: lifestyleScore.completed ? storedInputs.lifestyle : undefined,
         exercise: exerciseScore.completed ? storedInputs.exercise : undefined,
         diet: dietScore.completed ? storedInputs.diet : undefined,
         home: homeEnvironmentScore.completed ? storedInputs.home : undefined,
         family: familyHistoryScore.completed ? storedInputs.family : undefined,
         preventive: preventiveCareScore.completed ? storedInputs.preventive : undefined,
-        age: bodyDemographics?.age,
+        age: completedBody?.age,
       }) ?? undefined,
     [
-      bodyScore, bodyDemographics, airScore, airData, lifestyleScore, exerciseScore, dietScore,
+      completedBody, completedAir, lifestyleScore, exerciseScore, dietScore,
       homeEnvironmentScore, familyHistoryScore, preventiveCareScore, storedInputs,
     ],
   )
 
-  function handleBodyResult(
-    score: number,
-    demographics?: {
-      age: number
-      sex: "male" | "female"
-      bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
-      bmi?: number
-      waistCm?: number
-    },
-  ) {
+  function handleBodyResult(score: number, demographics?: BodyDemographics) {
     setBodyScore({ score, completed: true, label: "Body Composition" })
     if (demographics) {
       setBodyDemographics(demographics)
     }
   }
 
-  const localUv = airScore.completed ? getLocalUv(airData?.country, airData?.city) : undefined
+  const localUv = completedAir ? getLocalUv(completedAir.country, completedAir.city) : undefined
 
-  function handleAirResult(score: number, countryData?: { country: string; city?: string; pm25Level?: number }) {
+  function handleAirResult(score: number, countryData?: AirExtras) {
     setAirScore({ score, completed: true, label: "Air Quality" })
     if (countryData) {
       setAirData(countryData)
@@ -462,7 +514,7 @@ export default function Page() {
     setWaterScore({ score, completed: true, label: "Water Quality" })
   }
 
-  function handleDietResult(score: number, meatData?: { processedMeatFrequency: number }) {
+  function handleDietResult(score: number, meatData?: DietExtras) {
     setDietScore({ score, completed: true, label: "Diet" })
     if (meatData) {
       setDietData(meatData)
@@ -477,16 +529,7 @@ export default function Page() {
     setWorkScore({ score, completed: true, label: "Work" })
   }
 
-  function handleLifestyleResult(
-    score: number,
-    lifestyleExtras?: {
-      smokingStatus: string
-      alcoholFrequency: string
-      alcoholUnitsPerSession: number
-      sleepHours?: number
-      socialConnection?: "strong" | "moderate" | "weak" | "isolated"
-    },
-  ) {
+  function handleLifestyleResult(score: number, lifestyleExtras?: LifestyleExtras) {
     setLifestyleScore({ score, completed: true, label: "Lifestyle" })
     if (lifestyleExtras) {
       setLifestyleData(lifestyleExtras)
@@ -531,18 +574,6 @@ export default function Page() {
             onNavigate={setActiveSection}
           />
         )
-      case "dashboard":
-        return (
-          <HealthDashboard
-            result={overallResult}
-            onNavigate={setActiveSection}
-            lifeExpectancyData={lifeExpectancyData}
-            biologicalAgeData={biologicalAgeData}
-            diabetesRiskData={diabetesRiskData}
-            neuroRiskData={neuroRiskData}
-            cancerRiskData={cancerRiskData}
-          />
-        )
       case "body":
         return <BodyCompositionSection onResult={handleBodyResult} storedResult={storedResults.body} onStoreResult={(r) => storeResult("body", r)} onRetake={() => clearResult("body")} storedInputs={storedInputs.body} onStoreInputs={(i) => storeInputs("body", i)} />
       case "air":
@@ -573,6 +604,7 @@ export default function Page() {
         return <HomeEnvironmentSection onResult={handleHomeEnvironmentResult} storedResult={storedResults.home} onStoreResult={(r) => storeResult("home", r)} onRetake={() => clearResult("home")} storedInputs={storedInputs.home} onStoreInputs={(i) => storeInputs("home", i)} />
       case "methodology":
         return <MethodologySection />
+      // "dashboard", and any section name that no longer exists
       default:
         return (
           <HealthDashboard
@@ -580,6 +612,7 @@ export default function Page() {
             onNavigate={setActiveSection}
             lifeExpectancyData={lifeExpectancyData}
             biologicalAgeData={biologicalAgeData}
+            cardiovascularHealthData={cardiovascularHealthData}
             diabetesRiskData={diabetesRiskData}
             neuroRiskData={neuroRiskData}
             cancerRiskData={cancerRiskData}

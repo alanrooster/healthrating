@@ -120,25 +120,36 @@ function scoreWeight(inputs: CardiovascularHealthInputs): number | undefined {
   return byCategory[bmiCategory]
 }
 
-function getBand(score: number): Pick<CardiovascularHealthResult, "band" | "bandLabel" | "summary"> {
-  if (score >= 80) {
+const HIGH_SCORE = 80
+const MODERATE_SCORE = 50
+
+/**
+ * The overall score is an unweighted mean, so one very low metric (a daily smoker scores 0 for
+ * nicotine) can hide behind four good ones: the summary always names the lowest metric.
+ */
+function getBand(
+  score: number,
+  lowest: CardiovascularMetric,
+): Pick<CardiovascularHealthResult, "band" | "bandLabel" | "summary"> {
+  const focus = lowest.score < HIGH_SCORE ? ` ${lowest.label} is your lowest metric: start there.` : ""
+  if (score >= HIGH_SCORE) {
     return {
       band: "high",
       bandLabel: "High",
-      summary: "Your habits and weight match the American Heart Association's picture of high cardiovascular health.",
+      summary: `Overall, your habits and weight are in the range the American Heart Association calls high cardiovascular health.${focus}`,
     }
   }
-  if (score >= 50) {
+  if (score >= MODERATE_SCORE) {
     return {
       band: "moderate",
       bandLabel: "Moderate",
-      summary: "Raising your lowest metrics moves you towards high cardiovascular health.",
+      summary: `Raising your lowest metrics moves you towards high cardiovascular health.${focus}`,
     }
   }
   return {
     band: "low",
     bandLabel: "Low",
-    summary: "Several metrics are low. Start with the lowest one, and have your blood pressure, cholesterol and glucose checked.",
+    summary: `Several metrics are low.${focus} Have your blood pressure, cholesterol and glucose checked.`,
   }
 }
 
@@ -170,7 +181,7 @@ export function calculateCardiovascularHealth(inputs: CardiovascularHealthInputs
   const score = Math.round(metrics.reduce((sum, metric) => sum + metric.score, 0) / metrics.length)
 
   return {
-    ...getBand(score),
+    ...getBand(score, metrics[0]),
     score,
     metrics,
     metricsAssessed: metrics.length,

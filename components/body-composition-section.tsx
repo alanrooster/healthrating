@@ -30,7 +30,10 @@ interface BodyCompositionSectionProps {
       age: number
       sex: "male" | "female"
       bmiCategory: LEBmiCategory
+      /** Raw BMI, as the FINDRISC diabetes screen uses it */
       bmi?: number
+      /** Composite BMI with the ethnicity-specific cut-offs, which the category comes from */
+      compositeBmi?: number
       waistCm?: number
     },
   ) => void
@@ -54,6 +57,7 @@ export function BodyCompositionSection({ onResult, storedResult, onStoreResult, 
       sex: measurements.sex === "female" ? "female" : "male",
       bmiCategory: toLEBmiCategory(bmiResult.category),
       bmi: bmiResult.bmi,
+      compositeBmi: bmiResult.compositeScore,
       waistCm: measurements.waistCm,
     })
     setTimeout(() => {

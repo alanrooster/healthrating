@@ -5,7 +5,7 @@
  * One source per factor, in priority order:
  * 1. Lancet Commission 2024 (Livingston et al., Lancet 404:572-628): relative risks for its
  *    14 potentially modifiable factors, plus its diet-quality meta-analysis.
- * 2. LIBRA2 (Rosenau et al., J Alzheimers Dis 2024): sleep problems and cognitive activity.
+ * 2. LIBRA2 (Rosenau et al., Alzheimers Dement 2024): sleep problems and cognitive activity.
  * 3. Single meta-analyses where neither applies: perceived stress (Franks et al., J Alzheimers
  *    Dis 2021) and family history (Cannon-Albright et al., Neurology 2019).
  * 4. Natural experiments where no meta-analysis exists yet: shingles vaccination from 50 (Eyting

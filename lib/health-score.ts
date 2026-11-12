@@ -47,11 +47,12 @@ export interface SubstanceYearsLost {
 // Tobacco, alcohol and drugs share one sub-score worth 16% of Lifestyle, itself 10% of the total,
 // so daily smoking alone would move the overall score by less than a point while costing 10 years
 // of life. The overall score therefore loses one point per year of life expectancy they cost, the
-// same years as the life expectancy estimate. For scale, class III obesity costs about 10 points
-// through the Body module for 9 years of life.
-const MAX_SUBSTANCE_DEDUCTION = 30
+// same years as the life expectancy estimate: at most 10 for smoking, 4.5 for alcohol and 15.8 for
+// drugs. For scale, class III obesity costs about 10 points through the Body module for 9 years
+// of life.
 
-const WEIGHTS = {
+/** Each module's share of the overall score (sums to 1) */
+export const MODULE_WEIGHTS: Record<keyof HealthScores, number> = {
   body: 0.11,
   airQuality: 0.05,
   waterQuality: 0.04,
@@ -158,8 +159,8 @@ export function calculateOverallHealth(
   }
 
   // Re-normalize weights among completed modules only
-  const totalWeight = completed.reduce((sum, [key]) => sum + WEIGHTS[key], 0)
-  const weightedScore = completed.reduce((sum, [key, m]) => sum + (WEIGHTS[key] / totalWeight) * m.score, 0)
+  const totalWeight = completed.reduce((sum, [key]) => sum + MODULE_WEIGHTS[key], 0)
+  const weightedScore = completed.reduce((sum, [key, m]) => sum + (MODULE_WEIGHTS[key] / totalWeight) * m.score, 0)
 
   const deductions: ScoreDeduction[] = substanceYears
     ? [
@@ -168,10 +169,7 @@ export function calculateOverallHealth(
         { label: "Drug use", points: substanceYears.drugs },
       ].filter((deduction) => deduction.points > 0)
     : []
-  const totalDeduction = Math.min(
-    MAX_SUBSTANCE_DEDUCTION,
-    deductions.reduce((sum, deduction) => sum + deduction.points, 0),
-  )
+  const totalDeduction = deductions.reduce((sum, deduction) => sum + deduction.points, 0)
   const overallScore = Math.max(0, Math.round(weightedScore - totalDeduction))
 
   const letterGrade = getLetterGrade(overallScore)

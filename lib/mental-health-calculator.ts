@@ -27,7 +27,7 @@
  * - Four wellbeing items adapted from the WHO-5 Well-Being Index (4 of its 5 items, on a 5-point
  *   scale over 30 days, so the WHO-5 cut-off is indicative only)
  * - Cognitive engagement: high cognitive activity carries RR 0.61 for dementia in LIBRA2
- *   (Rosenau et al., J Alzheimers Dis 2024), and the 2024 Lancet Commission recommends
+ *   (Rosenau et al., Alzheimers Dement 2024), and the 2024 Lancet Commission recommends
  *   cognitively stimulating activity in midlife
  * - Purpose in life (Hill & Turiano 2014; Alimujiang et al. 2019)
  *

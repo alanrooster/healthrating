@@ -31,21 +31,13 @@ import {
   reportsDrugUse,
   sunExposureBands,
   type LifestyleAnswers,
+  type LifestyleExtras,
   type LifestyleResult,
 } from "@/lib/lifestyle-calculator"
 import { getScoreColor } from "@/lib/health-score"
 
 interface LifestyleSectionProps {
-  onResult: (
-    score: number,
-    lifestyleExtras?: {
-      smokingStatus: string
-      alcoholFrequency: string
-      alcoholUnitsPerSession: number
-      sleepHours: number
-      socialConnection: "strong" | "moderate" | "weak" | "isolated"
-    },
-  ) => void
+  onResult: (score: number, lifestyleExtras?: LifestyleExtras) => void
   storedResult?: LifestyleResult | null
   onStoreResult?: (result: LifestyleResult) => void
   onRetake?: () => void

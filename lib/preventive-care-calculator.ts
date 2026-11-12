@@ -26,9 +26,6 @@
  *   al., JAMA Intern Med 2025). Avoiding unneeded scans is "quaternary prevention", so lifetime
  *   CT, PET-CT and nuclear medicine scans subtract a few points; scans are usually needed, so the
  *   penalty stays small and people with none keep the same score.
- *
- * Studies suggest adherence to recommended preventive care can reduce
- * mortality by 5-15% over a decade and add several years of life expectancy.
  */
 
 export type CarePeriod = "current" | "overdue" | "long-overdue" | "never" | "not-applicable"

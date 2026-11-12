@@ -126,8 +126,20 @@ const MAX_COMBINED_GAIN = 10
 const YEARS_PER_10_UG_PM25 = 0.98
 const WHO_PM25_GUIDELINE = 5
 
+// Spread of lifespans among peers at the reference age, for the percentile
+const LIFESPAN_SD_YEARS = 10
+
 function combineGains(sum: number): number {
   return MAX_COMBINED_GAIN * (1 - Math.exp(-sum / MAX_COMBINED_GAIN))
+}
+
+// Standard normal cumulative distribution (Abramowitz & Stegun 26.2.17, error below 1e-7)
+function normalCdf(z: number): number {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z))
+  const density = 0.3989422804 * Math.exp((-z * z) / 2)
+  const upperTail =
+    density * t * (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))))
+  return z > 0 ? 1 - upperTail : upperTail
 }
 
 // Smokers lose about 10 years (Doll et al., BMJ 2004; Jha et al., NEJM 2013). Lifelong non-daily
@@ -483,10 +495,10 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   const scaledAdjustment = totalAdjustment * ageScale
   const adjustedTotal = Math.max(age + 1, baselineTotal + scaledAdjustment)
 
-  // Percentile (rough approximation): a normal distribution with an SD of 10 years at the
-  // reference age; the spread of remaining lifespans narrows with age in the same proportion as
-  // the scaled effects.
-  const percentile = Math.min(99, Math.max(1, 50 + (totalAdjustment / 10) * 34))
+  // Share of peers the estimate outlives (rough approximation): lifespans at the reference age
+  // are taken as normally distributed with an SD of 10 years; the spread of remaining lifespans
+  // narrows with age in the same proportion as the scaled effects.
+  const percentile = Math.min(99, Math.max(1, 100 * normalCdf(totalAdjustment / LIFESPAN_SD_YEARS)))
 
   // Years still to gain by reaching the best case on the completed modules: every loss removed
   // and every gain at its maximum, combined the same way

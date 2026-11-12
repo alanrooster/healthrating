@@ -1,14 +1,14 @@
 /**
- * Type 2 Diabetes Risk Screen — adapted from FINDRISC
+ * Type 2 Diabetes Risk Screen, adapted from FINDRISC
  * (Finnish Diabetes Risk Score, Lindström & Tuomilehto 2003, Diabetes Care).
  *
  * FINDRISC is the most widely validated non-laboratory diabetes risk
- * questionnaire. This adaptation uses data the user has ALREADY entered in
+ * questionnaire. This adaptation uses answers the user has ALREADY given in
  * other modules (zero additional questions):
- * - Age, BMI, waist circumference, sex  -> Body Composition module
- * - Physical activity                    -> Exercise module (score proxy)
- * - Daily vegetables/fruit               -> Diet module (score proxy)
- * - Family history of type 2 diabetes    -> Family History module
+ * - Age, BMI, waist circumference, sex       -> Body Composition module
+ * - At least 30 minutes of activity a day    -> Exercise module (210 active minutes a week)
+ * - Vegetables, fruit or berries every day   -> Diet module (1 serving or more of either a day)
+ * - Family history of diabetes               -> Family History module
  *
  * Two original FINDRISC items are NOT collected by the app (blood pressure
  * medication, history of high blood glucose), so this is a PARTIAL screen
@@ -28,10 +28,11 @@ export interface DiabetesRiskInputs {
   sex?: "male" | "female"
   bmi?: number
   waistCm?: number
-  /** Exercise module overall score 0-100 (>=50 treated as meeting activity criterion) */
-  exerciseScore?: number
-  /** Diet module overall score 0-100 (>=60 treated as regular vegetables/fruit) */
-  dietScore?: number
+  /** Active minutes a week across work, travel and leisure (Exercise module) */
+  activeMinutesPerWeek?: number
+  /** Diet module answers for daily servings (0-4, where 2 is "1-2 servings") */
+  fruitServings?: number
+  vegetableServings?: number
   familyDiabetes?: FamilyDiabetesHistory
 }
 
@@ -46,6 +47,11 @@ export interface DiabetesRiskResult {
   drivers: string[]
   note: string
 }
+
+// FINDRISC asks for at least 30 minutes of physical activity every day
+const DAILY_ACTIVITY_MINUTES_PER_WEEK = 30 * 7
+// Diet answer 2 is "1-2 servings" a day; the answers below it are less than one serving a day
+const DAILY_SERVING_ANSWER = 2
 
 export function calculateDiabetesRisk(inputs: DiabetesRiskInputs): DiabetesRiskResult | null {
   // Require at minimum age + one anthropometric measure to produce anything meaningful
@@ -95,21 +101,24 @@ export function calculateDiabetesRisk(inputs: DiabetesRiskInputs): DiabetesRiskR
     }
   }
 
-  // Physical activity (>=30 min/day: yes=0, no=2) — exercise score proxy
-  if (inputs.exerciseScore !== undefined) {
+  // Physical activity: at least 30 minutes a day (yes=0, no=2)
+  if (inputs.activeMinutesPerWeek !== undefined && Number.isFinite(inputs.activeMinutesPerWeek)) {
     used++
-    if (inputs.exerciseScore < 50) {
+    if (inputs.activeMinutesPerWeek < DAILY_ACTIVITY_MINUTES_PER_WEEK) {
       points += 2
-      drivers.push("Low physical activity")
+      drivers.push("Under 30 minutes of activity a day")
     }
   }
 
-  // Daily vegetables/fruit (yes=0, no=1) — diet score proxy
-  if (inputs.dietScore !== undefined) {
+  // Vegetables, fruit or berries every day (yes=0, no=1)
+  const servingAnswers = [inputs.fruitServings, inputs.vegetableServings].filter(
+    (answer): answer is number => answer !== undefined && Number.isFinite(answer),
+  )
+  if (servingAnswers.length > 0) {
     used++
-    if (inputs.dietScore < 60) {
+    if (Math.max(...servingAnswers) < DAILY_SERVING_ANSWER) {
       points += 1
-      drivers.push("Diet quality below target")
+      drivers.push("Vegetables or fruit not eaten every day")
     }
   }
 
