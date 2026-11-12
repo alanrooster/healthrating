@@ -431,7 +431,7 @@ function DietResults({
             )}
 
             <p className="text-xs text-muted-foreground">
-              IARC = International Agency for Research on Cancer (WHO). Group 1 substances have the same carcinogenicity classification as tobacco smoking and asbestos.
+              IARC = International Agency for Research on Cancer (WHO). Its groups rate how strong the evidence is that something can cause cancer, not how large the risk is: processed meat shares Group 1 with tobacco smoking, but smoking raises cancer risk far more.
             </p>
           </CardContent>
         </Card>

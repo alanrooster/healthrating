@@ -10,8 +10,24 @@
  * Adjustments: life-expectancy differences for modifiable factors from the studies
  * cited per factor below. Most were estimated around age 40, so for older users they
  * are scaled by e(age) / e(40): fewer remaining years means fewer years at stake.
+ *
+ * Combining factors:
+ * - Gains level off. Each effect comes from a separate study that adjusted for only some of the
+ *   other factors, and several of them share the same causes of death, so a plain sum of every
+ *   gain over-counts (11 modules at their best would add 22.5 years). They are combined as
+ *   MAX_COMBINED_GAIN x (1 - exp(-sum / MAX_COMBINED_GAIN)) with a ceiling of 10 years above the
+ *   country average, more than the healthiest groups on record: California Adventists outlive
+ *   other Californians by 7.3 years (men) and 4.4 (women), with about 10 years between their own
+ *   low- and high-risk members (Fraser & Shavlik, Arch Intern Med 2001), and US adults with all 5
+ *   low-risk lifestyle factors live 12-14 years longer from age 50 than those with none (Li et
+ *   al., Circulation 2018).
+ * - Losses add up. The excess risks of high BMI and smoking were roughly additive in 900,000
+ *   adults (Prospective Studies Collaboration, Lancet 2009), and obese smokers lost 13.3-13.7
+ *   years against normal-weight non-smokers (Peeters et al., Ann Intern Med 2003), where this
+ *   model gives 14 (10 for smoking, 3 for obesity and the 1 a normal weight earns).
  */
 
+import { COUNTRY_PM25 } from "@/lib/data/country-pm25"
 import { LIFE_TABLE_AGES, LIFE_TABLES, type LifeTable } from "@/lib/data/life-tables"
 
 export interface LifeExpectancyInputs {
@@ -19,7 +35,9 @@ export interface LifeExpectancyInputs {
   age?: number
   sex?: "male" | "female"
   bmiCategory?: "underweight" | "normal" | "overweight" | "obese" | "severely_obese"
-  
+  /** Composite BMI from the Body module; tells obesity class II from class III */
+  compositeBmi?: number
+
   // Module scores (0-100)
   bodyScore?: number
   airQualityScore?: number
@@ -32,18 +50,19 @@ export interface LifeExpectancyInputs {
   lifeContextScore?: number
   personalityScore?: number
   homeEnvironmentScore?: number
-  
+
   // Specific risk factors (from various modules)
   smokingStatus?: string
   otherDrugUse?: string
   injectedDrugs?: string
-  alcoholFrequency?: string
+  /** Grams of pure alcohol a week (weeklyAlcoholGrams in the lifestyle calculator) */
+  alcoholGramsPerWeek?: number
   sleepHours?: number
   socialConnection?: string
   processedMeatFrequency?: number
   pm25Level?: number
-  
-  // Country for baseline life expectancy
+
+  // Country for baseline life expectancy and the national PM2.5 the city is compared with
   country?: string
 }
 
@@ -51,7 +70,7 @@ export interface LifeExpectancyResult {
   baselineYears: number
   adjustedYears: number
   totalAdjustment: number
-  /** Sum of factor effects at the reference age, before age scaling (drives biological age) */
+  /** Combined factor effects at the reference age, before age scaling (drives biological age) */
   referenceAdjustment: number
   adjustments: {
     factor: string
@@ -59,7 +78,7 @@ export interface LifeExpectancyResult {
     direction: "positive" | "negative" | "neutral"
     source: string
   }[]
-  percentile: number // Where they fall among population
+  percentile: number // Share of peers the estimate outlives
   potentialGain: number // Years that could be gained with optimal lifestyle
   confidence: "low" | "medium" | "high"
 }
@@ -100,11 +119,67 @@ function getExpectedTotalLifespan(age: number, sex: SexKey, country: string | un
 
 // Age at which most of the life-year effects below were estimated
 const EFFECT_REFERENCE_AGE = 40
+// Years above the country average that the combined gains approach but never reach
+const MAX_COMBINED_GAIN = 10
+// Each sustained 10 µg/m³ of PM2.5 costs 0.98 years of life expectancy (AQLI 2025 Annual Update,
+// EPIC University of Chicago)
+const YEARS_PER_10_UG_PM25 = 0.98
+const WHO_PM25_GUIDELINE = 5
+
+function combineGains(sum: number): number {
+  return MAX_COMBINED_GAIN * (1 - Math.exp(-sum / MAX_COMBINED_GAIN))
+}
+
+// Smokers lose about 10 years (Doll et al., BMJ 2004; Jha et al., NEJM 2013). Lifelong non-daily
+// smokers lose about 5 (Inoue-Choi et al., Am J Prev Med 2019). Quitting before 40 recovers about
+// 9 of the 10 years (Jha 2013); the age at quitting isn't asked, so former smokers count 1 year.
+const SMOKING_YEARS_LOST: Record<string, number> = {
+  never: 0,
+  former: 1,
+  occasional: 5,
+  daily: 10,
+}
+
+export interface SubstanceUse {
+  sex?: "male" | "female"
+  smokingStatus?: string
+  alcoholGramsPerWeek?: number
+  otherDrugUse?: string
+  injectedDrugs?: string
+}
+
+/**
+ * Years of life expectancy lost to tobacco, alcohol and drugs at the reference age, as positive
+ * numbers. Shared with the overall health score, which subtracts one point per year.
+ * - Alcohol: against up to 100 g a week, drinking 100-200 g costs about 6 months at age 40,
+ *   200-350 g 1-2 years and over 350 g 4-5 years (Wood et al., Lancet 2018, 599,912 drinkers).
+ *   No level is protective once study biases are corrected (Zhao et al., JAMA Netw Open 2023).
+ * - Drugs: opioid dependence cuts life expectancy at 18 by 14.7 years for men and 15.8 for women
+ *   (SMR 6.06; Lewer et al., J Psychiatr Res 2020). Regular cocaine and amphetamine use carry
+ *   similar SMRs (6.1, 6.8), so weekly use of any drug other than cannabis counts the same. People
+ *   who inject drugs have an SMR of 14.7 (Mathers et al., Bull WHO 2013), so injecting in the past
+ *   year gets at least the same. Less frequent or past use has no measured effect on life
+ *   expectancy and lowers the habits score only.
+ */
+export function substanceYearsLost(use: SubstanceUse): { smoking: number; alcohol: number; drugs: number } {
+  const grams = use.alcoholGramsPerWeek
+  const alcohol =
+    grams === undefined || !Number.isFinite(grams) ? 0 : grams > 350 ? 4.5 : grams > 200 ? 1.5 : grams > 100 ? 0.5 : 0
+  const drugs =
+    use.otherDrugUse === "weekly" || use.injectedDrugs === "recent"
+      ? use.sex === "female"
+        ? 15.8
+        : use.sex === "male"
+          ? 14.7
+          : 15
+      : 0
+  return { smoking: SMOKING_YEARS_LOST[use.smokingStatus ?? ""] ?? 0, alcohol, drugs }
+}
 
 export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpectancyResult {
   const sex = inputs.sex || "default"
   const age = inputs.age || 40 // Default assumption
-  
+
   const baselineTotal = getExpectedTotalLifespan(age, sex, inputs.country)
   const ageScale = Math.min(
     1,
@@ -112,48 +187,32 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
       remainingLifeExpectancy(EFFECT_REFERENCE_AGE, sex, inputs.country),
   )
 
-  const adjustments: LifeExpectancyResult["adjustments"] = []
-  let totalAdjustment = 0
+  // Factor effects at the reference age, before they are combined
+  const factors: { factor: string; years: number; source: string }[] = []
+  function add(factor: string, years: number, source: string) {
+    if (years !== 0) factors.push({ factor, years, source })
+  }
 
-  // Tracks the best-case (maximum positive) adjustment achievable from ONLY
-  // the modules the user has actually completed. This makes `potentialGain`
-  // accurate: it reflects how much better the user could realistically do on
-  // what they've assessed, rather than comparing against a fixed ceiling that
-  // assumes every module is filled in.
-  let maxPossibleAdjustment = 0
-  
+  // Best-case sum of gains from ONLY the modules the user has completed, so `potentialGain`
+  // reflects what they could realistically reach on what they've assessed
+  let maxPossibleGain = 0
+
   // Count how many modules provided data for confidence calculation
   let dataPoints = 0
-  
+
+  const substances = substanceYearsLost(inputs)
+
   // === SMOKING (Lifestyle) ===
-  // Smokers lose ~10 years on average (Doll et al., BMJ 2004).
-  // Former smokers recover most of those years if they quit before 40-50
-  // (Jha et al., NEJM 2013). We use a conservative average of -1 year.
   if (inputs.smokingStatus) {
     dataPoints++
-    const smokingImpact: Record<string, number> = {
-      never: 0,
-      former: -1, // Most loss recovered if quit before middle age
-      occasional: -5,
-      daily: -10,
-    }
-    const years = smokingImpact[inputs.smokingStatus] ?? 0
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Smoking",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Doll et al., BMJ 2004; Jha et al., NEJM 2013",
-      })
-      totalAdjustment += years
-    }
+    add("Smoking", -substances.smoking, "Doll et al., BMJ 2004; Jha et al., NEJM 2013; Inoue-Choi et al., Am J Prev Med 2019")
   }
-  
+
   // === EXERCISE (Exercise Module) ===
   // 150 min/week moderate exercise adds 3-4 years (Moore et al., PLOS Medicine 2012)
   if (inputs.exerciseScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 4 // best case: highly active
+    maxPossibleGain += 4 // best case: highly active
     let years = 0
     if (inputs.exerciseScore >= 80) {
       years = 4 // Highly active
@@ -164,47 +223,34 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.exerciseScore < 20) {
       years = -3 // Sedentary
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Physical Activity",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Moore et al., PLOS Medicine 2012",
-      })
-      totalAdjustment += years
-    }
+    add("Physical Activity", years, "Moore et al., PLOS Medicine 2012")
   }
-  
+
   // === BMI / BODY COMPOSITION ===
-  // Obesity reduces life expectancy by 3-10 years (Lancet 2016 meta-analysis)
+  // Median survival is 2-4 years shorter at BMI 30-35 and 8-10 years shorter at 40-45
+  // (Prospective Studies Collaboration, Lancet 2009); class II (35-40) sits between the two.
+  // Overweight counts 0: it is the average weight in most countries, so the baseline includes it.
   if (inputs.bmiCategory || inputs.bodyScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 1 // best case: normal BMI
+    maxPossibleGain += 1 // best case: normal BMI
     let years = 0
     if (inputs.bmiCategory === "severely_obese") {
-      years = -8
+      // Results saved before the composite BMI was passed on don't tell class II from class III
+      years = inputs.compositeBmi === undefined ? -8 : inputs.compositeBmi >= 40 ? -9 : -6
     } else if (inputs.bmiCategory === "obese") {
       years = -3
     } else if (inputs.bmiCategory === "normal") {
       years = 1 // Slight advantage
     } else if (inputs.bmiCategory === "underweight") {
       years = -2
-    } else if (inputs.bodyScore !== undefined) {
+    } else if (!inputs.bmiCategory && inputs.bodyScore !== undefined) {
       // Use score as proxy
       if (inputs.bodyScore >= 80) years = 1
       else if (inputs.bodyScore < 40) years = -3
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Body Composition",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Global BMI Mortality Collaboration, Lancet 2016",
-      })
-      totalAdjustment += years
-    }
+    add("Body Composition", years, "Prospective Studies Collaboration, Lancet 2009")
   }
-  
+
   // === DIET ===
   // Mediterranean/healthy diet adds 2-4 years (Sofi et al., BMJ 2008). Conservative next to
   // Fadnes et al. (PLOS Med 2022): a sustained switch from a typical Western to an optimal diet
@@ -212,7 +258,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // Processed meat (IARC Group 1) reduces life expectancy
   if (inputs.dietScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 3 // best case: excellent diet, no processed-meat penalty
+    maxPossibleGain += 3 // best case: excellent diet, no processed-meat penalty
     let years = 0
     if (inputs.dietScore >= 80) {
       years = 3
@@ -221,105 +267,58 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.dietScore < 30) {
       years = -2
     }
-    
-    // Additional penalty for high processed meat consumption
+
+    // Additional penalty for processed meat 5 or more times a week
     if (inputs.processedMeatFrequency !== undefined && inputs.processedMeatFrequency >= 3) {
-      years -= 1.5 // Daily processed meat
+      years -= 1.5
     }
-    
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Diet Quality",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Sofi et al., BMJ 2008; Fadnes et al., PLOS Med 2022; IARC 2015",
-      })
-      totalAdjustment += years
-    }
+
+    add("Diet Quality", years, "Sofi et al., BMJ 2008; Fadnes et al., PLOS Med 2022; IARC 2015")
   }
-  
+
   // === ALCOHOL ===
-  // Heavy drinking (>350 g/week) at 40 reduces life expectancy by 4-5 years (Wood et al., Lancet 2018)
-  // No level of alcohol is protective: low-volume drinkers show no mortality benefit over
-  // lifetime abstainers once study biases are corrected (Zhao et al., JAMA Netw Open 2023;
-  // WHO, Lancet Public Health 2023). We treat "never" as neutral (0).
-  if (inputs.alcoholFrequency) {
+  if (inputs.alcoholGramsPerWeek !== undefined) {
     dataPoints++
-    const alcoholImpact: Record<string, number> = {
-      never: 0, // No protective effect (Lancet 2018)
-      rarely: 0,
-      monthly: 0,
-      weekly: -0.5,
-      "several-weekly": -2,
-      daily: -4,
-    }
-    const years = alcoholImpact[inputs.alcoholFrequency] ?? 0
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Alcohol Consumption",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Wood et al., Lancet 2018; Zhao et al., JAMA Netw Open 2023",
-      })
-      totalAdjustment += years
-    }
+    add("Alcohol Consumption", -substances.alcohol, "Wood et al., Lancet 2018; Zhao et al., JAMA Netw Open 2023")
   }
-  
+
   // === DRUG USE ===
-  // Opioid dependence cuts life expectancy at 18 by 14.7 years for men and 15.8 for women (SMR
-  // 6.06; Lewer et al., J Psychiatr Res 2020). Regular cocaine and amphetamine use carry similar
-  // SMRs (6.1, 6.8), so weekly use of any drug other than cannabis counts the same. People who
-  // inject drugs have an SMR of 14.7 (Mathers et al., Bull WHO 2013), so injecting in the past
-  // year gets at least the same. Less frequent or past use has no measured effect on life
-  // expectancy and lowers the habits score only.
   if (inputs.otherDrugUse || inputs.injectedDrugs) {
     dataPoints++
-    if (inputs.otherDrugUse === "weekly" || inputs.injectedDrugs === "recent") {
-      const years = inputs.sex === "female" ? -15.8 : inputs.sex === "male" ? -14.7 : -15
-      adjustments.push({
-        factor: "Drug Use",
-        years,
-        direction: "negative",
-        source: "Lewer et al., J Psychiatr Res 2020; Mathers et al., Bull WHO 2013",
-      })
-      totalAdjustment += years
-    }
+    add("Drug Use", -substances.drugs, "Lewer et al., J Psychiatr Res 2020; Mathers et al., Bull WHO 2013")
   }
 
   // === AIR QUALITY ===
-  // Each sustained 10 μg/m³ of PM2.5 above the WHO guideline costs 0.98 years of life
-  // expectancy (AQLI 2025 Annual Update, EPIC University of Chicago)
+  // The national life table already includes the country's average exposure, so the city counts
+  // against the national mean (WHO, SDG indicator 11.6.2), not against the WHO guideline: cleaner
+  // air than the national average gains years, dirtier air loses them.
   if (inputs.airQualityScore !== undefined || inputs.pm25Level !== undefined) {
     dataPoints++
     let years = 0
     if (inputs.pm25Level !== undefined) {
-      // Direct PM2.5 calculation
-      const excessPM25 = Math.max(0, inputs.pm25Level - 5) // WHO guideline is 5
-      years = -(excessPM25 / 10) * 0.98
-      // Best achievable via measured PM2.5 is 0 (clean air = no penalty, no bonus)
+      const nationalMean = inputs.country ? COUNTRY_PM25[inputs.country] : undefined
+      // An unknown national mean leaves nothing to compare the city with
+      const reference = nationalMean ?? inputs.pm25Level
+      years = -((inputs.pm25Level - reference) / 10) * YEARS_PER_10_UG_PM25
+      // Best case: air at the WHO guideline
+      maxPossibleGain += Math.max(0, ((reference - WHO_PM25_GUIDELINE) / 10) * YEARS_PER_10_UG_PM25)
     } else if (inputs.airQualityScore !== undefined) {
       // Use score as proxy
       if (inputs.airQualityScore >= 90) years = 0.5 // Clean air bonus
       else if (inputs.airQualityScore < 40) years = -2
       else if (inputs.airQualityScore < 60) years = -1
-      maxPossibleAdjustment += 0.5 // best case: clean-air bonus
+      maxPossibleGain += 0.5 // best case: clean-air bonus
     }
     if (Math.abs(years) > 0.1) {
-      adjustments.push({
-        factor: "Air Quality",
-        years: Math.round(years * 10) / 10,
-        direction: years > 0 ? "positive" : "negative",
-        source: "AQLI 2025 Annual Update, University of Chicago",
-      })
-      totalAdjustment += years
+      add("Air Quality", years, "AQLI 2025 Annual Update, University of Chicago; WHO SDG 11.6.2")
     }
   }
-  
+
   // === SLEEP ===
-  // Optimal sleep (7-8h) vs poor sleep affects mortality (Cappuccio et al., Sleep 2010)
+  // Short sleep carries 12% higher mortality and long sleep 30% (Cappuccio et al., Sleep 2010)
   if (inputs.sleepHours !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 1 // best case: optimal 7-8h sleep
+    maxPossibleGain += 1 // best case: optimal 7-8h sleep
     let years = 0
     if (inputs.sleepHours >= 7 && inputs.sleepHours <= 8) {
       years = 1 // Optimal
@@ -328,62 +327,37 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.sleepHours > 9) {
       years = -1 // Long sleep also associated with mortality
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Sleep Duration",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Cappuccio et al., Sleep 2010",
-      })
-      totalAdjustment += years
-    }
+    add("Sleep Duration", years, "Cappuccio et al., Sleep 2010")
   } else if (inputs.lifestyleScore !== undefined) {
     // Use lifestyle score as partial proxy for sleep
     dataPoints++
-    maxPossibleAdjustment += 0.5 // best case: healthy lifestyle proxy
+    maxPossibleGain += 0.5 // best case: healthy lifestyle proxy
     let years = 0
     if (inputs.lifestyleScore >= 80) years = 0.5
     else if (inputs.lifestyleScore < 40) years = -1
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Lifestyle Habits",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Lifestyle factors meta-analysis",
-      })
-      totalAdjustment += years
-    }
+    add("Lifestyle Habits", years, "Lifestyle factors meta-analysis")
   }
-  
+
   // === SOCIAL CONNECTION ===
-  // Strong social ties add 2-5 years (Holt-Lunstad et al., PLOS Medicine 2010)
+  // Stronger social relationships: 50% higher odds of survival (Holt-Lunstad et al., PLOS Medicine 2010)
   if (inputs.socialConnection) {
     dataPoints++
-    maxPossibleAdjustment += 3 // best case: strong social ties
+    maxPossibleGain += 3 // best case: strong social ties
     const socialImpact: Record<string, number> = {
       strong: 3,
       moderate: 1,
       weak: -1,
       isolated: -3,
     }
-    const years = socialImpact[inputs.socialConnection] ?? 0
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Social Connection",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Holt-Lunstad et al., PLOS Medicine 2010",
-      })
-      totalAdjustment += years
-    }
+    add("Social Connection", socialImpact[inputs.socialConnection] ?? 0, "Holt-Lunstad et al., PLOS Medicine 2010")
   }
-  
+
   // === MENTAL HEALTH ===
   // Mental disorders carry a median 10 years of potential life lost (Walker et al. 2015). The
   // input is a screening score, not a diagnosis, so the adjustments stay conservative.
   if (inputs.mentalHealthScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 1.5 // best case: good mental health
+    maxPossibleGain += 1.5 // best case: good mental health
     let years = 0
     if (inputs.mentalHealthScore >= 80) {
       years = 1.5 // Good mental health is protective
@@ -392,22 +366,16 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.mentalHealthScore < 50) {
       years = -2
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Mental Health",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Walker et al., JAMA Psychiatry 2015",
-      })
-      totalAdjustment += years
-    }
+    add("Mental Health", years, "Walker et al., JAMA Psychiatry 2015")
   }
-  
-  // === WORK STRESS ===
-  // Chronic work stress reduces life expectancy by 1-3 years
+
+  // === WORK ===
+  // Working 55+ hours a week: 33% more strokes and 13% more coronary disease (Kivimäki et al.,
+  // Lancet 2015); job strain: 23% more coronary disease (Kivimäki et al., Lancet 2012). No study
+  // gives years of life for the work score, so these small values are a modelling assumption.
   if (inputs.workScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 0.5 // best case: low-stress work
+    maxPossibleGain += 0.5 // best case: low-stress work
     let years = 0
     if (inputs.workScore >= 80) {
       years = 0.5 // Low stress work environment
@@ -416,23 +384,16 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.workScore < 50) {
       years = -1
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Work Environment",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Kivimäki et al., Lancet 2015",
-      })
-      totalAdjustment += years
-    }
+    add("Work Environment", years, "Kivimäki et al., Lancet 2015 and 2012")
   }
 
   // === WATER QUALITY ===
-  // Poor water quality and microplastic exposure affect health outcomes
-  // Contaminated water linked to various diseases (WHO 2022)
+  // Unsafe drinking water is a recognised cause of death (WHO Guidelines for Drinking-water
+  // Quality, 2022), but no study gives years of life for filtration or bottled-water habits, so
+  // these small values are a modelling assumption.
   if (inputs.waterQualityScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 0.5 // best case: clean, well-filtered water
+    maxPossibleGain += 0.5 // best case: clean, well-filtered water
     let years = 0
     if (inputs.waterQualityScore >= 80) {
       years = 0.5 // Clean water, good filtration
@@ -441,24 +402,16 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.waterQualityScore < 50) {
       years = -1 // Moderate water quality issues
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Water Quality",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "WHO Drinking Water Guidelines 2022",
-      })
-      totalAdjustment += years
-    }
+    add("Water Quality", years, "WHO Guidelines for Drinking-water Quality 2022")
   }
-  
+
   // === LIFE CONTEXT (relationships, education, income, religion, pets, volunteering) ===
-  // High impact - marriage, education, income individually contribute multi-year effects
-  // Robles 2014, Balaj 2024 Lancet Public Health (education), Chetty 2016 JAMA (income),
-  // Li 2016 JAMA Intern Med (religion)
+  // Marriage, education and income each carry multi-year differences: Jia & Lubetkin 2020
+  // (marriage), Balaj 2024 Lancet Public Health (education), Chetty 2016 JAMA (income),
+  // Li 2016 JAMA Intern Med (religion), Brown 2009 (ACEs)
   if (inputs.lifeContextScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 4 // best case: strong relationships, education, income
+    maxPossibleGain += 4 // best case: strong relationships, education, income
     let years = 0
     if (inputs.lifeContextScore >= 85) {
       years = 4 // Marriage + education + income + religion + pets stack up
@@ -471,23 +424,19 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.lifeContextScore < 50) {
       years = -1.5
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Life Context & Relationships",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Robles 2014; Chetty 2016 JAMA; Balaj 2024 Lancet Public Health; Brown 2009 (ACEs)",
-      })
-      totalAdjustment += years
-    }
+    add(
+      "Life Context & Relationships",
+      years,
+      "Jia & Lubetkin 2020; Chetty 2016 JAMA; Balaj 2024 Lancet Public Health; Brown 2009 (ACEs)",
+    )
   }
 
   // === PERSONALITY & OUTLOOK ===
   // Lee 2019 PNAS: top-quartile optimists live 11-15% longer
-  // Friedman & Kern 2014: high conscientiousness = +4 years
+  // Jokela 2013 Am J Epidemiol: low conscientiousness carries 37% higher mortality
   if (inputs.personalityScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 3 // best case: optimism + conscientiousness
+    maxPossibleGain += 3 // best case: optimism + conscientiousness
     let years = 0
     if (inputs.personalityScore >= 85) {
       years = 3
@@ -498,15 +447,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.personalityScore < 50) {
       years = -0.5
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Personality & Outlook",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Lee et al. 2019 PNAS, Friedman & Kern 2014",
-      })
-      totalAdjustment += years
-    }
+    add("Personality & Outlook", years, "Lee et al. 2019 PNAS; Jokela et al. 2013 Am J Epidemiol")
   }
 
   // === HOME ENVIRONMENT & HOUSEHOLD EXPOSURES ===
@@ -517,7 +458,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
   // US EPA (radon = 2nd leading lung-cancer cause), Luo 2022 / Hussain 2023 (micro/nanoplastics).
   if (inputs.homeEnvironmentScore !== undefined) {
     dataPoints++
-    maxPossibleAdjustment += 1 // best case: clean cookware, low-VOC, well-ventilated
+    maxPossibleGain += 1 // best case: clean cookware, low-VOC, well-ventilated
     let years = 0
     if (inputs.homeEnvironmentScore >= 85) {
       years = 1
@@ -528,39 +469,42 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     } else if (inputs.homeEnvironmentScore < 50) {
       years = -1
     }
-    if (years !== 0) {
-      adjustments.push({
-        factor: "Home Environment",
-        years,
-        direction: years > 0 ? "positive" : "negative",
-        source: "Svanes 2018; Gruenwald 2023; WHO 2009 (damp); US EPA (radon)",
-      })
-      totalAdjustment += years
-    }
+    add("Home Environment", years, "Svanes 2018; Gruenwald 2023; WHO 2009 (damp); US EPA (radon)")
   }
 
-  // Calculate final values (factor effects are at the reference age; scale to the user's age)
+  // Combine: gains level off, losses add up (see the header)
+  const gains = factors.reduce((sum, f) => (f.years > 0 ? sum + f.years : sum), 0)
+  const losses = factors.reduce((sum, f) => (f.years < 0 ? sum - f.years : sum), 0)
+  const combinedGain = combineGains(gains)
+  const gainScale = gains > 0 ? combinedGain / gains : 1
+  const totalAdjustment = combinedGain - losses
+
+  // Factor effects are at the reference age; scale to the user's age
   const scaledAdjustment = totalAdjustment * ageScale
   const adjustedTotal = Math.max(age + 1, baselineTotal + scaledAdjustment)
 
-  // Calculate percentile (rough approximation)
-  // Assume normal distribution with SD of 10 years at the reference age; the spread of
-  // remaining lifespans narrows with age in the same proportion as the scaled effects.
+  // Percentile (rough approximation): a normal distribution with an SD of 10 years at the
+  // reference age; the spread of remaining lifespans narrows with age in the same proportion as
+  // the scaled effects.
   const percentile = Math.min(99, Math.max(1, 50 + (totalAdjustment / 10) * 34))
 
-  // Calculate potential gain: how many more years the user could realistically
-  // add by improving to the best-case outcome on the modules they've completed.
-  // Comparing against `maxPossibleAdjustment` (not a fixed constant) keeps this
-  // accurate regardless of how many modules have been filled in.
-  const potentialGain = Math.max(0, (maxPossibleAdjustment - totalAdjustment) * ageScale)
-  
+  // Years still to gain by reaching the best case on the completed modules: every loss removed
+  // and every gain at its maximum, combined the same way
+  const potentialGain = Math.max(0, (combineGains(maxPossibleGain) - totalAdjustment) * ageScale)
+
   // Confidence based on data points
   let confidence: "low" | "medium" | "high" = "low"
   if (dataPoints >= 6) confidence = "high"
   else if (dataPoints >= 3) confidence = "medium"
-  
-  const scaledFactors = adjustments
-    .map((adjustment) => ({ ...adjustment, years: Math.round(adjustment.years * ageScale * 10) / 10 }))
+
+  // Each gain is shown at its share of the combined gain, so the factors add up to the total
+  const adjustments = factors
+    .map(({ factor, years, source }) => ({
+      factor,
+      years: Math.round(years * (years > 0 ? gainScale : 1) * ageScale * 10) / 10,
+      direction: (years > 0 ? "positive" : "negative") as "positive" | "negative",
+      source,
+    }))
     .filter((adjustment) => adjustment.years !== 0)
     .sort((a, b) => Math.abs(b.years) - Math.abs(a.years))
 
@@ -569,7 +513,7 @@ export function calculateLifeExpectancy(inputs: LifeExpectancyInputs): LifeExpec
     adjustedYears: Math.round(adjustedTotal * 10) / 10,
     totalAdjustment: Math.round(scaledAdjustment * 10) / 10,
     referenceAdjustment: Math.round(totalAdjustment * 10) / 10,
-    adjustments: scaledFactors,
+    adjustments,
     percentile: Math.round(percentile),
     potentialGain: Math.round(potentialGain * 10) / 10,
     confidence,

@@ -48,26 +48,14 @@ function calcBMI(weightKg: number, heightCm: number): number {
 }
 
 /**
- * Age-adjusted BMI using the "New BMI" formula
- * Accounts for the fact that BMI norms shift with age
+ * Age allowance on BMI: 0.12 BMI units off per decade after 20 (0.6 at 70). In adults over 65
+ * the lowest mortality sits at a higher BMI than in midlife, about 23 to 33 (Winter et al., Am J
+ * Clin Nutr 2014), so this small modelling allowance stays far inside what the evidence would
+ * permit.
  */
-function calcAgeAdjustedBMI(
-  bmi: number,
-  age: number,
-  sex: Sex
-): number {
-  // BMI reference ranges shift slightly with age
-  // For adults, after age 20, ~0.1 BMI unit per decade is considered acceptable
-  let adjustment = 0
-  if (age > 20) {
-    const decadesOver20 = (age - 20) / 10
-    adjustment = decadesOver20 * 0.12
-  }
-  // Women naturally have higher body fat, slight downward adjustment for comparison
-  if (sex === "female") {
-    adjustment -= 0.08
-  }
-  return bmi - adjustment
+function calcAgeAdjustedBMI(bmi: number, age: number): number {
+  const decadesOver20 = Math.max(0, age - 20) / 10
+  return bmi - decadesOver20 * 0.12
 }
 
 /**
@@ -310,7 +298,7 @@ function getRecommendations(
   measurements: BodyMeasurements
 ): string[] {
   const recs: string[] = []
-  const { bmi, bodyFatPercentage, waistToHeightRatio, overweightBy, underweightBy } = result
+  const { bodyFatPercentage, waistToHeightRatio, overweightBy, underweightBy } = result
 
   if (overweightBy && overweightBy > 0) {
     if (overweightBy > 20) {
@@ -320,7 +308,7 @@ function getRecommendations(
     }
     recs.push(
       `A safe rate of weight loss is 0.5-1 kg per week. Reaching your ideal range could take ${Math.ceil(
-        overweightBy / 0.75
+        overweightBy
       )}-${Math.ceil(overweightBy / 0.5)} weeks.`
     )
   }
@@ -366,7 +354,13 @@ function getRecommendations(
     }
   }
 
-  if (bmi && bmi >= 18.5 && bmi < 25 && (!overweightBy || overweightBy <= 0)) {
+  // The composite carries the ethnicity-specific cut-offs, so it decides, not the raw BMI
+  if (
+    compositeBMI !== undefined &&
+    compositeBMI >= 18.5 &&
+    compositeBMI < 25 &&
+    (!overweightBy || overweightBy <= 0)
+  ) {
     recs.push(
       "You are within a healthy BMI range. Maintain your current lifestyle with regular exercise and balanced nutrition."
     )
@@ -443,21 +437,21 @@ export function calculateBMI(measurements: BodyMeasurements): BMIResult {
 
   // Core BMI
   const bmi = calcBMI(weightKg, heightCm)
-  const adjustedBMI = calcAgeAdjustedBMI(bmi, age, sex)
+  const adjustedBMI = calcAgeAdjustedBMI(bmi, age)
 
   // Ethnicity adjustment applied to the adjusted BMI
   const ethnicityAdjustedBMI = adjustedBMI + getEthnicityBMIAdjustment(ethnicity, adjustedBMI)
 
-  // Body measurements are optional. Waist + neck unlock the circumference body-fat
-  // method (Navy for men, RFM for women) and waist-to-height ratio. Without them we
-  // fall back to a BMI-only estimate.
+  // Body measurements are optional and unlock the circumference body-fat method: waist and neck
+  // for men (Navy), waist alone for women (Relative Fat Mass doesn't use the neck). Without them
+  // we fall back to a BMI-only estimate.
   const hasBodyMeasurements =
-    typeof waistCm === "number" && typeof neckCm === "number"
+    typeof waistCm === "number" && (sex === "female" || typeof neckCm === "number")
 
   // Body fat: circumference method averaged with Deurenberg; without measurements,
   // Deurenberg (BMI/age/sex) only.
   const bodyFatRaw = hasBodyMeasurements
-    ? calcBodyFatCombined(sex, age, heightCm, weightKg, waistCm!, neckCm!)
+    ? calcBodyFatCombined(sex, age, heightCm, weightKg, waistCm!, neckCm ?? 0)
     : calcBodyFatDeurenberg(sex, age, heightCm, weightKg)
   const bodyFatPercentage = Math.round(bodyFatRaw * 10) / 10
 

@@ -21,6 +21,12 @@ export interface HealthScores {
   homeEnvironment: ModuleScore
 }
 
+export interface ScoreDeduction {
+  label: string
+  /** Points taken off the weighted score */
+  points: number
+}
+
 export interface OverallHealthResult {
   overallScore: number
   letterGrade: string
@@ -28,7 +34,22 @@ export interface OverallHealthResult {
   totalModules: number
   scores: HealthScores
   summary: string
+  deductions: ScoreDeduction[]
 }
+
+/** Years of life expectancy lost to each substance (`substanceYearsLost` in the life expectancy model) */
+export interface SubstanceYearsLost {
+  smoking: number
+  alcohol: number
+  drugs: number
+}
+
+// Tobacco, alcohol and drugs share one sub-score worth 16% of Lifestyle, itself 10% of the total,
+// so daily smoking alone would move the overall score by less than a point while costing 10 years
+// of life. The overall score therefore loses one point per year of life expectancy they cost, the
+// same years as the life expectancy estimate. For scale, class III obesity costs about 10 points
+// through the Body module for 9 years of life.
+const MAX_SUBSTANCE_DEDUCTION = 30
 
 const WEIGHTS = {
   body: 0.11,
@@ -112,7 +133,14 @@ function getGradeColor(grade: string): string {
 
 export { getGradeColor }
 
-export function calculateOverallHealth(scores: HealthScores): OverallHealthResult {
+/**
+ * @param substanceYears Years of life lost to tobacco, alcohol and drugs, from the Lifestyle
+ *   answers; leave out until Lifestyle is completed
+ */
+export function calculateOverallHealth(
+  scores: HealthScores,
+  substanceYears?: SubstanceYearsLost,
+): OverallHealthResult {
   const modules = Object.entries(scores) as [keyof HealthScores, ModuleScore][]
   const completed = modules.filter(([, m]) => m.completed)
   const completedCount = completed.length
@@ -125,14 +153,26 @@ export function calculateOverallHealth(scores: HealthScores): OverallHealthResul
       totalModules: 14,
       scores,
       summary: "Complete at least one assessment to see your health score.",
+      deductions: [],
     }
   }
 
   // Re-normalize weights among completed modules only
   const totalWeight = completed.reduce((sum, [key]) => sum + WEIGHTS[key], 0)
-  const overallScore = Math.round(
-    completed.reduce((sum, [key, m]) => sum + (WEIGHTS[key] / totalWeight) * m.score, 0)
+  const weightedScore = completed.reduce((sum, [key, m]) => sum + (WEIGHTS[key] / totalWeight) * m.score, 0)
+
+  const deductions: ScoreDeduction[] = substanceYears
+    ? [
+        { label: "Smoking", points: substanceYears.smoking },
+        { label: "Alcohol", points: substanceYears.alcohol },
+        { label: "Drug use", points: substanceYears.drugs },
+      ].filter((deduction) => deduction.points > 0)
+    : []
+  const totalDeduction = Math.min(
+    MAX_SUBSTANCE_DEDUCTION,
+    deductions.reduce((sum, deduction) => sum + deduction.points, 0),
   )
+  const overallScore = Math.max(0, Math.round(weightedScore - totalDeduction))
 
   const letterGrade = getLetterGrade(overallScore)
 
@@ -151,6 +191,7 @@ export function calculateOverallHealth(scores: HealthScores): OverallHealthResul
     totalModules: 14,
     scores,
     summary: summaries[letterGrade] || "",
+    deductions,
   }
 }
 

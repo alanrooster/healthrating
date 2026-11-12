@@ -6,9 +6,9 @@ export interface CityAQData {
 }
 
 /**
- * Dataset of ~600+ cities with WHO annual PM2.5 averages.
- * Source: WHO Global Air Quality Database 2024, IQAir World Air Quality Report 2024.
- * PM2.5 values represent annual averages in ug/m3.
+ * 564 cities with approximate annual mean PM2.5 in µg/m³, entered by hand from the WHO Ambient
+ * Air Quality Database and the IQAir World Air Quality Report (2023-2024 editions). They are not
+ * generated from a source file, so individual cities can be a few µg/m³ off or out of date.
  */
 export const CITY_DATA: CityAQData[] = [
   // ============ NORTH AMERICA ============
@@ -776,7 +776,8 @@ export function scoreAirQuality(cityData: CityAQData, noiseLevel: NoiseLevel = "
     healthImpact =
       "Air quality meets WHO guidelines. Minimal risk to health from air pollution."
   } else if (pm25 <= 10) {
-    airScore = 85 - ((pm25 - 5) / 5) * 15
+    // Falls from 100 at the WHO guideline to 70 at interim target 4, with no cliff just above 5
+    airScore = 100 - ((pm25 - 5) / 5) * 30
     category = "Good"
     healthImpact =
       "Air quality is acceptable. Sensitive individuals may experience minor issues with prolonged outdoor exposure."

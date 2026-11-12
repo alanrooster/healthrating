@@ -23,10 +23,13 @@
  *    - Cut-off >= 3: sensitivity 76%, specificity 81% for GAD
  *      (Plummer et al. 2016 meta-analysis; the original study reported 86%/83%).
  *
- * Additional validated items cover:
- * - Perceived Stress Scale (PSS-4): Cohen et al. (1983)
- * - WHO-5 Well-Being Index items for positive mental health
- * - Social functioning and resilience indicators
+ * Additional items:
+ * - Four wellbeing items adapted from the WHO-5 Well-Being Index (4 of its 5 items, on a 5-point
+ *   scale over 30 days, so the WHO-5 cut-off is indicative only)
+ * - Cognitive engagement: high cognitive activity carries RR 0.61 for dementia in LIBRA2
+ *   (Rosenau et al., J Alzheimers Dis 2024), and the 2024 Lancet Commission recommends
+ *   cognitively stimulating activity in midlife
+ * - Purpose in life (Hill & Turiano 2014; Alimujiang et al. 2019)
  *
  * IMPORTANT DISCLAIMER: This is a screening tool only and does NOT
  * constitute diagnosis. Users scoring in concerning ranges should
@@ -67,8 +70,7 @@ export interface MentalHealthAnswers {
   wellbeing_active: FrequencyResponse     // "...active and vigorous?"
   wellbeing_rested: FrequencyResponse     // "...waking up feeling fresh and rested?"
 
-  // Cognitive Engagement (Lancet Commission 2024 - dementia prevention)
-  // Mental engagement is one of the most modifiable dementia risk factors
+  // Cognitive engagement (LIBRA2 dementia risk factor; recommended by the 2024 Lancet Commission)
   cognitive_learning: "daily" | "weekly" | "monthly" | "rarely" | "never" // active learning, courses, languages
   cognitive_reading: "daily" | "weekly" | "monthly" | "rarely" | "never"  // reading books, articles
   cognitive_challenges: "daily" | "weekly" | "monthly" | "rarely" | "never" // puzzles, problem-solving
@@ -208,8 +210,9 @@ function scoreWellbeing(answers: MentalHealthAnswers): number {
 
 /**
  * Score cognitive engagement (0-100)
- * Lancet Commission 2024: cognitive engagement is a major modifiable
- * dementia risk factor, alongside hearing loss and education.
+ * LIBRA2 (Rosenau et al. 2024): high cognitive activity carries RR 0.61 for dementia. It is not
+ * one of the 14 risk factors the 2024 Lancet Commission quantifies, but the Commission
+ * recommends cognitively stimulating activity in midlife.
  */
 const ENGAGEMENT_MAP: Record<string, number> = {
   daily: 100,
@@ -294,10 +297,10 @@ export function calculateMentalHealth(answers: MentalHealthAnswers): MentalHealt
     flags.push(`K10 score of ${k10.raw} indicates ${k10.category.toLowerCase()}. Professional mental health support is recommended.`)
   }
   if (wellbeing <= 50) {
-    flags.push("Low wellbeing score: WHO-5 research indicates scores at or below 50% warrant further assessment for depression.")
+    flags.push("Low wellbeing score: on the WHO-5, which these items are adapted from, 50% or less calls for a depression assessment.")
   }
   if (cognitive < 40) {
-    flags.push("Low cognitive engagement: Lancet Commission 2024 identifies cognitive activity as a major modifiable dementia-prevention factor.")
+    flags.push("Low cognitive engagement: high cognitive activity goes with 39% lower dementia risk (LIBRA2, Rosenau et al. 2024), and the 2024 Lancet Commission recommends cognitively stimulating activity in midlife.")
   }
   if (purpose < 40) {
     flags.push("Low sense of purpose: lower purpose-in-life is associated with greater all-cause mortality risk (Hill & Turiano, 2014).")

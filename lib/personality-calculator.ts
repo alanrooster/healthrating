@@ -4,13 +4,16 @@
  * Evidence base:
  * - Optimism (LOT-R): Lee et al. 2019 PNAS (top-quartile optimists 11-15% longer lifespan;
  *   ~50-70% higher chance of reaching age 85)
- * - Conscientiousness: Friedman & Kern 2014 review (high-C ~+4 years vs low-C across studies)
+ * - Conscientiousness: Jokela et al. 2013, Am J Epidemiol (76,150 adults in 7 cohorts: the
+ *   lowest third of conscientiousness carries 37% higher mortality, HR 1.37); reviewed in
+ *   Friedman & Kern 2014
  * - Internal locus of control: Roddenberry & Renk 2010; Lefcourt - associated with better
- *   health behaviors and lower mortality
- * - Forgiveness: Toussaint et al. 2012 (forgiveness associated with reduced mortality, esp.
- *   for younger and middle-aged adults)
- * - Humor / laughter: Romundstad et al. 2016 (HUNT study, n~53k - high humor sense
- *   ~35% lower infection mortality, modest cardiac protection)
+ *   health behaviors
+ * - Forgiveness: Toussaint et al. 2012, J Behav Med (US adults aged 66+: forgiving others only
+ *   on conditions predicted higher mortality)
+ * - Humor: Romundstad et al. 2016, Psychosom Med (HUNT study, n = 53,556: a high cognitive
+ *   sense of humour went with 48% lower mortality in women, HR 0.52, and fewer infection deaths
+ *   in both sexes, HR 0.17 in women and 0.26 in men; no all-cause difference in men)
  *
  * Self-report approach uses validated short-form items (LOT-R subset, mini-IPIP-C, etc.).
  * This is an educational, non-diagnostic instrument.
@@ -152,16 +155,16 @@ export function calculatePersonality(a: PersonalityAnswers): PersonalityResult {
   if (optimism >= 75) strengths.push("High optimism (top-quartile optimists live 11-15% longer, Lee 2019)")
   else if (optimism < 50) growthAreas.push("Lower optimism - associated with worse cardiovascular outcomes")
 
-  if (conscientiousness >= 75) strengths.push("High conscientiousness (~+4 years lifespan, Friedman & Kern 2014)")
+  if (conscientiousness >= 75) strengths.push("High conscientiousness (low conscientiousness carries 37% higher mortality, Jokela 2013)")
   else if (conscientiousness < 50) growthAreas.push("Lower conscientiousness can predict less consistent health behaviors")
 
   if (locusOfControl >= 75) strengths.push("Internal locus of control supports proactive health behaviors")
   else if (locusOfControl < 50) growthAreas.push("External locus of control associated with lower self-care engagement")
 
-  if (forgiveness >= 75) strengths.push("Strong forgiveness disposition (associated with lower mortality, Toussaint 2012)")
+  if (forgiveness >= 75) strengths.push("Strong forgiveness disposition (linked to lower mortality in adults over 65, Toussaint 2012)")
   else if (forgiveness < 50) growthAreas.push("Holding grudges sustains stress responses harmful to cardiovascular health")
 
-  if (humor >= 75) strengths.push("High humor / laughter (~35% lower infection mortality, Romundstad 2016)")
+  if (humor >= 75) strengths.push("Strong sense of humour (48% lower mortality in women and fewer infection deaths in both sexes, Romundstad 2016)")
 
   const recommendations: string[] = []
   if (optimism < 60) recommendations.push("Cognitive-behavioral practices (e.g. 'Best Possible Self' exercise) reliably increase optimism.")

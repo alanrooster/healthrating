@@ -24,6 +24,9 @@
  * 8. EU-OSHA Psychosocial Risks Framework (2022-2025)
  * 9. ILO Psychosocial Hazards at Work (2022)
  * 10. Maslach Burnout Inventory dimensions (Maslach & Jackson 1981)
+ *     Effect sizes for job strain and effort-reward imbalance come from the IPD-Work pooled
+ *     cohorts: coronary heart disease HR 1.23 with job strain (Kivimäki et al., Lancet 2012),
+ *     1.16 with effort-reward imbalance and 1.41 with both (Dragano et al., Epidemiology 2017)
  * 11. Ionising radiation at work (Directive 2013/59/Euratom): aircrew doses must be assessed above
  *     1 mSv a year (Art. 35(3)); industries processing naturally-occurring radioactive material
  *     (NORM, Annex VI: phosphate fertiliser, oil and gas, coal-fired power plants, zircon, rare
@@ -248,7 +251,7 @@ function scoreWorkSchedule(answers: WorkAnswers): { score: number; risks: string
     commutePenalty = Math.min(15, ((answers.commuteMinutes - 30) / 60) * 15)
   }
   if (answers.commuteMinutes > 60) {
-    risks.push("Long commute (60+ min): Associated with increased cortisol, blood pressure, and reduced life satisfaction (Stutzer & Frey 2008)")
+    risks.push("Long commute (60+ min): linked to lower life satisfaction (Stutzer & Frey 2008) and to higher blood pressure and weight (Hoehner et al. 2012)")
   }
 
   if (answers.daysPerWeek >= 6) {
@@ -328,7 +331,7 @@ function scoreJobResources(answers: WorkAnswers): { score: number; risks: string
   const developmentScore = OPPORTUNITY_MAP[answers.possibilitiesForDevelopment] ?? 60
 
   if (controlScore <= 35) {
-    risks.push("Low job control (Karasek model): When combined with high demands, creates 'high-strain' jobs with 2-3x increased cardiovascular risk")
+    risks.push("Low job control (Karasek model): combined with high demands it makes a 'high-strain' job, which carries 23% more coronary heart disease (Kivimäki et al., Lancet 2012)")
   }
   if (clarityScore <= 35) {
     risks.push("Low role clarity (COPSOQ III): Unclear expectations linked to stress, job dissatisfaction, and intention to leave")
@@ -373,7 +376,7 @@ function scoreRelationships(answers: WorkAnswers): { score: number; risks: strin
     risks.push("Low organizational justice (COPSOQ III): Perceived unfairness strongly predicts mental health problems and sickness absence")
   }
   if (recognition <= 30) {
-    risks.push("Low recognition (Siegrist ERI model): Effort-reward imbalance doubles coronary heart disease risk")
+    risks.push("Low recognition (Siegrist ERI model): effort-reward imbalance carries 16% more coronary heart disease, 41% together with job strain (Dragano et al. 2017)")
   }
   if (bullyingScore <= 55) {
     risks.push("Workplace bullying exposure (EU-OSHA): Associated with depression, anxiety, PTSD, and cardiovascular disease")
@@ -417,7 +420,7 @@ function scoreJobSecurity(answers: WorkAnswers): { score: number; risks: string[
     risks.push("Insecurity over working conditions: Uncertainty about future changes increases chronic stress")
   }
   if (rewardScore <= 30) {
-    risks.push("Effort-reward imbalance (Siegrist 1996): High effort with low reward doubles cardiovascular disease risk")
+    risks.push("Effort-reward imbalance (Siegrist 1996): high effort for low reward carries 16% more coronary heart disease, 41% together with job strain (Dragano et al. 2017)")
   }
 
   const score = Math.round(securityScore * 0.40 + conditionsScore * 0.25 + rewardScore * 0.35)

@@ -38,7 +38,9 @@ export const ISO3 = {
 /** Every city in the app's location picker (lib/air-quality-data.ts), in file order */
 export function pickerCities(root) {
   const src = readFileSync(join(root, "lib/air-quality-data.ts"), "utf8")
-  return [...src.matchAll(/\{\s*city: "([^"]+)",\s*country: "([^"]+)"/g)].map((m) => ({ city: m[1], country: m[2] }))
+  return [...src.matchAll(/\{\s*city: "([^"]+)",\s*country: "([^"]+)",\s*continent: "[^"]+",\s*pm25: ([0-9.]+)/g)].map(
+    (m) => ({ city: m[1], country: m[2], pm25: Number(m[3]) }),
+  )
 }
 
 /** Countries offered by the picker, sorted */

@@ -35,7 +35,7 @@ import { calculateExerciseScore, type ExerciseInputs } from "./exercise-calculat
 import type { DietAnswers } from "./diet-calculator"
 import type { FamilyHistoryAnswers } from "./family-history-calculator"
 import type { HomeEnvironmentAnswers } from "./home-environment-calculator"
-import type { LifestyleAnswers } from "./lifestyle-calculator"
+import { ALCOHOL_GRAMS_PER_DRINK, weeklyAlcoholGrams, type LifestyleAnswers } from "./lifestyle-calculator"
 import {
   IMAGING_MSV_PER_SCAN,
   IMAGING_SCAN_COUNT,
@@ -145,17 +145,9 @@ const FRUIT_VEG_SERVING_G = 80 // WHO portion
 // Midpoints of the diet module's servings-a-day bands: none, under 1, 1-2, 2-3, 3+ (lower bound)
 const DAILY_SERVINGS = [0, 0.5, 1.5, 2.5, 3]
 
-const GRAMS_PER_DRINK = 12 // 1 beer, glass of wine or shot, as in the diet module
 // Strictest of the standardised score (14 g/day for women, 28 for men) and UK CMO guidance
 // (14 units = 112 g a week), the cut-off UK Biobank used
 const ALCOHOL_LIMIT_G_PER_WEEK: Record<Sex, number> = { female: 98, male: 112 }
-const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], number> = {
-  never: 0,
-  monthly: 0.25,
-  weekly: 1,
-  "several-weekly": 3,
-  daily: 7,
-}
 // Diet module alcohol bands at their midpoints: never or rarely, 1-2 a week, 3-6 a week, 1-2 a day, 3+ a day
 const DIET_DRINKS_PER_WEEK = [0, 1.5, 4.5, 10.5, 21]
 
@@ -304,12 +296,9 @@ function scoreAlcohol(inputs: CancerRiskInputs): WcrfComponent | undefined {
   const { lifestyle, diet, sex } = inputs
   let weeklyGrams: number | undefined
   if (lifestyle) {
-    weeklyGrams =
-      (ALCOHOL_SESSIONS_PER_WEEK[lifestyle.alcoholFrequency] ?? 0) *
-      (lifestyle.alcoholUnitsPerSession ?? 0) *
-      GRAMS_PER_DRINK
+    weeklyGrams = weeklyAlcoholGrams(lifestyle)
   } else if (diet && Number.isFinite(diet.alcohol)) {
-    weeklyGrams = answerBand(DIET_DRINKS_PER_WEEK, diet.alcohol) * GRAMS_PER_DRINK
+    weeklyGrams = answerBand(DIET_DRINKS_PER_WEEK, diet.alcohol) * ALCOHOL_GRAMS_PER_DRINK
   }
   if (weeklyGrams === undefined) return undefined
   // WCRF and ECAC5 both advise not drinking at all, so only no alcohol earns the full point

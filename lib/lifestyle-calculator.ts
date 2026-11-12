@@ -66,7 +66,7 @@ export interface LifestyleAnswers {
   outdoorTimeMinutes: number // daily outdoor/nature time
   hobbiesEngagement: "daily" | "several-weekly" | "weekly" | "monthly" | "rarely"
 
-  // Sedentary behavior (independent mortality predictor - Patel et al. 2018)
+  // Sedentary behavior (Patel et al. 2018; Ekelund et al. 2016)
   sittingHoursPerDay: number // total sitting hours per day
   sedentaryBreaks: "frequently" | "sometimes" | "rarely" | "never" // breaks every 30-60 min
 
@@ -79,16 +79,16 @@ export interface LifestyleAnswers {
   sunbedFirstUse?: "before-35" | "35-plus" | "unsure" // "unsure" counts as before 35, the stricter reading
   flightHoursPerYear?: "none" | "under-50" | "50-100" | "100-200" | "200-plus" // as a passenger; aircrew answer in Work
 
-  // Commute (Hansson et al. 2011 - long commutes raise depression/obesity risk)
+  // Commute (Hansson et al. 2011: long commutes go with more stress, exhaustion and poor sleep)
   commuteMinutesOneWay: number // 0+ minutes one-way
 
-  // Sauna (Laukkanen et al. 2015 JAMA - 4-7 sessions/week = -40% mortality vs 1/week)
+  // Sauna (Laukkanen et al. 2015 JAMA Intern Med - 4-7 sessions/week = -40% mortality vs 1/week)
   saunaSessionsPerWeek: number // 0-7+
 
   // Substance use
   smokingStatus: "never" | "former" | "occasional" | "daily"
   alcoholFrequency: "never" | "monthly" | "weekly" | "several-weekly" | "daily"
-  alcoholUnitsPerSession: number // 0-10+
+  alcoholUnitsPerSession: number // drinks per session, about 12 g of alcohol each (see weeklyAlcoholGrams)
   caffeineConsumption: "none" | "moderate" | "high" | "excessive" // cups of coffee equivalent
   // Optional, same reason. "past" = tried once or a few times, "former" = used regularly; both
   // not in the last 12 months. Injecting only counts alongside reported drug use, as in WHO ASSIST
@@ -119,6 +119,27 @@ const FREQ_MAP: Record<string, number> = {
   sometimes: 2,
   often: 3,
   always: 4,
+}
+
+// The form asks for drinks per session (a beer, a glass of wine or a shot): about 12 g of pure
+// alcohol each, 1.5 UK units
+export const ALCOHOL_GRAMS_PER_DRINK = 12
+const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], number> = {
+  never: 0,
+  monthly: 0.25,
+  weekly: 1,
+  "several-weekly": 3,
+  daily: 7,
+}
+
+/** Grams of pure alcohol a week. Anyone who drinks at all counts at least one drink a session. */
+export function weeklyAlcoholGrams(
+  answers: Pick<LifestyleAnswers, "alcoholFrequency" | "alcoholUnitsPerSession">,
+): number {
+  const sessions = ALCOHOL_SESSIONS_PER_WEEK[answers.alcoholFrequency] ?? 0
+  if (sessions === 0) return 0
+  const drinks = Number.isFinite(answers.alcoholUnitsPerSession) ? answers.alcoholUnitsPerSession : 1
+  return sessions * Math.max(1, drinks) * ALCOHOL_GRAMS_PER_DRINK
 }
 
 // The UK Biobank cohorts measured light with wrist sensors; these bands are a self-report stand-in
@@ -229,8 +250,10 @@ function scoreSleep(answers: LifestyleAnswers): { score: number; risks: string[]
 
 /**
  * Sedentary behavior score (0-100)
- * Patel et al. (2018, 2010): prolonged sitting increases all-cause mortality
- * INDEPENDENT of exercise. >8h/day sitting ~+40% mortality risk.
+ * Patel et al. (Am J Epidemiol 2018): sitting 6+ hours a day vs under 3 goes with 19% higher
+ * all-cause mortality after adjusting for activity. Ekelund et al. (Lancet 2016, 1 million
+ * adults): sitting over 8 hours a day with little activity carries up to 59% higher mortality,
+ * and 60-75 minutes of moderate activity a day removes the excess.
  * Breaking up sitting every 30-60 min reduces metabolic harm.
  */
 function scoreSedentary(answers: LifestyleAnswers): { score: number; risks: string[] } {
@@ -245,7 +268,9 @@ function scoreSedentary(answers: LifestyleAnswers): { score: number; risks: stri
   else sittingScore = 10
 
   if (h >= 8) {
-    risks.push(`Sitting ${h}+ hours daily increases all-cause mortality risk independently of exercise (Patel et al. 2018)`)
+    risks.push(
+      `Sitting ${h} hours a day is linked to higher all-cause mortality (Patel et al. 2018); 60-75 minutes of moderate activity a day offsets it (Ekelund et al. 2016)`,
+    )
   }
 
   const breaksMap: Record<string, number> = {
@@ -543,17 +568,21 @@ function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[
   const smokingScore = smokingMap[answers.smokingStatus] ?? 60
   let alcoholScore = alcoholFreqMap[answers.alcoholFrequency] ?? 60
 
-  // Adjust for units per session (heavy drinking episodes are particularly harmful)
+  // Five or more drinks in a session is 60 g of alcohol, the WHO threshold for heavy episodic drinking
   if (answers.alcoholUnitsPerSession > 4) {
     alcoholScore = Math.max(10, alcoholScore - (answers.alcoholUnitsPerSession - 4) * 8)
-    risks.push("Heavy drinking episodes (4+ units) significantly increase health risks")
+    risks.push(
+      "Five or more drinks in one session (60 g of alcohol) is heavy episodic drinking by the WHO definition, and raises the risk of injury and heart disease",
+    )
   }
 
-  // Caffeine (moderate is fine, excessive can disrupt sleep)
+  // Three to four cups of coffee a day go with the lowest all-cause mortality (RR 0.83 vs none,
+  // Poole et al., BMJ 2017), and up to 400 mg of caffeine a day, about 4 cups, is safe for adults
+  // (EFSA 2015), so only higher intakes lose points
   const caffeineMap: Record<string, number> = {
     none: 100,
-    moderate: 95, // 1-3 cups is fine
-    high: 70, // 4-6 cups
+    moderate: 100, // 1-3 cups
+    high: 80, // 4-6 cups: at or above the EFSA 400 mg
     excessive: 40, // 7+ cups
   }
   const caffeineScore = caffeineMap[answers.caffeineConsumption] ?? 80
@@ -602,9 +631,11 @@ function scoreHabits(answers: LifestyleAnswers): { score: number; risks: string[
 
 /**
  * Commute time score (0-100)
- * Hansson et al. 2011 (Sweden): commutes >45 min one-way associated with
- * +33% depression, +21% obesity, lower wellbeing. Each 10-min increment
- * correlates with worse health outcomes.
+ * Hansson et al. 2011 (Sweden, BMC Public Health, 21,000 workers): commuting by car or public
+ * transport goes with more everyday stress, exhaustion, poor sleep and low self-rated health than
+ * walking or cycling; for public-transport commutes over 60 minutes the odds are 1.2-1.6 times
+ * higher. Hoehner et al. 2012 (Am J Prev Med): longer commuting distance goes with lower fitness
+ * and higher BMI, waist and blood pressure.
  */
 function scoreCommute(answers: LifestyleAnswers): { score: number; risks: string[] } {
   const risks: string[] = []
@@ -619,16 +650,18 @@ function scoreCommute(answers: LifestyleAnswers): { score: number; risks: string
   else score = 5
 
   if (m >= 45) {
-    risks.push(`Commute of ${m}+ minutes one-way is associated with elevated depression and obesity risk (Hansson et al. 2011)`)
+    risks.push(
+      `Commute of ${m} minutes one-way: long commutes are linked to more stress, exhaustion and poor sleep (Hansson et al. 2011) and to higher blood pressure and weight (Hoehner et al. 2012)`,
+    )
   }
   return { score, risks }
 }
 
 /**
  * Sauna use score (0-100)
- * Laukkanen et al. 2015 (JAMA): 4-7 sauna sessions/week associated with
- * 40% lower all-cause mortality and 50% lower cardiovascular mortality
- * vs 1 session/week. Robust Finnish cohort with dose-response.
+ * Laukkanen et al. 2015 (JAMA Intern Med, 2,315 middle-aged Finnish men): 4-7 sauna
+ * sessions/week associated with 40% lower all-cause mortality and 50% lower cardiovascular
+ * mortality vs 1 session/week, with a dose-response. One observational cohort of men.
  */
 function scoreSauna(answers: LifestyleAnswers): { score: number; risks: string[] } {
   const risks: string[] = []

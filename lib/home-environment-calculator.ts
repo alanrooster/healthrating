@@ -11,8 +11,9 @@
  *    - Microwaving/heating food in plastic: 3 min of microwaving polypropylene containers
  *      can release >2 billion nanoplastics + ~4 million microplastics per cm²
  *      (Hussain et al. 2023, Environ. Sci. Technol.).
- *    - Plastic food storage leaches BPA/phthalates; switching to glass/steel lowers
- *      urinary BPA (Carwile et al. 2011; Muncke 2011). EFSA (2023) cut the BPA tolerable
+ *    - Plastic and canned food packaging leaches BPA/phthalates: three days of fresh food with
+ *      little packaging cut urinary BPA by 66% and DEHP metabolites by 53-56% (Rudel et al.
+ *      2011, Environ. Health Perspect.). EFSA (2023) cut the BPA tolerable
  *      daily intake 20,000-fold and the EU banned BPA in food-contact materials
  *      (Regulation (EU) 2024/3190).
  *
@@ -23,9 +24,10 @@
  *    - House dust is a major reservoir of PBDEs, phthalates, PFAS and lead — dozens of
  *      endocrine-disrupting chemicals (Mitro et al. 2016, Environ. Sci. Technol.);
  *      regular wet-dusting/HEPA vacuuming reduces ingestion/inhalation.
- *    - Regular use of cleaning sprays is associated with accelerated lung-function decline
- *      over 20 years, comparable to smoking 10-20 cigarettes/day (Svanes et al. 2018,
- *      Am. J. Respir. Crit. Care Med.). Fragrance-free / low-VOC ("eco/bio") products reduce this.
+ *    - In women, cleaning at home went with faster lung-function decline over 20 years (FEV1
+ *      -22.1 vs -18.5 ml a year), with both sprays and other cleaning agents; no effect was seen
+ *      in men (Svanes et al. 2018, Am. J. Respir. Crit. Care Med.). Fragrance-free / low-VOC
+ *      ("eco/bio") products and ventilation limit the exposure.
  *
  * 3) Indoor air quality
  *    - Gas stoves: ~12.7% of US childhood asthma is attributable to gas-stove NO2
@@ -170,7 +172,7 @@ function scoreCookware(a: HomeEnvironmentAnswers): { score: number; protective: 
   }
   const storageScore = storageMap[a.foodStorage]
   if (a.foodStorage === "glass-steel" || a.foodStorage === "mostly-glass") {
-    protective.push("Glass/steel food storage minimizes BPA & phthalate migration (Carwile 2011)")
+    protective.push("Glass/steel food storage keeps BPA & phthalates out of food: cutting plastic and canned packaging lowered urinary BPA by 66% (Rudel 2011)")
   } else if (a.foodStorage === "mostly-plastic") {
     risks.push("Mostly plastic storage increases BPA/phthalate exposure, especially with fatty or acidic foods")
   }
@@ -240,9 +242,9 @@ function scoreFoodAndCleaning(a: HomeEnvironmentAnswers): { score: number; prote
   }
   const cleanScore = cleanMap[a.cleaningProducts]
   if (a.cleaningProducts === "eco-lowvoc") {
-    protective.push("Fragrance-free / low-VOC ('bio') cleaners reduce airway irritation (Svanes 2018)")
+    protective.push("Fragrance-free / low-VOC ('bio') cleaners keep irritant sprays and VOCs out of the air you breathe")
   } else if (a.cleaningProducts === "heavy-bleach" || a.cleaningProducts === "conventional") {
-    risks.push("Regular cleaning sprays are linked to lung-function decline akin to smoking 10-20 cigs/day (Svanes 2018)")
+    risks.push("In women, regular cleaning with sprays and other agents was linked to faster lung-function decline over 20 years (Svanes 2018)")
   }
 
   const score = Math.round(

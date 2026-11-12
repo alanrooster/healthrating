@@ -44,6 +44,8 @@ export interface DietQuestion {
   options: DietOption[]
   isHealthy: boolean
   iarcGroup?: "1" | "2A" | "2B" | null
+  /** What IARC classified, as shown in the results */
+  iarcName?: string
   iarcNote?: string
 }
 
@@ -176,6 +178,7 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     description: "Bacon, ham, sausages, hot dogs, salami, corned beef, deli meats, canned meat",
     isHealthy: false,
     iarcGroup: "1",
+    iarcName: "Processed meat",
     iarcNote: "IARC Group 1 - Carcinogenic to humans. Each 50g/day increases colorectal cancer risk by 18%.",
     options: [
       { label: "Never or rarely", value: 0 },
@@ -191,6 +194,7 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     description: "Beer, wine, spirits, cocktails - any amount",
     isHealthy: false,
     iarcGroup: "1",
+    iarcName: "Alcoholic beverages",
     iarcNote: "IARC Group 1 - Carcinogenic to humans. Linked to cancers of mouth, throat, esophagus, liver, breast, colon.",
     options: [
       { label: "Never or rarely", value: 0 },
@@ -206,6 +210,7 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     description: "Chinese-style salted fish, dried fish, fermented fish products",
     isHealthy: false,
     iarcGroup: "1",
+    iarcName: "Chinese-style salted fish",
     iarcNote: "IARC Group 1 - Carcinogenic to humans. Linked to nasopharyngeal cancer.",
     options: [
       { label: "Never or rarely", value: 0 },
@@ -223,6 +228,7 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     description: "Beef, pork, lamb, goat - fresh, minced, or as steaks/chops",
     isHealthy: false,
     iarcGroup: "2A",
+    iarcName: "Red meat",
     iarcNote: "IARC Group 2A - Probably carcinogenic to humans. Linked to colorectal, pancreatic, and prostate cancer.",
     options: [
       { label: "Never or rarely", value: 0 },
@@ -238,6 +244,7 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     description: "Tea, coffee, or other drinks consumed very hot - hot enough to burn your mouth",
     isHealthy: false,
     iarcGroup: "2A",
+    iarcName: "Very hot beverages (above 65°C)",
     iarcNote: "IARC Group 2A - Probably carcinogenic. Very hot beverages can cause esophageal cancer regardless of type.",
     options: [
       { label: "Never - I wait for drinks to cool", value: 0 },
@@ -253,7 +260,8 @@ export const DIET_QUESTIONS: DietQuestion[] = [
     description: "Deep-fried foods, charred/burnt meat, heavily browned toast, chips/fries (acrylamide formation)",
     isHealthy: false,
     iarcGroup: "2A",
-    iarcNote: "IARC Group 2A - High-temperature frying and acrylamide are probably carcinogenic. Formed when starchy foods are cooked at high temp.",
+    iarcName: "Fried, charred or heavily browned food (acrylamide)",
+    iarcNote: "Acrylamide, which forms when starchy foods are fried, baked or toasted at high temperature, is IARC Group 2A (probably carcinogenic), mainly on animal evidence. Charring meat forms other probable carcinogens.",
     options: [
       { label: "Rarely or never", value: 0 },
       { label: "1-2 times per week", value: 1 },
@@ -371,32 +379,32 @@ const FEEDBACK: Record<string, { good: string; moderate: string; poor: string }>
   processed_meat: {
     good: "Excellent! You are avoiding processed meat, a Group 1 carcinogen.",
     moderate: "Consider reducing processed meat. IARC classifies it as carcinogenic (Group 1).",
-    poor: "HIGH CANCER RISK: Processed meat is a Group 1 carcinogen (same category as tobacco). Each 50g/day increases colorectal cancer risk by 18%.",
+    poor: "Processed meat is an IARC Group 1 carcinogen: the evidence that it causes colorectal cancer is as strong as for tobacco, although the risk is far smaller. Each 50 g a day raises colorectal cancer risk by 18%.",
   },
   alcohol: {
     good: "Excellent! Avoiding alcohol eliminates this cancer risk factor.",
     moderate: "Consider reducing alcohol intake. IARC classifies it as carcinogenic (Group 1).",
-    poor: "HIGH CANCER RISK: Alcohol is a Group 1 carcinogen linked to 7 types of cancer including mouth, throat, liver, and breast cancer.",
+    poor: "Alcohol is an IARC Group 1 carcinogen linked to 7 types of cancer, including mouth, throat, liver and breast cancer. The risk rises with every drink.",
   },
   salted_fish: {
     good: "Excellent! You are avoiding salted fish, a Group 1 carcinogen.",
     moderate: "Consider reducing salted/preserved fish consumption.",
-    poor: "HIGH CANCER RISK: Chinese-style salted fish is a Group 1 carcinogen linked to nasopharyngeal cancer.",
+    poor: "Chinese-style salted fish is an IARC Group 1 carcinogen linked to nasopharyngeal cancer. Choose fresh fish instead.",
   },
   red_meat: {
     good: "Great job limiting red meat intake.",
     moderate: "Consider reducing red meat. IARC classifies it as probably carcinogenic (Group 2A).",
-    poor: "ELEVATED CANCER RISK: Red meat is Group 2A (probably carcinogenic). Linked to colorectal and pancreatic cancer.",
+    poor: "Red meat is IARC Group 2A (probably carcinogenic), linked to colorectal, pancreatic and prostate cancer. WCRF advises no more than about three portions a week.",
   },
   very_hot_beverages: {
     good: "Good practice! Letting beverages cool reduces esophageal cancer risk.",
     moderate: "Try to let your beverages cool before drinking.",
-    poor: "ELEVATED CANCER RISK: Very hot beverages (>65°C) are Group 2A carcinogenic and increase esophageal cancer risk.",
+    poor: "Drinks above 65°C are IARC Group 2A (probably carcinogenic), linked to oesophageal cancer. Let them cool before drinking.",
   },
   high_temp_cooking: {
     good: "Great! You are limiting high-temperature cooking which produces carcinogens.",
     moderate: "Try to reduce deep-fried and charred foods. Use lower-temperature cooking methods.",
-    poor: "ELEVATED CANCER RISK: High-temperature frying produces acrylamide (Group 2A). Avoid charred/burnt foods.",
+    poor: "Frying, charring and heavy browning form acrylamide (IARC Group 2A) and other probable carcinogens. Steam, boil or bake at moderate heat more often.",
   },
   sugary_drinks: {
     good: "Great job avoiding sugary beverages!",
@@ -516,9 +524,8 @@ export function calculateDietScore(answers: DietAnswers): DietResult {
 
     // Track IARC risks
     if (q.iarcGroup && answer > 0) {
-      const frequencyLabels = ["Rarely", "1-2x/week", "3-4x/week", "5-6x/week", "Daily+"]
       iarcRisks.push({
-        substance: q.description?.split(",")[0] || q.question,
+        substance: q.iarcName ?? q.question,
         group: q.iarcGroup,
         groupLabel:
           q.iarcGroup === "1"
@@ -526,7 +533,7 @@ export function calculateDietScore(answers: DietAnswers): DietResult {
             : q.iarcGroup === "2A"
               ? "Probably carcinogenic"
               : "Possibly carcinogenic",
-        frequency: frequencyLabels[answer] || "Unknown",
+        frequency: q.options.find((option) => option.value === answer)?.label ?? "Unknown",
         riskLevel: getIARCRiskLevel(q.iarcGroup, answer),
         recommendation: getIARCRecommendation(q.id, answer),
       })
@@ -543,14 +550,16 @@ export function calculateDietScore(answers: DietAnswers): DietResult {
   const highRisks = iarcRisks.filter((r) => r.riskLevel === "high")
 
   let iarcSummary = ""
+  // IARC groups rate the strength of the evidence, not the size of the risk, so the wording
+  // follows how often the item is consumed
   if (group1Risks.length === 0 && group2ARisks.length === 0) {
     iarcSummary = "Excellent! You are avoiding known and probable carcinogens in your diet."
   } else if (highRisks.length > 0) {
-    iarcSummary = `WARNING: You have ${highRisks.length} high-risk exposure(s) to IARC carcinogens. ${group1Risks.length > 0 ? `${group1Risks.length} Group 1 (confirmed carcinogen) exposure(s).` : ""} Strongly consider reducing these foods.`
+    iarcSummary = `You often have ${highRisks.length} of the items below${group1Risks.length > 0 ? `, and ${group1Risks.length} of your items are carcinogenic to humans (IARC Group 1)` : ""}. Cutting down on the frequent ones lowers your risk the most.`
   } else if (group1Risks.length > 0) {
-    iarcSummary = `You have ${group1Risks.length} exposure(s) to Group 1 carcinogens. While frequency is moderate, any exposure increases cancer risk.`
+    iarcSummary = `You have ${group1Risks.length} item(s) that IARC classifies as carcinogenic to humans (Group 1), at low or moderate frequency. The risk rises with the amount, so less is better.`
   } else {
-    iarcSummary = `You have ${group2ARisks.length} exposure(s) to Group 2A probable carcinogens. Consider reducing these foods.`
+    iarcSummary = `You have ${group2ARisks.length} item(s) that IARC classifies as probably carcinogenic (Group 2A). Consider cutting them down.`
   }
 
   let category: string

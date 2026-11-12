@@ -25,7 +25,7 @@ import { calculateExerciseScore, type ExerciseInputs } from "./exercise-calculat
 import type { DietAnswers } from "./diet-calculator"
 import type { FamilyHistoryAnswers, FamilyRelation } from "./family-history-calculator"
 import type { LifeContextAnswers } from "./life-context-calculator"
-import type { LifestyleAnswers } from "./lifestyle-calculator"
+import { weeklyAlcoholGrams, type LifestyleAnswers } from "./lifestyle-calculator"
 import { calculateMentalHealth, type MentalHealthAnswers } from "./mental-health-calculator"
 import { isAskedAtAge, type PreventiveCareAnswers } from "./preventive-care-calculator"
 import type { SensesOralAnswers } from "./senses-oral-calculator"
@@ -122,22 +122,15 @@ const WHO_PM25_GUIDELINE = 5 // WHO AQG 2021 annual mean
 // The linear dose-response isn't extrapolated beyond WHO interim target 2
 const PM25_DOSE_RESPONSE_CAP = 25
 const WHO_ACTIVITY_MET_MINUTES = 600 // 150 min/week of moderate activity
-// UK CMO low-risk limit, stricter than the Lancet's 21 units
+// UK CMO low-risk limit, stricter than the Lancet's 21 units. A UK unit is 8 g of pure alcohol.
 const ALCOHOL_UNITS_PER_WEEK_LIMIT = 14
+const ALCOHOL_GRAMS_PER_WEEK_LIMIT = ALCOHOL_UNITS_PER_WEEK_LIMIT * 8
 const MIN_SLEEP_HOURS = 7 // AASM/SRS adult minimum
 const MAX_SLEEP_HOURS = 9
 const K10_DISTRESS_CUTOFF = 20 // Andrews & Slade 2001: 20+ is at least mild distress
 const MIN_FACTORS_ASSESSED = 4
 const TOTAL_FACTORS = 16
 const NOT_ASSESSED = ["blood pressure", "LDL cholesterol", "diabetes", "head injury"]
-
-const ALCOHOL_SESSIONS_PER_WEEK: Record<LifestyleAnswers["alcoholFrequency"], number> = {
-  never: 0,
-  monthly: 0.25,
-  weekly: 1,
-  "several-weekly": 3,
-  daily: 7,
-}
 
 // MIND diet groups (Morris 2015) that map onto diet-module questions, each answered 0-4
 const BRAIN_HEALTHY_FOODS = ["vegetables", "fruits", "wholegrains", "legumes", "fish_protein"]
@@ -302,9 +295,8 @@ export function calculateNeuroRisk(inputs: NeuroRiskInputs): NeuroRiskResult | n
 
   let heavyDrinking: boolean | undefined
   if (lifestyle) {
-    const weeklyUnits =
-      (ALCOHOL_SESSIONS_PER_WEEK[lifestyle.alcoholFrequency] ?? 0) * (lifestyle.alcoholUnitsPerSession ?? 0)
-    heavyDrinking = weeklyUnits > ALCOHOL_UNITS_PER_WEEK_LIMIT
+    // The Lifestyle answer is in drinks of about 12 g, not UK units
+    heavyDrinking = weeklyAlcoholGrams(lifestyle) > ALCOHOL_GRAMS_PER_WEEK_LIMIT
   } else if (inputs.diet && Number.isFinite(inputs.diet.alcohol)) {
     // Diet answer 3 = "1-2 drinks daily": 10-21 UK units a week at 12 g per drink, over the limit at its midpoint
     heavyDrinking = inputs.diet.alcohol >= 3
@@ -312,7 +304,7 @@ export function calculateNeuroRisk(inputs: NeuroRiskInputs): NeuroRiskResult | n
   if (heavyDrinking !== undefined) {
     assessed++
     if (heavyDrinking) {
-      flag("alcohol", `Alcohol over ${ALCOHOL_UNITS_PER_WEEK_LIMIT} units/week`, RELATIVE_RISK.alcohol)
+      flag("alcohol", `Alcohol over ${ALCOHOL_UNITS_PER_WEEK_LIMIT} UK units/week`, RELATIVE_RISK.alcohol)
     }
   }
 

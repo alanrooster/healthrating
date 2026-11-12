@@ -5,9 +5,9 @@
  * the conceptual framework of clinical biological-age research:
  * - Levine et al. 2018 (Aging) - PhenoAge: biological age as the age at which
  *   your mortality risk matches the population average.
- * - Belsky et al. 2015 (PNAS) - Dunedin Study: pace of aging varies between
- *   0.4 and 2.4 "biological years" per chronological year across individuals,
- *   driven largely by modifiable factors.
+ * - Belsky et al. 2015 (PNAS) and Elliott et al. 2021 (Nature Aging) - Dunedin
+ *   Study: by age 45 the pace of aging ranged from 0.40 to 2.44 "biological
+ *   years" per chronological year across people born in the same year.
  * - Rutledge, Oh & Wyss-Coray 2022 (Nature Reviews Genetics) - review of
  *   omics-based aging clocks and their link to mortality risk.
  *

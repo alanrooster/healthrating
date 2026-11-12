@@ -2,12 +2,18 @@
  * Life Context & Relationships assessment.
  *
  * Evidence base:
- * - Marital status: Robles et al. 2014 meta-analysis (married ~ +2-3y lifespan; quality matters more than status)
- * - Parenthood: Modlin et al. 2024 (parents ~5-10% lower all-cause mortality; U-shaped, optimum 2-3 children)
+ * - Marital status: Jia & Lubetkin 2020, SSM Popul Health (at 65, married men live 2.2 years
+ *   longer and married women 1.5 than unmarried peers, part of it selection); Robles et al. 2014
+ *   meta-analysis, Psychol Bull (better marital quality goes with lower mortality, r = .11)
+ * - Parenthood: Modig et al. 2017, J Epidemiol Community Health (at 60, parents live 2 years
+ *   longer (men) and 1.5 (women) than childless adults); Zeng et al. 2016, Sci Rep (no children:
+ *   19% higher all-cause mortality; the lowest mortality at moderate family sizes)
  * - Education: Balaj et al. 2024, Lancet Public Health (each extra year of schooling ~1.9%
  *   lower adult mortality risk; tertiary vs no schooling ~34% lower)
  * - Income / SES: Chetty et al. 2016 JAMA (top 1% vs bottom 1% income = ~14.6y gap men, ~10.1y women)
- * - Financial stress: Ryan et al. 2014 (financial stress = +13% all-cause mortality)
+ * - Financial stress: Carlsson et al. 2014, BMC Public Health (Swedish 60-year-olds without a
+ *   cash margin: about twice the all-cause mortality, HR 1.97 in cohabiting women and 2.78 in
+ *   single men)
  * - Religious attendance: Li et al. 2016, JAMA Intern Med (more than weekly = ~33% lower mortality,
  *   weekly = ~26% lower)
  * - Pet ownership: AHA 2013 statement; Mubanga et al. 2017 Sci Rep; Kramer et al. 2019 meta-analysis
@@ -110,7 +116,7 @@ function scoreRelationships(a: LifeContextAnswers): { score: number; protective:
 
   if (a.relationshipStatus === "married" || a.relationshipStatus === "partnered") {
     if (a.relationshipQuality === "excellent" || a.relationshipQuality === "good") {
-      protective.push("Healthy partnership (~+2-3 years lifespan, Robles 2014)")
+      protective.push("Healthy partnership: married adults live 1.5-2.2 years longer from 65 (Jia & Lubetkin 2020), and relationship quality counts too (Robles 2014)")
     } else if (a.relationshipQuality === "poor") {
       risks.push("Distressed relationship can be more harmful than being single")
     }
@@ -135,10 +141,12 @@ function scoreRelationships(a: LifeContextAnswers): { score: number; protective:
 function scoreFamily(a: LifeContextAnswers): { score: number; protective: string[]; risks: string[] } {
   const protective: string[] = []
   const risks: string[] = []
-  // Modlin 2024: U-shaped curve, optimum 2-3
+  // Zeng 2016: nonlinear, with the lowest mortality at moderate family sizes
   const map: Record<string, number> = { none: 65, "1": 75, "2-3": 90, "4+": 75 }
   const score = map[a.hasChildren] ?? 70
-  if (a.hasChildren === "2-3") protective.push("Parenthood (~5-10% lower mortality, Modlin 2024)")
+  if (a.hasChildren === "2-3") {
+    protective.push("Children: parents live 1.5-2 years longer from 60 than childless adults (Modig 2017), with the lowest mortality at moderate family sizes (Zeng 2016)")
+  }
   return { score, protective, risks }
 }
 
@@ -185,7 +193,7 @@ function scoreSocioeconomic(a: LifeContextAnswers): { score: number; protective:
   }
   const stressScore = stressMap[a.financialStress] ?? 60
   if (a.financialStress === "high" || a.financialStress === "severe") {
-    risks.push("High financial stress (+13% all-cause mortality, Ryan 2014)")
+    risks.push("High financial stress: having no cash margin went with about twice the mortality in a Swedish cohort of 60-year-olds (Carlsson 2014)")
   }
 
   const literacyMap: Record<string, number> = {
@@ -239,7 +247,7 @@ function scoreCommunity(a: LifeContextAnswers): { score: number; protective: str
   }
   const petScore = petMap[a.petOwnership] ?? 60
   if (a.petOwnership === "dog" || a.petOwnership === "multiple") {
-    protective.push("Dog ownership (~24% lower mortality, Mubanga 2017)")
+    protective.push("Dog ownership (~24% lower mortality, Kramer 2019)")
   }
 
   // Volunteering: Kim 2020 100+ hrs/yr threshold

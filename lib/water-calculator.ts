@@ -7,10 +7,12 @@
  * - WHO/UNICEF Joint Monitoring Programme (JMP) 2023: Country-level safely
  *   managed drinking water percentages
  * - Environmental Performance Index (EPI) 2024: Water quality indicators
- * - WHO (2022): Microplastics in drinking water review
+ * - WHO (2019): Microplastics in drinking-water
  * - Mason et al. (2018): 93% of bottled water contains microplastics
- * - PNAS (2024): ~240,000 nanoplastic particles per liter in bottled water
- * - Rochester & Bolden (2015): BPA and phthalate health effects
+ * - Qian et al. (PNAS 2024): about 240,000 plastic particles per litre of bottled water, 90% of
+ *   them nanoplastics
+ * - Le et al. (2008, Toxicol Lett): boiling water raised BPA release from polycarbonate bottles
+ *   up to 55-fold
  * - EU Drinking Water Directive 2020/2184: Quality standards, incl. PFAS limits from
  *   12 January 2026 (0.1 µg/L for the sum of 20 PFAS)
  * - US EPA PFAS drinking water rule (2024): 4 ng/L each for PFOA and PFOS
@@ -97,9 +99,10 @@ export interface WaterResult {
 }
 
 /**
- * WHO/UNICEF JMP + EPI country water quality data
- * Score represents % population with safely managed drinking water
- * combined with EPI water quality indicators, normalized to 0-100
+ * Approximate country scores (0-100), entered by hand with two guides: the share of people with
+ * safely managed drinking water (WHO/UNICEF JMP) and the EPI drinking-water indicator. They are
+ * not generated from either file and sit 20 points or more away from the JMP share for some
+ * countries (Mexico 72 vs 43%, India 58 vs 76%, Indonesia 62 vs 30%), so treat them as estimates.
  */
 const COUNTRY_WATER_SCORES: Record<string, number> = {
   // Europe - High income, excellent infrastructure
@@ -467,8 +470,8 @@ function calcPlasticScore(
     score -= Math.min(15, bottlesPerWeek * 0.5)
   }
 
-  // Heat exposure dramatically increases BPA/phthalate leaching
-  // Rochester & Bolden (2015): heat increases leaching 55x
+  // Heat speeds up leaching: boiling water raised BPA release from polycarbonate bottles up to
+  // 55-fold (Le et al. 2008)
   const storagePenalties: Record<StorageCondition, number> = {
     "cool-indoor": 0,
     "room-temp": 5,

@@ -42,7 +42,7 @@ export interface ExerciseInputs {
   // Functional fitness (self-report proxies for clinical measures)
   // Studenski et al. 2011 (JAMA): walking speed predicts survival
   // Leong et al. 2015 (Lancet): grip strength predicts mortality (5kg = +16%)
-  // Mandsager 2018 (JAMA): cardiorespiratory fitness reduces mortality up to 5x
+  // Mandsager 2018 (JAMA Netw Open): low vs elite cardiorespiratory fitness = 5x the mortality
   stairsCapacity: "easy-4plus" | "ok-4" | "ok-2" | "struggle-1" | "cannot" // 4 flights without stopping
   walkingPace: "very-fast" | "brisk" | "average" | "slow" | "very-slow" // self-reported usual pace
   gripStrength: "very-strong" | "strong" | "average" | "weak" | "very-weak" // jars/groceries proxy
@@ -267,7 +267,8 @@ function scoreStrengthDays(days: number): number {
 }
 
 function scoreRestingHeartRate(rhr: number): number {
-  // Optimal: 50-65; above 80 raises mortality risk (CARDIA, Whitehall)
+  // Each 10 bpm adds 9% to all-cause mortality; above 80 bpm it is 45% higher than in the lowest
+  // category (Zhang et al., CMAJ 2016, 1.2 million adults)
   if (rhr <= 0) return 50
   if (rhr < 50) return 90 // very low - athletic, but check for symptoms
   if (rhr <= 65) return 100
@@ -397,12 +398,12 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
   const functionalFlags: string[] = []
   if (inputs.stairsCapacity === "struggle-1" || inputs.stairsCapacity === "cannot") {
     functionalFlags.push(
-      "Difficulty climbing stairs suggests low cardiorespiratory fitness - a stronger mortality predictor than smoking (Mandsager 2018)"
+      "Difficulty climbing stairs suggests low cardiorespiratory fitness, a mortality predictor at least as strong as smoking (Mandsager 2018)"
     )
   }
   if (inputs.walkingPace === "slow" || inputs.walkingPace === "very-slow") {
     functionalFlags.push(
-      "Slow gait speed predicts mortality as strongly as age + sex + chronic conditions combined (Studenski 2011)"
+      "Slow gait speed predicts shorter survival: age, sex and gait speed alone predict it as well as models that add chronic conditions, smoking, blood pressure and BMI (Studenski 2011)"
     )
   }
   if (inputs.gripStrength === "weak" || inputs.gripStrength === "very-weak") {
@@ -412,7 +413,7 @@ export function calculateExerciseScore(inputs: ExerciseInputs): ExerciseResult {
   }
   if (inputs.restingHeartRate >= 80) {
     functionalFlags.push(
-      `Resting heart rate of ${inputs.restingHeartRate} bpm is elevated; lower RHR (50-65) is associated with longer life`
+      `Resting heart rate of ${inputs.restingHeartRate} bpm is elevated: above 80 bpm goes with 45% higher all-cause mortality than the lowest rates (Zhang 2016)`
     )
   }
 

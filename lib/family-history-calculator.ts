@@ -10,7 +10,8 @@
  * - American Heart Association: family history of premature CVD
  * - NCI/CDC: family history and cancer risk
  * - ADA: type 2 diabetes family risk multipliers
- * - Lancet Commission 2024: family history of dementia
+ * - Cannon-Albright et al. 2019 (Neurology): Alzheimer's risk with affected relatives (RR 1.73
+ *   with one first-degree relative, 3.98 with two or more)
  *
  * Score interpretation: 100 = no notable family history, lower = more risk.
  * NOTE: Family history identifies risk but does NOT determine outcomes;

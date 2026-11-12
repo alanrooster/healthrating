@@ -58,7 +58,7 @@ function scoreHearing(a: SensesOralAnswers): { score: number; flags: string[]; r
     recs.push("Get a baseline hearing test - especially after age 50 or with noise exposure.")
   }
   if (a.hearingAids === "needs-but-no") {
-    recs.push("If hearing aids were recommended, using them is strongly linked to lower dementia risk.")
+    recs.push("If hearing aids were recommended, using them is linked to lower dementia risk in cohort studies (2024 Lancet Commission).")
   }
 
   const score = Math.round(
