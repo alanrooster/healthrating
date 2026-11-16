@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://healthrating.org">
-    <img src="https://healthrating.org/og-image.png" width="760" alt="healthrating.org: life expectancy, biological age and disease risk in one health score">
+    <img src="public/og-image.png" width="760" alt="healthrating.org: life expectancy, biological age and disease risk in one health score">
   </a>
 </p>
 
@@ -13,7 +13,7 @@
 <p align="center">
   14 in-depth assessments and 100+ life factors, each scored against published research,<br>
   distilled into one health score, a life expectancy, a biological age and disease risk screens.<br>
-  Free, private, no sign-up.
+  Free, private, open source, no sign-up.
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
   <img src="https://img.shields.io/badge/life_factors-100%2B-2C9681?style=flat-square&amp;labelColor=131C20" alt="100+ life factors">
   <img src="https://img.shields.io/badge/studies_cited-60%2B-2C9681?style=flat-square&amp;labelColor=131C20" alt="60+ studies cited">
   <img src="https://img.shields.io/badge/data_sent_to_servers-0-2C9681?style=flat-square&amp;labelColor=131C20" alt="0 data sent to servers">
-  <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/"><img src="https://img.shields.io/badge/license-CC_BY--NC--SA_4.0-DF7149?style=flat-square&amp;labelColor=131C20" alt="License: CC BY-NC-SA 4.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-DF7149?style=flat-square&amp;labelColor=131C20" alt="License: AGPL-3.0"></a>
 </p>
 
 <p align="center">
@@ -105,23 +105,23 @@ Every formula and every source is on the [methodology page](https://healthrating
 ## Run it locally
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/healthrating.git
+git clone https://github.com/alanrooster/healthrating.git
 cd healthrating
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Then open `http://localhost:3000`.
 
-Built with Next.js, React, Tailwind CSS, shadcn/ui and Lucide icons. All state lives in the browser's local storage.
+Built with Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, Lucide icons and Recharts. All state lives in the browser's local storage.
 
 ## Contributing
 
 Help is welcome, and the easiest places to start are:
 
-- **City and country data.** PM2.5 values for cities and water baselines for countries are entered by hand, so some are a little off or out of date. Corrections with a source are quick to merge.
+- **City and country data.** PM2.5 values for 564 cities (`lib/air-quality-data.ts`) and water baselines for countries (`lib/water-calculator.ts`) are entered by hand, so some are a little off or out of date. Corrections with a source are quick to merge.
 - **Sources.** If a newer or stronger study contradicts a scoring rule, open an issue with the citation.
-- **Scoring bugs.** If a result disagrees with what the methodology page says, that's a bug.
+- **Scoring bugs.** Each assessment is scored in its own file under `lib/`. If a result disagrees with what the methodology page says, that's a bug.
 - **Translations.** The app is English-only today.
 
 One rule: every scoring change needs a source, and anything that is a judgment call gets labeled as one on the methodology page.
@@ -132,4 +132,6 @@ HealthRating gives educational estimates based on population-level research. It 
 
 ## License
 
-[healthrating.org](https://healthrating.org) by [Alan Gallicchio](https://alangallicchio.com) is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). You are free to use, study, adapt and share it for non-commercial purposes, as long as you credit the source and share your changes under the same license.
+HealthRating is open source under the [GNU Affero General Public License v3.0](LICENSE). You can use, study, change and share it, including commercially. If you distribute a modified version or run one as a public service, you must make your source code available under the same license.
+
+Made by [Alan Gallicchio](https://alangallicchio.com).
