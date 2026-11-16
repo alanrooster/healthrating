@@ -3,6 +3,8 @@
 import {
   Activity,
   ArrowRight,
+  ArrowUpRight,
+  GitBranch,
   BarChart3,
   BookOpenCheck,
   ClipboardList,
@@ -33,6 +35,11 @@ const FAQ_ITEMS = [
     question: "Is the health score scientifically grounded?",
     answer:
       "Every factor is scored using published, peer-reviewed research — over 60 studies including Chetty et al. 2016 (income and longevity), Holt-Lunstad 2010 (social connection), and the FINDRISC diabetes screening questionnaire — and every source is listed on the Methodology page. How the factors are weighted into one score is our own judgement. It is an educational tool, not a medical diagnosis.",
+  },
+  {
+    question: "Is HealthRating.org open source?",
+    answer:
+      "Yes. The application code is available on GitHub under the GNU Affero General Public License version 3 (AGPL-3.0). You can review the source, report an issue, or contribute a change at github.com/alanrooster/healthrating. Written content is separately licensed under CC BY-NC-SA 4.0.",
   },
   {
     question: "How is biological age different from life expectancy?",
@@ -169,6 +176,29 @@ export function HomeSection({ completedCount, totalCount, onNavigate }: HomeSect
           <Button size="lg" variant="outline" onClick={() => onNavigate("dashboard")}>
             View dashboard
           </Button>
+        </div>
+        <div className="flex w-full max-w-xl flex-col items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 text-left sm:flex-row">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <GitBranch aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Open source, built in public</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Code is under AGPL-3.0. Explore the repo, report an issue, or contribute a pull request.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://github.com/alanrooster/healthrating"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            View on GitHub
+            <ArrowUpRight aria-hidden="true" />
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </div>
         {hasStarted && (
           <p className="text-sm text-muted-foreground">

@@ -95,7 +95,7 @@ const structuredData = {
         height: 512,
       },
       description:
-        'HealthRating.org publishes a free, private, research-backed health scoring application.',
+        'HealthRating.org publishes a free, private health scoring application. Its software is open source under AGPL-3.0; written content is licensed under CC BY-NC-SA 4.0.',
     },
     {
       '@type': 'WebSite',
@@ -112,6 +112,16 @@ const structuredData = {
       description:
         'The most comprehensive health scoring on the web: life expectancy, biological age, and disease risk from 14 research-backed assessments.',
       inLanguage: 'en',
+    },
+    {
+      '@type': 'SoftwareSourceCode',
+      '@id': 'https://healthrating.org/#source-code',
+      name: 'HealthRating.org',
+      codeRepository: 'https://github.com/alanrooster/healthrating',
+      license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+      isAccessibleForFree: true,
+      author: { '@id': 'https://healthrating.org/#organization' },
+      programmingLanguage: ['TypeScript', 'JavaScript'],
     },
   ],
 }
